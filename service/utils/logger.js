@@ -15,3 +15,5 @@ const log = createLogger({
     format : combine(timestamp({format : "MM-DD-YYYY HH:mm:ss"}), custDateFormat),
     transports : [fileRotateTransport]
 })
+
+module.exports = log
