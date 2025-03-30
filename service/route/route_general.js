@@ -86,7 +86,7 @@ app.get("/getReportType", user_auth_controller.tokenVerif, function(req, res){
     general_controller.getReportType(req, res, page, size)
 })
 
-app.post("/addReportUser", user_auth_controller.tokenVerif, function(req, res){
+app.post("/addReport", user_auth_controller.tokenVerif, function(req, res){
     let reportee = req.body.reportee
     let report_type = req.body.report_type
     let report_detail = req.body.report_detail

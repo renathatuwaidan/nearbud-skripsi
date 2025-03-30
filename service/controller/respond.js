@@ -28,11 +28,8 @@ exports.successResp = function successResp(req, res, error_code, error_message, 
     size = parseInt(size);
 
     const pagination = (size > 0) ? size : config.base_response.pagination || 10
-
     const total_page = total_data > 0 ? Math.ceil(total_data / pagination) : 0
-
     const current_page = (page > 0 && page <= total_page) ? page : (total_page > 0 ? 1 : 0)
-
     const total_data_per_page = (total_query_data > 0) ? total_query_data : 0
 
     const default_response = {

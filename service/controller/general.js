@@ -487,7 +487,7 @@ exports.updateProfile = asyncHandler (async function updatedProfile(req, res, us
     }
 
     if(users_dob){
-        if(!utility.dobValidation(users_dob)){
+        if(!utility.insertDateValidation(users_dob)){
             return res.status(500).json({
                 "error_schema" : {
                     "error_code" : "nearbud-001-001",
@@ -537,9 +537,6 @@ exports.updateProfile = asyncHandler (async function updatedProfile(req, res, us
 
     if(users_city || users_province || users_description || users_gender || users_dob){
         var query_users_username = `WHERE USERNAME ILIKE LOWER('${users_username_token}')`
-
-        console.log(`UPDATE USERS SET MODIFIED = NOW() ${query_users_dob} ${query_users_gender} ${query_users_description} 
-                                ${query_province_name} ${query_city_name} ${query_users_name} ${query_users_email} ${query_users_username}`)
 
         try {
             var query_result = await pool.query(`UPDATE USERS SET MODIFIED = NOW() ${query_users_dob} ${query_users_gender} ${query_users_description} 
@@ -623,7 +620,7 @@ exports.getReportType = asyncHandler(async function getReportType(req, res, page
     }
 })
 
-exports.addReportUser = asyncHandler(async function addReportUser(req, res, reportee, report_type, report_detail, users_username_token) {
+exports.addReport = asyncHandler(async function addReport(req, res, reportee, report_type, report_detail, users_username_token) {
     var isError = false, result = []
     try {
         var query_result = await pool.query(`INSERT INTO REPORT_LINK 
@@ -640,7 +637,7 @@ exports.addReportUser = asyncHandler(async function addReportUser(req, res, repo
     } finally {
         if(!isError){
             respond.successResp(req, res, "nearbud-000-000", "Data berhasil ditambahkan", 0, 0, 0, result)
-            log.info(`SUCCESS | /general/getReportType - Success return the result`)
+            log.info(`SUCCESS | /general/getReportType - Success added the data`)
 
         } else {
             return res.status(500).json({
@@ -664,7 +661,7 @@ exports.updatePassword = asyncHandler (async function updatePassword(req, res, p
     } finally {
         if(!isError){
             respond.successResp(req, res, "nearbud-000-000", "Data berhasil diperbaharui", 0, 0, 0, result)
-            log.info(`SUCCESS | /general/updatePassword - Success return the result`)
+            log.info(`SUCCESS | /general/updatePassword - Success update the data`)
 
         } else {
             return res.status(500).json({
