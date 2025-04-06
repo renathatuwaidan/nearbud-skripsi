@@ -149,14 +149,12 @@ CREATE TABLE EVENTS_LINK (
 	IS_APPROVED BOOL
 );
 
--- on pending review
 CREATE TABLE REVIEW (
-	ID INT NOT NULL,
+	ID SERIAL,
 	PRIMARY KEY(ID),
 	created TIMESTAMP DEFAULT now(),
 	MODIFIED date,
 	ID_REVIEWEE VARCHAR(5),
-	FOREIGN KEY (ID_REVIEWEE) REFERENCES USERS(ID_USER),
 	ID_REVIEWER VARCHAR(5),
 	FOREIGN KEY (ID_REVIEWER) REFERENCES USERS(ID_USER),
 	RATING VARCHAR(255),
@@ -456,20 +454,15 @@ INSERT INTO EVENTS_LINK (ID_EVENT, ID_USER, IS_APPROVED) VALUES
 ('E017', 'U007', TRUE),
 ('E014', 'U016', FALSE),
 ('E018', 'U016', TRUE),
-('E006', 'U005', TRUE),
 ('E006', 'U016', FALSE),
 ('E006', 'U011', TRUE),
 ('E019', 'U004', FALSE),
 ('E010', 'U013', FALSE),
-('E018', 'U016', TRUE),
 ('E019', 'U013', TRUE),
 ('E010', 'U016', FALSE),
-('E001', 'U010', FALSE);
-
-INSERT INTO EVENTS_LINK (ID_EVENT, ID_USER, IS_APPROVED) VALUES
+('E001', 'U010', FALSE),
 ('E018', 'U012', FALSE),
 ('E005', 'U013', TRUE),
-('E008', 'U011', TRUE),
 ('E002', 'U011', TRUE),
 ('E016', 'U013', FALSE),
 ('E009', 'U006', FALSE),
@@ -483,10 +476,8 @@ INSERT INTO EVENTS_LINK (ID_EVENT, ID_USER, IS_APPROVED) VALUES
 ('E012', 'U003', FALSE),
 ('E018', 'U014', TRUE),
 ('E013', 'U017', TRUE),
-('E007', 'U003', TRUE),
 ('E019', 'U002', FALSE),
-('E016', 'U007', FALSE),
-('E012', 'U006', FALSE);
+('E016', 'U007', FALSE);
 
 ALTER TABLE COMMUNITY_LINK
 RENAME COLUMN IS_APPROVE TO IS_APPROVED
@@ -505,3 +496,62 @@ INSERT INTO REPORT_LINK (id, ID_REPORTEE, ID_REPORTER, REPORT_TYPE, REPORT_DETAI
 (2, 'U006','U003',2, 'Fake Profile12'),
 (3, 'U001', 'U008', 3, 'Harassment/Bullying123'),
 (4, 'U009', 'U007', 4, 'Hate SpeechEWEWQ')
+
+ALTER TABLE events_link 
+ALTER COLUMN is_approved TYPE VARCHAR(5) 
+USING (CASE WHEN is_approved THEN 'YES' ELSE 'NO' END);
+
+--insert dummy ke review table
+DO $$
+DECLARE
+    i INTEGER;
+    reviewer TEXT;
+    reviewee TEXT;
+    rating INTEGER;
+    review_text TEXT;
+    user_prefix TEXT := 'U';
+    community_prefix TEXT := 'C';
+    sample_reviews TEXT[] := ARRAY[
+        'Sangat bagus!',
+        'Kurang memuaskan.',
+        'Pelayanan oke.',
+        'Komunitasnya aktif.',
+        'Ramah dan membantu.',
+        'Cukup baik.',
+        'Biasa saja.',
+        'Sangat direkomendasikan!',
+        'Kurang responsif.',
+        'Luar biasa!'
+    ];
+BEGIN
+    FOR i IN 1..70 LOOP
+        reviewer := user_prefix || LPAD(FLOOR(RANDOM() * 17 + 1)::TEXT, 3, '0');
+        IF RANDOM() < 0.5 THEN
+            reviewee := user_prefix || LPAD(FLOOR(RANDOM() * 17 + 1)::TEXT, 3, '0');
+        ELSE
+            reviewee := community_prefix || LPAD(FLOOR(RANDOM() * 19 + 1)::TEXT, 3, '0');
+        END IF;
+
+        rating := FLOOR(RANDOM() * 5 + 1);
+        review_text := sample_reviews[FLOOR(RANDOM() * array_length(sample_reviews, 1) + 1)];
+
+        -- Insert data
+        INSERT INTO review (id_reviewee, id_reviewer, rating, review)
+        VALUES (reviewee, reviewer, rating, review_text);
+    END LOOP;
+END $$;
+
+INSERT INTO EVENTS (ID_CATEGORY, ID_CREATOR, NAME, DESCRIPTION, DATE, DURATION, CITY_BASED, LOCATION, ADDRESS, NUMBER_PARTICIPANT,ID_INTEREST) VALUES ('4','U001','TRIAL 123','Hunting Makanan Viral Blok M','2025-04-10 12:00:00','120','3','BLOK M','JL BLOK M 11','5','19');
+INSERT INTO EVENTS (ID_CATEGORY, ID_CREATOR, NAME, DESCRIPTION, DATE, DURATION, CITY_BASED, LOCATION, ADDRESS, NUMBER_PARTICIPANT,ID_INTEREST) VALUES ('1','C004','TRIAL 234','Lari keliling arena lari','2025-05-11 06:30:00','60','2','GOR PUSAT JAKARTA','JL PUSAT DKI','10','2');
+INSERT INTO EVENTS (ID_CATEGORY, ID_CREATOR, NAME, DESCRIPTION, DATE, DURATION, CITY_BASED, LOCATION, ADDRESS, NUMBER_PARTICIPANT,ID_INTEREST) VALUES ('2','C006','TRIAL 345','Dangdut ria bersama Jamil','2025-04-28 19:00:00','120','11','GELANGANG SENI ','JL BEKASI RAYA','15','13');
+
+INSERT INTO EVENTS_LINK (ID_EVENT, ID_USER, IS_APPROVED) VALUES
+('E020', 'U005', TRUE),
+('E021', 'U005', TRUE),
+('E022', 'U005', FALSE),
+('E020', 'U006', TRUE),
+('E021', 'U003', TRUE),
+('E022', 'U002', FALSE),
+('E020', 'U001', TRUE),
+('E021', 'U006', TRUE),
+('E022', 'U003', FALSE)

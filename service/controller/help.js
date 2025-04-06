@@ -1,4 +1,4 @@
-exports.getUserID = asyncHandler(async function getUserID(req, res, username, email) {
+// exports.getUserID = asyncHandler(async function getUserID(req, res, username, email) {
 //     let isError = false
 //     var url_getUserID = config.api_endpoint.getUser + `?users_username=${username}&users_email=${email}`
 

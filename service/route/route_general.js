@@ -86,13 +86,20 @@ app.get("/getReportType", user_auth_controller.tokenVerif, function(req, res){
     general_controller.getReportType(req, res, page, size)
 })
 
-app.post("/addReportUser", user_auth_controller.tokenVerif, function(req, res){
+app.post("/addReport", user_auth_controller.tokenVerif, function(req, res){
     let reportee = req.body.reportee
     let report_type = req.body.report_type
     let report_detail = req.body.report_detail
     let users_username_token = res.getHeader('users_username')
 
     general_controller.addReportUser(req, res, reportee, report_type, report_detail, users_username_token)
+})
+
+app.get("/getReview", user_auth_controller.tokenVerif, function(req, res){
+    let reviewee_id = req.query.reviewee_id
+    let users_username_token = res.getHeader('users_username')
+    
+    general_controller.getReview(res, res, reviewee_id, users_username_token)
 })
 
 module.exports = app

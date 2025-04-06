@@ -1,6 +1,8 @@
 const asyncHandler = require("express-async-handler")
 const dayjs = require('dayjs')
 require('dayjs/locale/id');
+const utc = require('dayjs/plugin/utc');
+dayjs.extend(utc);
 const log = require("../utils/logger")
 const config = require("../config/general")
 
@@ -11,7 +13,15 @@ exports.emailValidation = function emailValidation(users_email) {
     return emailValid
 }
 
-exports.dobValidation = function dobValidation(users_dob) {
+exports.timestampValidation = function timestampValidation(timestamp) {
+    console.log(timestamp)
+    const pattern =  /^(20\d{2})-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01]) (0\d|1\d|2[0-3]):([0-5]\d):([0-5]\d)$/
+    var timestampValid = pattern.test(timestamp) ? true : false
+
+    return timestampValid
+}
+
+exports.insertDateValidation = function insertDateValidation(users_dob) {
     const pattern = /^\d{4}-\d{2}-\d{2}$/
     var dobValid = pattern.test(users_dob) ? true : false
 
@@ -66,8 +76,36 @@ exports.getEndDate = function getEndDate(inpStartTime, duration){
 }
 
 exports.fullDisplayDate = function fullDisplayDate(date) {
-    const tempDate = dayjs(date).locale('ID');
+    const tempDate = dayjs(date);
     const formatted = tempDate.format('dddd, DD MMMM YYYY');
+
+    return formatted
+}
+
+exports.fullDisplayDateTime = function fullDisplayDateTime(date) {
+    const tempDate = dayjs(date);
+    const formatted = tempDate.format('dddd, DD MMMM YYYY HH:mm:ss');
+
+    return formatted
+}
+
+exports.displayEndDateTime = function displayEndDateTime(eventDate, eventDuration) {
+    const startDate = dayjs(eventDate, 'dddd, DD MMMM YYYY HH:mm:ss')
+    const endDate = startDate.add(eventDuration, 'minute')
+
+    return endDate.format('dddd, DD MMMM YYYY HH:mm:ss')
+}
+
+exports.timestampEndDate = function timestampEndDate(eventDate, eventDuration) {
+    const startDate = dayjs(eventDate).utc()
+    const endDate = startDate.add(eventDuration, 'minute')
+
+    return endDate.toISOString()
+};
+
+exports.convertdbDate = function convertdbDate(date){
+    const tempDate = dayjs(date);
+    const formatted = tempDate.format('YYYY-MM-DD')
 
     return formatted
 }

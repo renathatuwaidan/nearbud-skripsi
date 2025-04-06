@@ -263,11 +263,36 @@ exports.getUser = asyncHandler(async function getUser(req, res, suspended, users
 })
 
 exports.getSingleUser = asyncHandler(async function getSingleUser(req, res, users_id, users_name, users_username, users_username_token, page, size) {
-    let query_user_id = "", query_where = "", query_users_name = "", query_users_username ="", isError = false, result = [], button_action = "message"
-
-    var query_pagination = respond.query_pagination(req,res, page, size)
+    let query_user_id = "", query_where = "", query_users_name = "", query_users_username ="", isError = false, result = []
+    let query_user_id_1 = "", query_users_username_1 = "", query_users_name_1 = ""
     
-    if(users_id || users_name || users_username || users_username_token) query_where = "WHERE"
+    var query_pagination = respond.query_pagination(req,res, page, size)
+
+    // bisa username, name, atau id_user
+    if(users_username){
+        query_users_username_1 = `,CASE WHEN (SELECT USERNAME FROM USERS WHERE USERNAME ILIKE LOWER('${users_username}')) 
+                            = (SELECT USERNAME FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')) THEN 'Matched'
+                            ELSE 'Not Matched'
+                        END AS CHECK_CONDITION`
+    } else if(users_name) {
+        query_users_name_1 = `,CASE WHEN (SELECT NAME FROM USERS WHERE NAME ILIKE LOWER('${users_name}')) 
+                            = (SELECT NAME FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')) THEN 'Matched'
+                            ELSE 'Not Matched'
+                        END AS CHECK_CONDITION`
+    } else if(users_id) {
+        query_user_id_1 = `,CASE WHEN (SELECT ID_USER FROM USERS WHERE ID_USER ILIKE LOWER('${users_id}')) 
+                            = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')) THEN 'Matched'
+                            ELSE 'Not Matched'
+                        END AS CHECK_CONDITION`
+    } else {
+        query_users_username_1 = `,CASE WHEN (SELECT USERNAME FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')) 
+                            = (SELECT USERNAME FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')) THEN 'Matched'
+                            ELSE 'Not Matched'
+                        END AS CHECK_CONDITION`
+    }
+
+    
+    if(users_id || users_name || users_username || users_username_token)  query_where = "WHERE"
 
     if(!users_username && !users_id && !users_name){
         button_action = "edit-profile"
@@ -293,6 +318,18 @@ exports.getSingleUser = asyncHandler(async function getSingleUser(req, res, user
             }
         }
     }
+
+    console.log(`SELECT 
+        DISTINCT A.ID_USER, A.NAME, A.USERNAME, A.GENDER, A.DATE_OF_BIRTH, A.DESCRIPTION, A.EMAIL, A.GENDER,
+        E.NAME AS PROVINCE_NAME, F.NAME AS CITY_NAME,
+        CASE WHEN A.id_user NOT IN (SELECT ID_REPORTEE FROM SUSPENDED) THEN 'No'
+        ELSE 'Yes' END AS SUSPENDED
+        ${query_user_id_1} ${query_users_name_1} ${query_users_username_1}
+    FROM USERS A
+    JOIN PROVINCE E ON A.id_province = E.id
+    JOIN CITY F ON A.id_city = F.id
+    ${query_where} ${query_user_id} ${query_users_name} ${query_users_username}
+    ORDER BY A.ID_USER ${query_pagination} `)
     
     try {
         var query_result = await pool.query(`SELECT 
@@ -300,6 +337,7 @@ exports.getSingleUser = asyncHandler(async function getSingleUser(req, res, user
                 E.NAME AS PROVINCE_NAME, F.NAME AS CITY_NAME,
                 CASE WHEN A.id_user NOT IN (SELECT ID_REPORTEE FROM SUSPENDED) THEN 'No'
                 ELSE 'Yes' END AS SUSPENDED
+                ${query_user_id_1} ${query_users_name_1} ${query_users_username_1}
             FROM USERS A
             JOIN PROVINCE E ON A.id_province = E.id
             JOIN CITY F ON A.id_city = F.id
@@ -312,11 +350,17 @@ exports.getSingleUser = asyncHandler(async function getSingleUser(req, res, user
         if(!isError){
             if(query_result.rowCount > 0 ){
                 for( let i = 0; i < query_result.rowCount; i++){
-                    
+                    let button_action
                     var dob = new Date(query_result.rows[i].date_of_birth)
                     var age = utility.getAge(dob)
 
                     var result_interest = await exports.getUserInterestCategory(req, res, query_result.rows[i].id_user)
+
+                    if(query_result.rows[i].check_condition == 'Matched'){
+                        button_action = "edit-profile"
+                    } else {
+                        button_action = "message"
+                    }
 
                     var object = {
                         "users_id" : query_result.rows[i].id_user,
@@ -487,7 +531,7 @@ exports.updateProfile = asyncHandler (async function updatedProfile(req, res, us
     }
 
     if(users_dob){
-        if(!utility.dobValidation(users_dob)){
+        if(!utility.insertDateValidation(users_dob)){
             return res.status(500).json({
                 "error_schema" : {
                     "error_code" : "nearbud-001-001",
@@ -537,9 +581,6 @@ exports.updateProfile = asyncHandler (async function updatedProfile(req, res, us
 
     if(users_city || users_province || users_description || users_gender || users_dob){
         var query_users_username = `WHERE USERNAME ILIKE LOWER('${users_username_token}')`
-
-        console.log(`UPDATE USERS SET MODIFIED = NOW() ${query_users_dob} ${query_users_gender} ${query_users_description} 
-                                ${query_province_name} ${query_city_name} ${query_users_name} ${query_users_email} ${query_users_username}`)
 
         try {
             var query_result = await pool.query(`UPDATE USERS SET MODIFIED = NOW() ${query_users_dob} ${query_users_gender} ${query_users_description} 
@@ -623,7 +664,7 @@ exports.getReportType = asyncHandler(async function getReportType(req, res, page
     }
 })
 
-exports.addReportUser = asyncHandler(async function addReportUser(req, res, reportee, report_type, report_detail, users_username_token) {
+exports.addReport = asyncHandler(async function addReport(req, res, reportee, report_type, report_detail, users_username_token) {
     var isError = false, result = []
     try {
         var query_result = await pool.query(`INSERT INTO REPORT_LINK 
@@ -640,7 +681,7 @@ exports.addReportUser = asyncHandler(async function addReportUser(req, res, repo
     } finally {
         if(!isError){
             respond.successResp(req, res, "nearbud-000-000", "Data berhasil ditambahkan", 0, 0, 0, result)
-            log.info(`SUCCESS | /general/getReportType - Success return the result`)
+            log.info(`SUCCESS | /general/getReportType - Success added the data`)
 
         } else {
             return res.status(500).json({
@@ -664,7 +705,84 @@ exports.updatePassword = asyncHandler (async function updatePassword(req, res, p
     } finally {
         if(!isError){
             respond.successResp(req, res, "nearbud-000-000", "Data berhasil diperbaharui", 0, 0, 0, result)
-            log.info(`SUCCESS | /general/updatePassword - Success return the result`)
+            log.info(`SUCCESS | /general/updatePassword - Success update the data`)
+
+        } else {
+            return res.status(500).json({
+                "error_schema" : {
+                    "error_code" : "nearbud-003-001",
+                    "error_message" : `Error while connecting to DB`
+                }
+            })
+        }
+    }
+})
+
+exports.getReview = asyncHandler(async function getReview(req, res, reviewee_id, users_username_token, page, size){
+    let isError = false, result = [], query_where = ""
+
+    if(reviewee_id){
+        query_where = `FROM REVIEW A JOIN USERS B ON A.ID_REVIEWEE = B.ID_USER
+                        JOIN USERS C ON A.ID_REVIEWER = C.ID_USER
+                        WHERE A.ID_REVIEWEE ILIKE LOWER('${reviewee_id}')`
+    } else if(users_username_token){
+        query_where = `FROM REVIEW A JOIN USERS B ON A.ID_REVIEWEE = B.ID_USER
+                        JOIN USERS C ON A.ID_REVIEWER = C.ID_USER
+                        WHERE A.ID_REVIEWEE = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}'))`
+    }
+
+    console.log(`SELECT (SELECT ROUND(AVG(rating),1) AS average_rating
+        FROM review
+        WHERE id_reviewee = A.ID_REVIEWEE	
+        GROUP BY id_reviewee) AS AVG_RATING,
+        A.ID,
+        A.REVIEW,
+        A.ID_REVIEWEE AS REVIEWEE_ID,
+        B.NAME AS REVIEWEE,
+        A.ID_REVIEWER AS REVIEWER_ID,
+        C.NAME AS REVIEWER_NAME
+        ${query_where}`)
+
+    try {
+        var query_result = await pool.query(`SELECT (SELECT ROUND(AVG(rating),1) AS average_rating
+                                            FROM review
+                                            WHERE id_reviewee = A.ID_REVIEWEE	
+                                            GROUP BY id_reviewee) AS AVG_RATING,
+                                            A.ID,
+                                            A.REVIEW,
+                                            A.ID_REVIEWEE AS REVIEWEE_ID,
+                                            B.NAME AS REVIEWEE,
+                                            A.ID_REVIEWER AS REVIEWER_ID,
+                                            C.NAME AS REVIEWER_NAME
+                                            ${query_where}`)
+    } catch (error) {
+        isError = true
+        log.error(`ERROR | /general/getReview [username : "${users_username_token}"] - Error found while connect to DB - ${error}`)
+    } finally {
+        if(!isError){
+            if(query_result.rowCount > 0 ){
+                let temp = []
+                for( let i = 0; i < query_result.rowCount; i++){
+                    var rating_individu = {
+                        "review_id" : query_result.rows[i].id,
+                        "review_message" : query_result.rows[i].review,
+                        "review_reviewer_id" : query_result.rows[i].reviewer_id,
+                        "review_reviewer_name" : query_result.rows[i].reviewer_name
+                    }
+                    temp.push(rating_individu)
+                }
+                
+                var object = {
+                    "avg_rating" : query_result.rows[0].avg_rating,
+                    "reviews" : temp
+                } 
+                result.push(object)
+
+                respond.successResp(req, res, "nearbud-000-000", "Berhasil mendapatkan hasil", 1, 1, 1, result, 1)
+            } else {
+                respond.successResp(req, res, "nearbud-001-001", "Data tidak ditemukan", 0, 0, 0, result)
+            }
+            log.info(`SUCCESS | /general/getReview - Success return the result`)
 
         } else {
             return res.status(500).json({
