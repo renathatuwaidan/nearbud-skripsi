@@ -3,7 +3,7 @@ const app = express()
 const user_auth_controller = require("../controller/user_authentication")
 
 // checkin username dan email availability
-app.get("/checkExistUser", function(req,res){
+app.get("/check/existUser", function(req,res){
     let username = req.query.username
     let email = req.query.email
 

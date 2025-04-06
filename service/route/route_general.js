@@ -95,4 +95,11 @@ app.post("/addReport", user_auth_controller.tokenVerif, function(req, res){
     general_controller.addReportUser(req, res, reportee, report_type, report_detail, users_username_token)
 })
 
+app.get("/getReview", user_auth_controller.tokenVerif, function(req, res){
+    let reviewee_id = req.query.reviewee_id
+    let users_username_token = res.getHeader('users_username')
+    
+    general_controller.getReview(res, res, reviewee_id, users_username_token)
+})
+
 module.exports = app

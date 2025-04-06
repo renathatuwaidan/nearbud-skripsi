@@ -1,6 +1,8 @@
 const asyncHandler = require("express-async-handler")
 const dayjs = require('dayjs')
 require('dayjs/locale/id');
+const utc = require('dayjs/plugin/utc');
+dayjs.extend(utc);
 const log = require("../utils/logger")
 const config = require("../config/general")
 
@@ -79,6 +81,27 @@ exports.fullDisplayDate = function fullDisplayDate(date) {
 
     return formatted
 }
+
+exports.fullDisplayDateTime = function fullDisplayDateTime(date) {
+    const tempDate = dayjs(date);
+    const formatted = tempDate.format('dddd, DD MMMM YYYY HH:mm:ss');
+
+    return formatted
+}
+
+exports.displayEndDateTime = function displayEndDateTime(eventDate, eventDuration) {
+    const startDate = dayjs(eventDate, 'dddd, DD MMMM YYYY HH:mm:ss')
+    const endDate = startDate.add(eventDuration, 'minute')
+
+    return endDate.format('dddd, DD MMMM YYYY HH:mm:ss')
+}
+
+exports.timestampEndDate = function timestampEndDate(eventDate, eventDuration) {
+    const startDate = dayjs(eventDate).utc()
+    const endDate = startDate.add(eventDuration, 'minute')
+
+    return endDate.toISOString()
+};
 
 exports.convertdbDate = function convertdbDate(date){
     const tempDate = dayjs(date);
