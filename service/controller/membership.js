@@ -227,7 +227,6 @@ exports.getParticipants = asyncHandler(async function getParticipants(req, res, 
     }
 })
 
-
 exports.addCommunityLink = asyncHandler(async function addCommunityLink(req, res, community_id, users_username) {
     let isError1 = false, result = []
     try {
@@ -332,6 +331,89 @@ exports.getCommunityMember = asyncHandler(async function getCommunityMember(req,
             }
             log.info(`SUCCESS | /general/getCommunityMember - Success return the result`)
             
+        } else {
+            return res.status(500).json({
+                "error_schema" : {
+                    "error_code" : "nearbud-003-001",
+                    "error_message" : `Error while connecting to DB`
+                }
+            })
+        }
+    }
+})
+
+exports.getCommunity_preview = asyncHandler(async function getCommunity_preview(req, res, users_id, users_username_token, page, size) {
+    let isError = false, result = [], query_user = ""
+
+    var query_pagination = respond.query_pagination(req,res, page, size)
+
+    if(users_id){
+        query_user = `WHERE ID_COMMUNITY IN (SELECT ID_COMMUNITY FROM COMMUNITY_LINK WHERE ID_USER ILIKE LOWER('${users_id}') AND IS_APPROVED = TRUE)`
+    } else {
+        query_user = `WHERE ID_COMMUNITY IN (SELECT ID_COMMUNITY FROM COMMUNITY_LINK WHERE ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')) AND IS_APPROVED = TRUE)`
+    }
+
+    console.log(`WITH COMMUNITY_PREVIEW AS (
+                    SELECT
+                        A.ID_COMMUNITY,
+                        A.NAME AS COMMUNITY_NAME,
+                        B.NAME AS INTEREST_NAME,
+                        D.NAME AS CITY_NAME,
+                        C.NAME AS PROVINCE_NAME,
+                        (SELECT COUNT(ID_USER) FROM COMMUNITY_LINK WHERE ID_COMMUNITY = A.ID_COMMUNITY AND IS_APPROVED = TRUE) AS MEMBER
+                    FROM COMMUNITY A JOIN INTEREST B ON A.ID_INTEREST = B.ID
+                    JOIN PROVINCE C ON A.ID_PROVINCE = C.ID 
+                    JOIN CITY D ON A.ID_CITY = D.ID
+                    ${query_user}
+                )
+                SELECT *, COUNT(*) OVER ()
+                FROM COMMUNITY_PREVIEW
+                ${query_pagination}`)
+
+    try {
+        var query_result = await pool.query(`WITH COMMUNITY_PREVIEW AS (
+                                                SELECT
+                                                    A.ID_COMMUNITY,
+                                                    A.NAME AS COMMUNITY_NAME,
+                                                    B.NAME AS INTEREST_NAME,
+                                                    D.NAME AS CITY_NAME,
+                                                    C.NAME AS PROVINCE_NAME,
+                                                    (SELECT COUNT(ID_USER) FROM COMMUNITY_LINK WHERE ID_COMMUNITY = A.ID_COMMUNITY AND IS_APPROVED = TRUE) AS MEMBER
+                                                FROM COMMUNITY A JOIN INTEREST B ON A.ID_INTEREST = B.ID
+                                                JOIN PROVINCE C ON A.ID_PROVINCE = C.ID 
+                                                JOIN CITY D ON A.ID_CITY = D.ID
+                                                ${query_user}
+                                            )
+                                            SELECT *, COUNT(*) OVER ()
+                                            FROM COMMUNITY_PREVIEW
+                                            ${query_pagination}`)
+    } catch (error) {
+        isError = true
+        log.error(`ERROR | /membership/getCommunity/preview [username : "${users_username_token}"] - Error found while connect to DB - ${error}`)
+    } finally {
+        if(!isError){
+            if(query_result.rowCount > 0 ){
+                for( let i = 0; i < query_result.rowCount; i++){
+                    var object = {
+                        "community_id" : query_result.rows[i].id_community,
+                        "community_name" : query_result.rows[i].community_name,
+                        "interest_name" : query_result.rows[i].interest_name,
+                        "city_based" : query_result.rows[i].city_name,
+                        "province_based" : query_result.rows[i].province_based,
+                        "community_current_member" : query_result.rows[i].member
+                    }
+                    result.push(object)
+                }
+
+                var total_data = query_result.rows[0].count
+                var total_query_data = query_result.rowCount
+
+                respond.successResp(req, res, "nearbud-000-000", "Berhasil mendapatkan hasil", total_data, total_query_data, page, result)
+            } else {
+                respond.successResp(req, res, "nearbud-001-001", "Data tidak ditemukan", 0, 0, 0, result)
+            }
+            log.info(`SUCCESS | /membership/getCommunity/preview - Success return the result`)
+
         } else {
             return res.status(500).json({
                 "error_schema" : {

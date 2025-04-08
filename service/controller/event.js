@@ -5,10 +5,10 @@ const utility = require("./utility")
 const respond = require('./respond')
 const membership = require("./membership")
 
-exports.getEventsPreview = asyncHandler(async function getEventsPreview(req, res, interest_id1, interest_id2, interest_id3, interest_id4, interest_id5,category_id1, category_id2, category_id3, category_id4, category_id5, city_based, province_based, event_location,event_date, event_number_participant, status, users_username_token, size, page) {
-    var query_interest = "", query_category = "", query_city_based = "", query_province_based = "", query_event_location = "", query_event_number_participant = "", query_where = "", query_event_date = "", query_status = "", isError = false, result = []
+exports.getEventsPreview = asyncHandler(async function getEventsPreview(req, res, interest_id1, interest_id2, interest_id3, interest_id4, interest_id5,category_id1, category_id2, category_id3, category_id4, category_id5, city_based, province_based, event_location,event_date, event_number_participant, status, event_creator, users_username_token, size, page) {
+    var query_interest = "", query_category = "", query_city_based = "", query_province_based = "", query_event_location = "", query_event_number_participant = "", query_where = "", query_event_date = "", query_status = "", query_event_creator = "", isError = false, result = []
     
-    if( interest_id1 || interest_id2 || interest_id3 || interest_id4 || interest_id5 || category_id1 || category_id2 || category_id3 || category_id4 || category_id5 || city_based || province_based || event_location || event_date || event_number_participant || status) query_where = 'WHERE '
+    if( interest_id1 || interest_id2 || interest_id3 || interest_id4 || interest_id5 || category_id1 || category_id2 || category_id3 || category_id4 || category_id5 || city_based || province_based || event_location || event_date || event_number_participant || status|| event_creator) query_where = 'WHERE '
 
     if(interest_id1 || interest_id2 || interest_id3 || interest_id4 || interest_id5){
         if(interest_id1){interest_id1 = `'${interest_id1}'`} else interest_id1 = ''
@@ -17,7 +17,7 @@ exports.getEventsPreview = asyncHandler(async function getEventsPreview(req, res
         if(interest_id4){interest_id4 = `,'${interest_id4}'`} else interest_id4 = ''
         if(interest_id5){interest_id5 = `,'${interest_id5}'`} else interest_id5 = ''
 
-        query_interest = `A.ID_INTEREST IN (SELECT ID FROM interest WHERE NAME IN (${interest_id1} ${interest_id2} ${interest_id3} ${interest_id4} ${interest_id5}))`
+        query_interest = `A.ID_INTEREST IN (${interest_id1} ${interest_id2} ${interest_id3} ${interest_id4} ${interest_id5})`
     
         if(category_id1 || category_id2 || category_id3 || category_id4 || category_id5){
             if(category_id1){category_id1 = `'${category_id1}'`} else category_id1 = ''
@@ -26,7 +26,7 @@ exports.getEventsPreview = asyncHandler(async function getEventsPreview(req, res
             if(category_id4){category_id4 = `,'${category_id4}'`} else category_id4 = ''
             if(category_id5){category_id5 = `,'${category_id5}'`} else category_id5 = ''
     
-            query_category = `AND A.ID_CATEGORY IN (SELECT ID FROM CATEGORY WHERE NAME IN (${category_id1} ${category_id2} ${category_id3} ${category_id4} ${category_id5}))`
+            query_category = `AND A.ID_CATEGORY IN (${category_id1} ${category_id2} ${category_id3} ${category_id4} ${category_id5})`
         }
 
         if(event_date){
@@ -78,6 +78,10 @@ exports.getEventsPreview = asyncHandler(async function getEventsPreview(req, res
             query_status = `${query_status_1} ${query_status_2}`
         }
 
+        if(event_creator){
+            query_event_creator = `AND ID_CREATOR ILIKE LOWER('${event_creator}')`
+        }
+
     } else {
         if(category_id1 || category_id2 || category_id3 || category_id4 || category_id5){
             if(category_id1){category_id1 = `'${category_id1}'`} else category_id1 = ''
@@ -86,7 +90,7 @@ exports.getEventsPreview = asyncHandler(async function getEventsPreview(req, res
             if(category_id4){category_id4 = `,'${category_id4}'`} else category_id4 = ''
             if(category_id5){category_id5 = `,'${category_id5}'`} else category_id5 = ''
     
-            query_category = `A.ID_CATEGORY IN (SELECT ID FROM CATEGORY WHERE NAME IN (${category_id1} ${category_id2} ${category_id3} ${category_id4} ${category_id5}))`
+            query_category = `A.ID_CATEGORY IN (${category_id1} ${category_id2} ${category_id3} ${category_id4} ${category_id5})`
         
             if(event_date){
                 if(event_date == "today"){
@@ -134,7 +138,11 @@ exports.getEventsPreview = asyncHandler(async function getEventsPreview(req, res
                 }
     
                 query_status = `${query_status_1} ${query_status_2}`
-            }      
+            }     
+            
+            if(event_creator){
+                query_event_creator = `AND ID_CREATOR ILIKE LOWER('${event_creator}')`
+            }
         } else {
             if(city_based){
                 query_city_based = `C.NAME ILIKE LOWER('%${city_based}%')`
@@ -182,6 +190,10 @@ exports.getEventsPreview = asyncHandler(async function getEventsPreview(req, res
         
                     query_status = `${query_status_1} ${query_status_2}`
                 }
+
+                if(event_creator){
+                    query_event_creator = `AND ID_CREATOR ILIKE LOWER('${event_creator}')`
+                }
             } else {
                 if(province_based){
                     query_province_based = `E.NAME ILIKE LOWER('%${province_based}%')`
@@ -226,6 +238,10 @@ exports.getEventsPreview = asyncHandler(async function getEventsPreview(req, res
             
                         query_status = `${query_status_1} ${query_status_2}`
                     }
+
+                    if(event_creator){
+                        query_event_creator = `AND ID_CREATOR ILIKE LOWER('${event_creator}')`
+                    }
                 } else {
                     if(event_location){
                         query_event_location = `A.LOCATION ILIKE LOWER('%${event_location}%')`
@@ -250,6 +266,10 @@ exports.getEventsPreview = asyncHandler(async function getEventsPreview(req, res
                             }
                 
                             query_status = `${query_status_1} ${query_status_2}`
+                        }
+
+                        if(event_creator){
+                            query_event_creator = `AND ID_CREATOR ILIKE LOWER('${event_creator}')`
                         }
                     } else {
                         if(event_number_participant){
@@ -287,6 +307,10 @@ exports.getEventsPreview = asyncHandler(async function getEventsPreview(req, res
                     
                                 query_status = `${query_status_1} ${query_status_2}`
                             }
+
+                            if(event_creator){
+                                query_event_creator = `AND ID_CREATOR ILIKE LOWER('${event_creator}')`
+                            }
                         } else {
                             if(event_date){
                                 if(event_date == "today"){
@@ -319,6 +343,10 @@ exports.getEventsPreview = asyncHandler(async function getEventsPreview(req, res
                         
                                     query_status = `${query_status_1} ${query_status_2}`
                                 }
+
+                                if(event_creator){
+                                    query_event_creator = `AND ID_CREATOR ILIKE LOWER('${event_creator}')`
+                                }
                             } else {
                                 if(status){
                                     let query_status_1 = "", query_status_2 = ""
@@ -336,6 +364,14 @@ exports.getEventsPreview = asyncHandler(async function getEventsPreview(req, res
                                     }
                         
                                     query_status = `${query_status_1} ${query_status_2}`
+
+                                    if(event_creator){
+                                        query_event_creator = `AND ID_CREATOR ILIKE LOWER('${event_creator}')`
+                                    }
+                                } else {
+                                    if(event_creator){
+                                        query_event_creator = `ID_CREATOR ILIKE LOWER('${event_creator}')`
+                                    }
                                 }
                             }
                         }
@@ -355,10 +391,11 @@ exports.getEventsPreview = asyncHandler(async function getEventsPreview(req, res
         JOIN CATEGORY D ON A.ID_CATEGORY = D.ID 
         JOIN INTEREST F ON F.ID_CATEGORY = D.ID
         ${query_where} ${query_interest} ${query_category} ${query_city_based} ${query_event_date}
-        ${query_province_based} ${query_event_location} ${query_event_number_participant} ${query_status}
+        ${query_province_based} ${query_event_location} ${query_event_number_participant} ${query_status} ${query_event_creator}
     )
     SELECT *, COUNT (*)OVER ()
     FROM EVENT_DATE_LIST
+    ORDER BY EVENT_DATE
     ${query_pagination}`)
 
     try {
@@ -371,11 +408,14 @@ exports.getEventsPreview = asyncHandler(async function getEventsPreview(req, res
                                             JOIN INTEREST F ON F.ID_CATEGORY = D.ID
                                             ${query_where} ${query_interest} ${query_category} ${query_city_based} ${query_event_date}
                                             ${query_province_based} ${query_event_location} ${query_event_number_participant} ${query_status}
+                                            ${query_event_creator}
                                         )
                                         SELECT *, COUNT (*)OVER ()
                                         FROM EVENT_DATE_LIST
+                                        ORDER BY EVENT_DATE
                                         ${query_pagination}`)
     } catch (error) {
+        console.log(error)
         isError = true
         log.error(`ERROR | /general/getEventsPreview - Error found while connect to DB - ${error}`)
     } finally {
@@ -383,7 +423,7 @@ exports.getEventsPreview = asyncHandler(async function getEventsPreview(req, res
             if(query_result.rowCount > 0 ){
                 for( let i = 0; i < query_result.rowCount; i++){
                     var result_list = await exports.getEventsPreviewList(req, res, query_result.rows[i].event_date, query_interest, query_category, query_city_based, query_event_date,
-                        query_province_based, query_event_location, query_event_number_participant, "", "", query_status)
+                        query_province_based, query_event_location, query_event_number_participant, query_event_creator, "", query_status, "")
                     var fullDisplayDate = utility.fullDisplayDate(query_result.rows[i].event_date)
 
                     var object = {

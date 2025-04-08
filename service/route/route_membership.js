@@ -18,6 +18,15 @@ app.get("/getCommunityMember", user_auth_controller.tokenVerif, function(req, re
     membership_controller.getCommunityMember(req, res, community_id)
 })
 
+app.get("/getCommunity/preview",  user_auth_controller.tokenVerif, function(req, res){
+    let users_id = req.query.users_id 
+    let users_username_token = res.getHeader('users_username')
+    let page = req.query.page
+    let size = req.query.size
+
+    membership_controller.getCommunity_preview(req, res, users_id, users_username_token, page, size)
+})
+
 // // menghapus koneksi antar user dan komunitas
 // app.delete("/community_link", function(req, res){})
 

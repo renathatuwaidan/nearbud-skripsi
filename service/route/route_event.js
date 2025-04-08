@@ -20,13 +20,14 @@ app.get("/getEvents/preview", user_auth_controller.tokenVerif, function (req, re
     let province_based = req.query.province_based
     let event_location = req.query.event_location 
     let event_number_participant = req.query.event_number_participant
+    let event_creator = req.query.event_creator
     let status = req.query.status
     let size = req.query.size
     let page = req.query.page
     let users_username_token = res.getHeader('users_username')
 
     event_controller.getEventsPreview(req, res, interest_id1, interest_id2, interest_id3, interest_id4, interest_id5,category_id1, category_id2,
-         category_id3, category_id4, category_id5, city_based, province_based, event_location,event_date, event_number_participant, status, 
+         category_id3, category_id4, category_id5, city_based, province_based, event_location,event_date, event_number_participant, status, event_creator,
          users_username_token, size, page)
 })
 
