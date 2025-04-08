@@ -5,6 +5,6 @@ module.exports = {
         pagination : 10
     },
     auth : {
-        secretKey : process.env.SECRET_KEY
+        secretKey : "sV0pBm6lZLAPINearbud"
     }
 }
