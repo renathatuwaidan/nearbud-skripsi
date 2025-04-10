@@ -122,35 +122,40 @@ exports.registerUser_optional = asyncHandler(async function registerUser_optiona
         }
     }
     
-    for (const item of users_interest) {
-        await general.putInterestLink(req, res, users_username_token, item.interest_id)
+    if(users_interest){
+        for (const item of users_interest) {
+            await general.putInterestLink(req, res, users_username, item.interest_id)
+        }
     }
 
-    for (const item of users_community) {
-        let isError1 = false
-        try {
-            var query_result = await pool.query(`
-                INSERT INTO COMMUNITY_LINK(ID, ID_COMMUNITY, ID_USER) VALUES 
-                (
-                    (SELECT MAX(id) + 1 FROM COMMUNITY_LINK), 
-                    (SELECT ID_COMMUNITY FROM COMMUNITY WHERE NAME ILIKE LOWER('${item.community_name}')), 
-                    (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username}'))
-                )
-            `);
-        } catch (error) {
-            isError1 = true;
-            log.error(`ERROR | /auth/registerUser/optional - INSERT COMMUNITY [username : "${users_username}"] - Error found while connecting to DB - ${error}`);
-        } finally {
-            if (isError1) {
-                return res.status(500).json({
-                    "error_schema": {
-                        "error_code": "nearbud-003-001",
-                        "error_message": `Error while connecting to DB - Failed to Update Community Link`
-                    }
-                });
+    if(users_community){
+        for (const item of users_community) {
+            let isError1 = false
+            try {
+                var query_result = await pool.query(`
+                    INSERT INTO COMMUNITY_LINK(ID, ID_COMMUNITY, ID_USER) VALUES 
+                    (
+                        (SELECT MAX(id) + 1 FROM COMMUNITY_LINK), 
+                        (SELECT ID_COMMUNITY FROM COMMUNITY WHERE NAME ILIKE LOWER('${item.community_name}')), 
+                        (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username}'))
+                    )
+                `);
+            } catch (error) {
+                isError1 = true;
+                log.error(`ERROR | /auth/registerUser/optional - INSERT COMMUNITY [username : "${users_username}"] - Error found while connecting to DB - ${error}`);
+            } finally {
+                if (isError1) {
+                    return res.status(500).json({
+                        "error_schema": {
+                            "error_code": "nearbud-003-001",
+                            "error_message": `Error while connecting to DB - Failed to Update Community Link`
+                        }
+                    });
+                }
             }
         }
     }
+
 
     await exports.successResp(req, res, "nearbud-000-000", "Data user berhasil ditambahkan", 0, 0, 0, "")
     log.info(`SUCCESS | /auth/registerUser/optional [username : "${users_username}"] - Success return the result`)
@@ -222,8 +227,14 @@ exports.tokenVerif = asyncHandler(async function tokenVerif(req, res, next) {
         token = jwt.verify(generatedToken, config.auth.secretKey)
     } catch (error) {
         isError = true
-        console.log(error)
         log.error(`ERROR | /auth/verifyToken - Error found - ${error}`)
+
+        return res.status(401).json({
+            "error_schema" : {
+                "error_code" : "nearbud-003-001",
+                "error_message" : `Internal server error - ${error}`
+            }
+        })
     } finally {
         if(isError){
             return res.status(401).json({
