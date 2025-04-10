@@ -771,7 +771,7 @@ exports.editEvent = asyncHandler(async function editEvent(req, res, event_id, ev
                                         ${query_event_location} ${query_event_address} ${query_event_number_participant} ${query_event_category} ${query_event_interest} WHERE ID_EVENT ILIKE LOWER('${event_id}')`)
 
     try {
-        var query_result = await pool.query(`UPDATE EVENTS SET MODIFIED = NOW() ${query_event_category} ${query_event_interest} ${query_event_name} ${query_event_description} ${query_event_date} ${query_event_duration} ${query_event_city}
+        var query_result = await pool.query(`UPDATE EVENTS SET MODIFIED = NOW() AT TIME ZONE 'Asia/Jakarta' ${query_event_category} ${query_event_interest} ${query_event_name} ${query_event_description} ${query_event_date} ${query_event_duration} ${query_event_city}
                                         ${query_event_location} ${query_event_address} ${query_event_number_participant} ${query_event_category} ${query_event_interest} WHERE ID_EVENT ILIKE LOWER('${event_id}')`)
     } catch (error) {
         isError = true
@@ -791,11 +791,20 @@ exports.editEvent = asyncHandler(async function editEvent(req, res, event_id, ev
     }
 })
 
-exports.isCreator = asyncHandler(async function isCreator(res, res, id_creator, id_event) {
-    let isError = false
+exports.isCreator = asyncHandler(async function isCreator(res, res, id_creator, id_temp) {
+    let isError = false, query = ""
+    console.log("masuk sndsj")
+
+    if(id_temp.startsWith("E") || id_temp.startsWith("e") ){
+        query = (`SELECT * FROM EVENTS WHERE ID_CREATOR ILIKE LOWER('${id_creator}') AND ID_EVENT ILIKE LOWER('${id_temp}')`)
+    } else {
+        query = (`SELECT * FROM IS_ADMIN WHERE ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${id_creator}')) AND ID_COMMUNITY ILIKE LOWER('${id_temp}')`)
+    }
+
+    console.log(query)
 
     try {
-        var query_result = await pool.query(`SELECT * FROM EVENTS WHERE ID_CREATOR ILIKE LOWER('${id_creator}') AND ID_EVENT ILIKE LOWER('${id_event}')`)
+        var query_result = await pool.query(query)
     } catch (error) {
         isError = true
         log.error(`ERROR | /general/isCretor - Error found while connect to DB - ${error}`)

@@ -274,11 +274,6 @@ exports.getSingleUser = asyncHandler(async function getSingleUser(req, res, user
                             = (SELECT USERNAME FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')) THEN 'Matched'
                             ELSE 'Not Matched'
                         END AS CHECK_CONDITION`
-    } else if(users_name) {
-        query_users_name_1 = `,CASE WHEN (SELECT NAME FROM USERS WHERE NAME ILIKE LOWER('${users_name}')) 
-                            = (SELECT NAME FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')) THEN 'Matched'
-                            ELSE 'Not Matched'
-                        END AS CHECK_CONDITION`
     } else if(users_id) {
         query_user_id_1 = `,CASE WHEN (SELECT ID_USER FROM USERS WHERE ID_USER ILIKE LOWER('${users_id}')) 
                             = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')) THEN 'Matched'
@@ -295,7 +290,6 @@ exports.getSingleUser = asyncHandler(async function getSingleUser(req, res, user
     if(users_id || users_name || users_username || users_username_token)  query_where = "WHERE"
 
     if(!users_username && !users_id && !users_name){
-        button_action = "edit-profile"
         query_users_username = `A.USERNAME ILIKE LOWER('%${users_username_token}%')`
     } else {
         if(users_username){
@@ -357,9 +351,9 @@ exports.getSingleUser = asyncHandler(async function getSingleUser(req, res, user
                     var result_interest = await exports.getUserInterestCategory(req, res, query_result.rows[i].id_user)
 
                     if(query_result.rows[i].check_condition == 'Matched'){
-                        button_action = "edit-profile"
+                        button_action = false
                     } else {
-                        button_action = "message"
+                        button_action = true
                     }
 
                     var object = {
@@ -583,7 +577,7 @@ exports.updateProfile = asyncHandler (async function updatedProfile(req, res, us
         var query_users_username = `WHERE USERNAME ILIKE LOWER('${users_username_token}')`
 
         try {
-            var query_result = await pool.query(`UPDATE USERS SET MODIFIED = NOW() ${query_users_dob} ${query_users_gender} ${query_users_description} 
+            var query_result = await pool.query(`UPDATE USERS SET MODIFIED = NOW() AT TIME ZONE 'Asia/Jakarta' ${query_users_dob} ${query_users_gender} ${query_users_description} 
                                 ${query_province_name} ${query_city_name} ${query_users_name} ${query_users_email} ${query_users_username}`)
         } catch (error) {
             isError = true
@@ -670,7 +664,7 @@ exports.addReport = asyncHandler(async function addReport(req, res, reportee, re
         var query_result = await pool.query(`INSERT INTO REPORT_LINK 
                                             (id, ID_REPORTEE, ID_REPORTER, REPORT_TYPE, REPORT_DETAIL) VALUES 
                                             ( (SELECT MAX(ID)+1 FROM REPORT_LINK), 
-                                                '${reportee}',
+                                                '${reportee.toUpperCase()}',
                                                 (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('%${users_username_token}%')),
                                                 (SELECT ID FROM REPORT_TYPE WHERE REPORT_TYPE ILIKE LOWER('%${report_type}%')),
                                                 '${report_detail}'
@@ -698,7 +692,7 @@ exports.updatePassword = asyncHandler (async function updatePassword(req, res, p
     var isError = false, result = []
     
     try {
-        var query_result = await pool.query(`UPDATE USERS SET MODIFIED = NOW(), PASSWORD = '${password_new}' WHERE USERNAME ILIKE LOWER('%${users_username_token}%') AND PASSWORD = '${password_old}'`)
+        var query_result = await pool.query(`UPDATE USERS SET MODIFIED = NOW() AT TIME ZONE 'Asia/Jakarta', PASSWORD = '${password_new}' WHERE USERNAME ILIKE LOWER('%${users_username_token}%') AND PASSWORD = '${password_old}'`)
     } catch (error) {
         isError = true
         log.error(`ERROR | /general/updatePassword [username : "${username}"] - Error found while connect to DB - ${error}`)

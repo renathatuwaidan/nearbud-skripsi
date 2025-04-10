@@ -27,11 +27,14 @@ app.get("/getCommunity/preview",  user_auth_controller.tokenVerif, function(req,
     membership_controller.getCommunity_preview(req, res, users_id, users_username_token, page, size)
 })
 
-// // menghapus koneksi antar user dan komunitas
-// app.delete("/community_link", function(req, res){})
-
 // // mengupdate status isApprove user ke komunitas
-// app.put("/community_link", function(req, res){})
+app.put("/updateEventLink",  user_auth_controller.tokenVerif, function(req, res){
+    let event_id = req.body.event_id
+    let users_id = req.body.users_id
+    let decision = req.body.decision
+
+    membership_controller.updateEventLink(req, res, event_id, users_id, decision)
+})
 
 // // get user yang terhubung dengan event tertentu
 app.get("/getEventLink", function(req, res){
@@ -57,7 +60,13 @@ app.get("/getEvents/preview", user_auth_controller.tokenVerif, function(req, res
 })
 
 // // tambahkan data untuk event_link
-// app.post("/event_link", function(req, res){})
+app.post("/addEventLink",  user_auth_controller.tokenVerif, function(req, res){
+    let users_id = req.body.users_id
+    let event_id = req.body.event_id
+    let users_username_token = res.getHeader('users_username')
+
+    membership_controller.addEventLink(req, res, users_id, event_id, users_username_token)
+})
 
 // // menghapus koneksi antar user dan event
 // app.delete("/event_link", function(req, res){})

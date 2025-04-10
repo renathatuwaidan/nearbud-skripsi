@@ -61,7 +61,7 @@ app.post("/addEvent", user_auth_controller.tokenVerif, function(req, res){
         event_address, event_number_participant, event_image, event_category, event_interest, event_creator, users_username_token)
 })
 
-app.put("/editEvent", user_auth_controller.tokenVerif, function(req, res){
+app.patch("/editEvent", user_auth_controller.tokenVerif, function(req, res){
     let event_id = req.body.event_id
     let event_name = req.body.event_name
     let event_description = req.body.event_description

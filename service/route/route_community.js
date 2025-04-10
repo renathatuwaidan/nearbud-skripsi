@@ -57,8 +57,17 @@ app.post("/addCommunity", user_auth_controller.tokenVerif, function(req, res){
 app.patch("/deleteEvent", function(req, res){})
 
 // mengupdate event existing
-app.put("/updateEvent", function(req, res){})
+app.patch("/editCommunity", user_auth_controller.tokenVerif, function(req, res){
+    let users_username_token = res.getHeader('users_username')
+    let community_name = req.body.community_name
+    let community_description = req.body.community_description
+    let province_name = req.body.province_name
+    let city_name = req.body.city_name
+    let interest_id = req.body.interest_id
+    let community_id = req.body.community_id
 
+    community_controller.editCommunity(req, res, community_name, community_description, province_name, city_name, interest_id, users_username_token, community_id)
+})
 
 // get bulletin
 
@@ -67,7 +76,5 @@ app.put("/updateEvent", function(req, res){})
 // edit bulletin
 
 // delete bulletin
-
-
 
 module.exports = app

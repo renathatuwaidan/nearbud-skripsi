@@ -255,6 +255,77 @@ exports.addCommunityLink = asyncHandler(async function addCommunityLink(req, res
     }
 })
 
+exports.addEventLink = asyncHandler(async function addEventLink(req, res, users_id, event_id, users_username_token) {
+    let isError1 = false, isError = false, result = [], temp_query_user_id = ""
+
+    if(!event_id){
+        return res.status(500).json({
+            "error_schema": {
+                "error_code": "nearbud-001-000",
+                "error_message": `Event ID tidak boleh kosong`
+            }
+        })
+    }
+
+    if(!users_id){
+        temp_query_user_id = `(SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}'))`
+    } else {
+        temp_query_user_id = `'${users_id.toUpperCase()}'`
+    }
+
+    try {
+        var query_result = await pool.query(`
+            SELECT * FROM EVENTS_LINK WHERE ID_USER = ${temp_query_user_id} AND ID_EVENT = '${event_id.toUpperCase()}'
+        `)
+    } catch (error) {
+        isError = true;
+        log.error(`ERROR | /membership/addEventLink [username : "${users_username_token}"] - Error found while connecting to DB - ${error}`);
+    } finally {
+        if(!isError){
+            if(query_result.rowCount > 0){
+                return res.status(500).json({
+                    "error_schema": {
+                        "error_code": "nearbud-000-001",
+                        "error_message": `Event Link sudah pernah ditambahkan`
+                    }
+                })
+            } else {
+                try {
+                    console.log((`
+                        INSERT INTO EVENTS_LINK (ID_EVENT, ID_USER, IS_APPROVED) VALUES
+                        ('${event_id.toUpperCase()}', ${temp_query_user_id}, 'false')
+                    `))
+                    var query_result = await pool.query(`
+                        INSERT INTO EVENTS_LINK (ID_EVENT, ID_USER, IS_APPROVED) VALUES
+                        ('${event_id.toUpperCase()}', ${temp_query_user_id}, 'false')
+                    `)
+                } catch (error) {
+                    isError1 = true;
+                    log.error(`ERROR | /membership/addEventLink [username : "${users_username_token}"] - Error found while connecting to DB - ${error}`);
+                } finally {
+                    if (isError1) {
+                        return res.status(500).json({
+                            "error_schema": {
+                                "error_code": "nearbud-003-001",
+                                "error_message": `Error while connecting to DB - Failed to Update Event Link`
+                            }
+                        });
+                    } else {
+                        respond.successResp(req, res, "nearbud-000-000", "Berhasil menambahkan data", 0, 0, 0, result)
+                    }
+                }
+            }
+        } else {
+            return res.status(500).json({
+                "error_schema": {
+                    "error_code": "nearbud-003-001",
+                    "error_message": `Error while connecting to DB`
+                }
+            });
+        }
+    }
+})
+
 exports.getCommunityMember = asyncHandler(async function getCommunityMember(req, res, community_id, page, size) {
     let isError = false, result = []
 
@@ -424,6 +495,59 @@ exports.getCommunity_preview = asyncHandler(async function getCommunity_preview(
         }
     }
 })
+
+exports.updateEventLink = asyncHandler(async function updateEventLink(req, res, event_id, users_id, decision) {
+    let isError = false, isError1 = false, result = [], query = ""
+
+    if(decision == "approved"){
+        query = `UPDATE EVENTS_LINK SET MODIFIED = NOW() AT TIME ZONE 'Asia/Jakarta', IS_APPROVED = 'true' WHERE ID_USER ILIKE LOWER('${users_id}') AND ID_EVENT ILIKE LOWER('${event_id}')`
+    } else if (decision == "reject") {
+        query = `DELETE FROM EVENTS_LINK WHERE ID_USER ILIKE LOWER('${users_id}') AND ID_EVENT ILIKE LOWER('${event_id}')`
+    }
+    
+    try {
+        var query_result = await pool.query(`SELECT * FROM EVENTS_LINK WHERE ID_USER ILIKE LOWER('${users_id}') AND ID_EVENT ILIKE LOWER('${event_id}') AND IS_APPROVED = 'false'`)
+    } catch (error) {
+        isError = true;
+        log.error(`ERROR | /membership/updateEventLink - Error found while connecting to DB - ${error}`);
+    } finally {
+        if (isError) {
+            return res.status(500).json({
+                "error_schema": {
+                    "error_code": "nearbud-003-001",
+                    "error_message": `Error while connecting to DB`
+                }
+            })
+        } else {
+            if(query_result.rowCount > 0){
+                try {
+                    var query_result_1 = await pool.query(query)
+                } catch (error) {
+                    isError1 = true;
+                    log.error(`ERROR | /membership/updateEventLink - Error found while connecting to DB - ${error}`);
+                } finally {
+                    if (isError1) {
+                        return res.status(500).json({
+                            "error_schema": {
+                                "error_code": "nearbud-003-001",
+                                "error_message": `Error while connecting to DB`
+                            }
+                        });
+                    } else {
+                        respond.successResp(req, res, "nearbud-000-000", "Berhasil memperbaharui data", 0, 0, 0, result)
+                    }
+                }
+            } else {
+                return res.status(200).json({
+                    "error_schema": {
+                        "error_code": "nearbud-000-001",
+                        "error_message": `User sudah terlebih dahulu di "approved" dalam event`
+                    }
+                });
+            }
+        }
+    }
+}) 
 
 // exports.
 
