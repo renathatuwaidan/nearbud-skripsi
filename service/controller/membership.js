@@ -549,121 +549,96 @@ exports.updateEventLink = asyncHandler(async function updateEventLink(req, res, 
     }
 }) 
 
-// exports.
+exports.deleteEventLink = asyncHandler(async function deleteEventLink(req, res, event_id, users_username_token) {
+    let isError = false, isError1 = false, result = []
 
-// exports.getEventLink = asyncHandler(async function getEventLink(req, res, users_id, users_username, event_id, is_approved, page, size){
-//     let isError = false, result = [], query_where = "", query_users_id = "", query_event_id = "", query_is_approved = "", query_users_username = ""
+    try {
+        var query_result = await pool.query(`SELECT * FROM EVENTS_LINK WHERE ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')) AND ID_EVENT ILIKE LOWER('${event_id}') AND IS_APPROVED = 'true'`)
+    } catch (error) {
+        isError = true;
+        log.error(`ERROR | /membership/deleteEventLink - Error found while connecting to DB - ${error}`);
+    } finally {
+        if (isError) {
+            return res.status(500).json({
+                "error_schema": {
+                    "error_code": "nearbud-003-001",
+                    "error_message": `Error while connecting to DB`
+                }
+            })
+        } else {
+            if(query_result.rowCount > 0){
+                try {
+                    var query_result = await pool.query(`DELETE FROM EVENTS_LINK WHERE ID_EVENT ILIKE LOWER('${event_id}') AND ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}'))`)
+                } catch (error) {
+                    isError1 = true;
+                    log.error(`ERROR | /membership/deleteEventLink - Error found while connecting to DB - ${error}`);
+                } finally {
+                    if (isError1) {
+                        return res.status(500).json({
+                            "error_schema": {
+                                "error_code": "nearbud-003-001",
+                                "error_message": `Error while connecting to DB`
+                            }
+                        });
+                    } else {
+                        respond.successResp(req, res, "nearbud-000-000", "Berhasil menghapus data", 0, 0, 0, result)
+                    }
+                }
+            } else {
+                return res.status(200).json({
+                    "error_schema": {
+                        "error_code": "nearbud-000-001",
+                        "error_message": `User harus terlebih dahulu di "approved" dalam event`
+                    }
+                });
+            }
+        }
+    }
+})
 
-//     var query_pagination = respond.query_pagination(req,res, page, size)
+exports.deleteCommunityLink = asyncHandler(async function deleteCommunityLink(req, res, community_id, users_username_token) {
+    let isError = false, isError1 = false, result = []
 
-//     if(users_id || users_username || event_id || is_approved) query_where = "WHERE" 
-
-//     if(users_id) {
-//         query_users_id = `A.ID_USER ILIKE LOWER('${users_id}')`
-
-//         if(users_username) {
-//             query_users_username = `AND C.USERNAME ILIKE LOWER('${users_username}')`
-//         }
-
-//         if(event_id){
-//             query_event_id = `AND A.ID_EVENT ILIKE LOWER('${event_id}')`
-//         }
-
-//         if(is_approved){
-//             query_is_approved = `AND A.IS_APPROVED = '${is_approved}'`
-//         }
-//     } else {
-//         if(users_username) {
-//             query_users_username = `C.USERNAME ILIKE LOWER('${users_username}')`
-            
-//             if(event_id){
-//                 query_event_id = `AND A.ID_EVENT ILIKE LOWER('${event_id}')`
-//             }
-    
-//             if(is_approved){
-//                 query_is_approved = `AND A.IS_APPROVED = '${is_approved}'`
-//             }
-//         } else {
-//             if(event_id){
-//                 query_event_id = `A.ID_EVENT ILIKE LOWER('${event_id}')`
-                
-//                 if(is_approved){
-//                     query_is_approved = `AND A.IS_APPROVED = '${is_approved}'`
-//                 }
-//             } else {
-//                 if(is_approved){
-//                     query_is_approved = `A.IS_APPROVED = '${is_approved}'`
-//                 }
-//             }
-//         }
-//     }
-
-//     console.log(`WITH EVENT_LINK AS (
-//                 SELECT 
-//                     A.*,
-//                     C.NAME,
-//                     B.NAME,
-                    // (SELECT ROUND(AVG(rating)) AS average_rating
-                    // FROM review
-                    // WHERE id_reviewee = A.ID_USER
-                    // GROUP BY id_reviewee) AS AVG_RATING
-//                 FROM EVENTS_LINK A JOIN EVENTS B ON A.ID_EVENT = B.ID_EVENT 
-//                 JOIN USERS C ON A.ID_USER = C.ID_USER
-//                 ${query_where} ${query_users_id} ${query_users_username} ${query_event_id} ${query_is_approved})
-//                 SELECT *, COUNT (*)OVER ()
-//                 FROM EVENT_LINK`)
-
-//     try {
-//         var query_result = await pool.query(`WITH EVENT_LINK AS (
-//                                             SELECT 
-//                                                 A.*,
-//                                                 C.NAME AS USERS_NAME,
-//                                                 B.NAME AS EVENT_NAME,
-//                                                 (SELECT ROUND(AVG(rating)) AS average_rating
-//                                                 FROM review
-//                                                 WHERE id_reviewee = A.ID_USER
-//                                                 GROUP BY id_reviewee) AS AVG_RATING
-//                                             FROM EVENTS_LINK A JOIN EVENTS B ON A.ID_EVENT = B.ID_EVENT 
-//                                             JOIN USERS C ON A.ID_USER = C.ID_USER
-//                                             ${query_where} ${query_users_id} ${query_users_username} ${query_event_id} ${query_is_approved})
-//                                             SELECT *, COUNT (*)OVER ()
-//                                             FROM EVENT_LINK
-//                                             ${query_pagination}`)
-//     } catch (error) {
-//         isError = true
-//         log.error(`ERROR | /membership/getEventLink - Error found while connect to DB - ${error}`)
-//     } finally {
-//         if(!isError){
-//             console.log(query_result.rows)
-//             if(query_result.rowCount > 0 ){
-//                 for( let i = 0; i < query_result.rowCount; i++){
-//                     var object = {
-//                         "event_id" : query_result.rows[i].id_event,
-//                         "event_name" : query_result.rows[i].event_name,
-//                         "users_id" : query_result.rows[i].id_user,
-//                         "users_name" : query_result.rows[i].users_name,
-//                         "users_status" : query_result.rows[i].user_status,
-//                         "users_avg_rating" : query_result.rows[i].avg_rating
-//                     }
-//                     result.push(object)
-//                 }
-
-//                 var total_query_data = query_result.rowCount
-//                 var total_data = query_result.rows[0].count
-
-//                 respond.successResp(req, res, "nearbud-000-000", "Berhasil mendapatkan hasil", total_data, total_query_data, page, result, size)
-//             } else {
-//                 respond.successResp(req, res, "nearbud-001-001", "Data tidak ditemukan", 0, 0, 0, result, size)
-//             }
-//             log.info(`SUCCESS | /membership/getEventLink - Success return the result`)
-            
-//         } else {
-//             return res.status(500).json({
-//                 "error_schema" : {
-//                     "error_code" : "nearbud-003-001",
-//                     "error_message" : `Error while connecting to DB`
-//                 }
-//             })
-//         }
-//     }
-// })
+    try {
+        var query_result = await pool.query(`SELECT * FROM COMMUNITY_LINK WHERE ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')) AND ID_COMMUNITY ILIKE LOWER('${community_id}') AND IS_APPROVED = 'true'`)
+    } catch (error) {
+        isError = true;
+        log.error(`ERROR | /membership/deleteCommunityLink - Error found while connecting to DB - ${error}`);
+    } finally {
+        if (isError) {
+            return res.status(500).json({
+                "error_schema": {
+                    "error_code": "nearbud-003-001",
+                    "error_message": `Error while connecting to DB`
+                }
+            })
+        } else {
+            if(query_result.rowCount > 0){
+                try {
+                    var query_result = await pool.query(`DELETE FROM COMMUNITY_LINK WHERE ID_COMMUNITY ILIKE LOWER('${community_id}') AND ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}'))`)
+                } catch (error) {
+                    isError1 = true;
+                    log.error(`ERROR | /membership/deleteCommunityLink - Error found while connecting to DB - ${error}`);
+                } finally {
+                    if (isError1) {
+                        return res.status(500).json({
+                            "error_schema": {
+                                "error_code": "nearbud-003-001",
+                                "error_message": `Error while connecting to DB`
+                            }
+                        });
+                    } else {
+                        respond.successResp(req, res, "nearbud-000-000", "Berhasil menghapus data", 0, 0, 0, result)
+                    }
+                }
+            } else {
+                return res.status(200).json({
+                    "error_schema": {
+                        "error_code": "nearbud-000-001",
+                        "error_message": `User harus terlebih dahulu di "approved" dalam community`
+                    }
+                });
+            }
+        }
+    }
+})

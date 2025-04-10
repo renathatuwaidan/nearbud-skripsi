@@ -69,9 +69,18 @@ app.post("/addEventLink",  user_auth_controller.tokenVerif, function(req, res){
 })
 
 // // menghapus koneksi antar user dan event
-// app.delete("/event_link", function(req, res){})
+app.delete("/deleteEventLink", user_auth_controller.tokenVerif, function(req, res){
+    let event_id = req.body.event_id
+    let users_username_token = res.getHeader('users_username')
 
-// // mengupdate status isApprove user ke komunitas
-// app.put("/event_link", function(req, res){})
+    membership_controller.deleteEventLink(req, res, event_id, users_username_token)
+})
+
+app.delete("/deleteCommunityLink", user_auth_controller.tokenVerif, function(req, res){
+    let users_username_token = res.getHeader('users_username')
+    let community_id = req.body.community_id
+
+    membership_controller.deleteCommunityLink(req, res, community_id, users_username_token)
+})
 
 module.exports = app
