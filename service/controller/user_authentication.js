@@ -6,7 +6,7 @@ const log = require("../utils/logger")
 const utility = require("./utility")
 const general = require('./general')
 
-exports.registerUser = asyncHandler(async function registerUser(req, res, users_name, users_email, users_username, users_password, agree_tnc) {
+exports.registerUser = asyncHandler(async function registerUser(req, res, users_name, users_email, users_username, users_password, agree_tnc, users_dob) {
     let isError = false
 
     if(!utility.emailValidation(users_email)){
@@ -16,20 +16,51 @@ exports.registerUser = asyncHandler(async function registerUser(req, res, users_
                 "error_message" : `Email tidak dalam format yang sesuai (example : user@domain.com)`
             }
         })
+    } else {
+        let validUser = await exports.checkExistedUser(users_username, users_email)
+        if(!validUser){
+            return res.status(500).json({
+                "error_schema" : {
+                    "error_code" : "nearbud-000-001",
+                    "error_message" : `Username atau email sudah digunakan`
+                }
+            })
+        }
     }
 
+    if(!users_dob){
+        return res.status(500).json({
+            "error_schema" : {
+                "error_code" : "nearbud-001-001",
+                "error_message" : `Date of Birth tidak dalam format yang sesuai (example : yyyy-mm-dd)`
+            }
+        })
+    } else {
+        if(!utility.insertDateValidation(users_dob)){
+            return res.status(500).json({
+                "error_schema" : {
+                    "error_code" : "nearbud-001-001",
+                    "error_message" : `Date of Birth tidak dalam format yang sesuai (example : yyyy-mm-dd)`
+                }
+            })
+        }
+    }
+
+    console.log(`INSERT INTO USERS (NAME, USERNAME, EMAIL, PASSWORD, DATE_OF_BIRTH) 
+        VALUES ('${utility.toTitleCase(users_name)}','${users_username.toLowerCase()}','${users_email.toLowerCase()}','${users_password}', '${users_dob}')`)
+
     try {
-        var query_result = await pool.query(`INSERT INTO USERS (NAME, USERNAME, EMAIL, PASSWORD) 
-        VALUES ('${utility.toTitleCase(users_name)}','${users_username.toLowerCase()}','${users_email}','${users_password}')`)
+        var query_result = await pool.query(`INSERT INTO USERS (NAME, USERNAME, EMAIL, PASSWORD, DATE_OF_BIRTH) 
+        VALUES ('${utility.toTitleCase(users_name)}','${users_username.toLowerCase()}','${users_email.toLowerCase()}','${users_password}', '${users_dob}')`)
     } catch (error) {
         isError = true
-        log.error(`ERROR | /auth/registerUser [username : "${users_username}" | email : "${users_email}"] - Error found while connect to DB - ${error}`)
+        log.error(`ERROR | /auth/registerUser [username : "${users_username}"] - Error found while connect to DB - ${error}`)
     } finally {
         if(!isError){
-            token = jwt.sign({users_username, users_password}, config.auth.secretKey, {expiresIn : '30d'})
+            token = jwt.sign({users_username, users_password}, config.auth.secretKey, {expiresIn : config.auth.tokenExpired})
 
             await exports.successResp(req, res, "nearbud-000-000", "Data user berhasil ditambahkan", 0, query_result.rowCount, 0, token)
-            log.info(`SUCCESS | /auth/registerUser [username : "${users_username}" | email : "${users_email}"] - Success return the result`)
+            log.info(`SUCCESS | /auth/registerUser [username : "${users_username}"] - Success return the result`)
         } else {
             return res.status(500).json({
                 "error_schema" : {
@@ -41,22 +72,9 @@ exports.registerUser = asyncHandler(async function registerUser(req, res, users_
     }
 })
 
-exports.registerUser_optional = asyncHandler(async function registerUser_optionalregisterUser_optional(req, res, users_dob, users_gender, province_name, city_name, users_description, users_interest, users_community, users_username) {
+exports.registerUser_optional = asyncHandler(async function registerUser_optionalregisterUser_optional(req, res, users_gender, province_name, city_name, users_description, users_interest, users_community, users_username) {
     let isError = false
-    var query_users_dob = "", query_users_gender = "", query_province_name = "", query_city_name = "", query_users_description = ""
-
-    if(users_dob){
-        if(!utility.dobValidation(users_dob)){
-            return res.status(500).json({
-                "error_schema" : {
-                    "error_code" : "nearbud-001-001",
-                    "error_message" : `Date of Birth tidak dalam format yang sesuai (example : yyyy-mm-dd)`
-                }
-            })
-        } else {
-            query_users_dob = `,DATE_OF_BIRTH = '${users_dob}'`
-        }
-    }
+    var query_users_gender = "", query_province_name = "", query_city_name = "", query_users_description = ""
 
     if(users_gender){
         if(!utility.genderValidation(users_gender)){
@@ -87,7 +105,7 @@ exports.registerUser_optional = asyncHandler(async function registerUser_optiona
         var query_users_username = `WHERE USERNAME ILIKE LOWER('${users_username}')`
 
         try {
-            var query_result = await pool.query(`UPDATE USERS SET MODIFIED = NOW() ${query_users_dob} ${query_users_gender} ${query_users_description} 
+            var query_result = await pool.query(`UPDATE USERS SET MODIFIED = NOW() AT TIME ZONE 'Asia/Jakarta' ${query_users_gender} ${query_users_description} 
                                 ${query_province_name} ${query_city_name} ${query_users_username}`)
         } catch (error) {
             isError = true
@@ -177,8 +195,8 @@ exports.loginUser = asyncHandler(async function loginUser(req, res, users_userna
                     }
                 })
             } else {
-                token = jwt.sign({users_username, users_password}, config.auth.secretKey, {expiresIn : '30d'})
-
+                token = jwt.sign({users_username, users_password}, config.auth.secretKey, {expiresIn : config.auth.tokenExpired})
+            
                 await exports.successResp(req, res, "nearbud-000-000", "Login berhasil", 0, query_result.rowCount, 0, token)
                 log.info(`SUCCESS [username : "${users_username}"] - Success return the result`)
             }
@@ -204,7 +222,8 @@ exports.tokenVerif = asyncHandler(async function tokenVerif(req, res, next) {
         token = jwt.verify(generatedToken, config.auth.secretKey)
     } catch (error) {
         isError = true
-        log.error(`ERROR | /auth/verifyToken [username : "${users_username}"] - Error found - ${error}`)
+        console.log(error)
+        log.error(`ERROR | /auth/verifyToken - Error found - ${error}`)
     } finally {
         if(isError){
             return res.status(401).json({
@@ -221,71 +240,55 @@ exports.tokenVerif = asyncHandler(async function tokenVerif(req, res, next) {
     }
 })
 
-exports.checkExistedUser = asyncHandler(async function checkExistedUser(req, res, username, email, page) {
-    let isError = false
+exports.isTokenValid = asyncHandler(async function isTokenValid(req, res, users_username_token, token) {
+    var isError = false, token
 
-    if(!username) {
-        return res.status(500).json({
-            "error_schema" : {
-                "error_code" : "nearbud-001-000",
-                "error_message" : `Username tidak boleh kosong`
-            }
-        })
-    }
-    if(!email) {
-        return res.status(500).json({
-            "error_schema" : {
-                "error_code" : "nearbud-001-000",
-                "error_message" : `Email tidak boleh kosong`
-            }
-        })
-    }
-
-    try { 
-        var query_result = await pool.query(`SELECT * , COUNT (*) OVER () FROM USERS WHERE (USERNAME = '${username}' OR EMAIL = '${email}') ORDER BY ID_USER ${query_pagination}`)
+    try {
+        token = jwt.verify(token, config.auth.secretKey)
     } catch (error) {
         isError = true
-        log.error(`ERROR | /auth/checkExistUser [username : "${username}" | email : "${email}"] - Error found while connect to DB - ${error}`)
+        log.error(`ERROR | /auth/verifyToken [username : "${users_username_token}"] - Error found - ${error}`)
     } finally {
-        if(!isError){
-            if(query_result.rowCount == 0){
-                await exports.successResp(req, res, "nearbud-000-000", "Username dan Email bisa digunakan", 0, query_result.rowCount, page, "")
-                log.info(`SUCCESS [username : "${username}" | email : "${email}"] - Success return the result`)
-            } else {
-                for(let i = 0; i < query_result.rowCount; i++){
-                    res_username = query_result.rows[i].username
-                    res_email = query_result.rows[i].email
-
-                    if(username == res_username){
-                        return res.status(500).json({
-                            "error_schema" : {
-                                "error_code" : "nearbud-000-001",
-                                "error_message" : `Username sudah digunakan`
-                            }
-                        })
-                    }else if(email == res_email){
-                        return res.status(500).json({
-                            "error_schema" : {
-                                "error_code" : "nearbud-000-001",
-                                "error_message" : `Email sudah digunakan`
-                            }
-                        })
-                    }
-                }
-            }
-        } else {
-            return res.status(500).json({
+        console.log(token)
+        if(isError){
+            return res.status(401).json({
                 "error_schema" : {
-                    "error_code" : "nearbud-003-001",
-                    "error_message" : `Error while connecting to DB`
+                    "error_code" : "nearbud-002-001",
+                    "error_message" : `Unauthorized inserted token`
+                }
+            })
+        } else {
+            return res.status(200).json({
+                "error_schema" : {
+                    "error_code" : "nearbud-000-000",
+                    "error_message" : `Token valid`
                 }
             })
         }
     }
 })
 
-exports.updatePassword = asyncHandler(async function updatePassword(req, res, old_pass, new_pass, users_username){
-    
+exports.checkExistedUser = asyncHandler(async function checkExistedUser(username, email) {
+    let isError = false
+    if(!username || !email) {
+        return false
+    }
+
+    try { 
+        var query_result = await pool.query(`SELECT * , COUNT (*) OVER () FROM USERS WHERE (USERNAME = '${username}' OR EMAIL = '${email}')`)
+    } catch (error) {
+        isError = true
+        log.error(`ERROR | /auth/registerUser - checkExistUser [username : "${username}"] - Error found while connect to DB - ${error}`)
+    } finally {
+        if(!isError){
+            if(query_result.rowCount == 0){
+                log.info(`SUCCESS /auth/registerUser - checkExistUser [username : "${username}"] - Success return the result`)
+                return true
+            } 
+        } else {
+            return false
+        }
+    }
 })
 
 exports.query_pagination = asyncHandler(async function query_pagination(req, res, page){

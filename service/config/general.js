@@ -5,6 +5,7 @@ module.exports = {
         pagination : 10
     },
     auth : {
-        secretKey : "sV0pBm6lZLAPINearbud"
+        secretKey : "sV0pBm6lZLAPINearbud",
+        tokenExpired : "30d"
     }
 }

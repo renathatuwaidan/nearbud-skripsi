@@ -4,6 +4,7 @@ const log = require("../utils/logger")
 const config = require("../config/general")
 const respond = require("./respond")
 const utility = require("./utility")
+const event = require("./event")
 
 exports.getCommunityPreview = asyncHandler(async function getCommunityPreview(req, res, community_id, community_name, community_number_participant, category, interest_id1, interest_id2, interest_id3, interest_id4, interest_id5, city_based, province_based, status, page, size, users_username_token) {
     let isError = false, result = [], query_interest = "", query_community_id = "", query_community_name = "", query_number_participant = "", query_category = "", query_city = "", query_province = "", query_status = ""
@@ -479,4 +480,72 @@ exports.addCommunity = asyncHandler(async function addEvent(req, res, community_
             })
         }
     }
+})
+
+exports.editCommunity = asyncHandler(async function editCommunity(req, res, community_name, community_description, province_name, city_name, interest_id, users_username_token, community_id) {
+    let isError = false, result = []
+
+    if(!community_id){
+        return res.status(500).json({
+            "error_schema" : {
+                "error_code" : "nearbud-001-002",
+                "error_message" : `Community ID tidak boleh kosong`
+            }
+        })
+    }
+
+    let isCreator = await event.isCreator(req, res, users_username_token, community_id)
+    console.log(isCreator)
+    if(isCreator == "notCreator"){
+        return res.status(500).json({
+            "error_schema" : {
+                "error_code" : "nearbud-002-001",
+                "error_message" : `Unauthorized, anda bukan Creator Community tersebut`
+            }
+        })
+    }
+
+    if(community_name){
+        community_name = `,NAME = '${utility.toTitleCase(community_name)}'`
+    } else { community_name = ''}
+
+    if(community_description){
+        community_description = `,DESCRIPTION = '${community_description}'`
+    } else { community_description = '' }
+
+    if(province_name){
+        province_name = `,ID_PROVINCE = (SELECT ID FROM PROVINCE WHERE NAME ILIKE LOWER('${province_name}'))`
+    } else { province_name = '' }
+
+    if(city_name){
+        city_name = `,ID_CITY = (SELECT ID FROM CITY WHERE NAME ILIKE LOWER('${city_name}'))`
+    } else { city_name = '' }
+
+    if(interest_id){
+        interest_id = `,ID_INTEREST = '${interest_id.toUpperCase()}'`
+    } else { interest_id = '' }
+
+    console.log(`UPDATE COMMUNITY SET MODIFIED = NOW() ${community_name}${community_description} 
+        ${province_name} ${city_name} ${interest_id} WHERE ID_COMMUNITY ILIKE LOWER('${community_id}')`)
+
+    try {
+        query_result_1 = await pool.query(`UPDATE COMMUNITY SET MODIFIED = NOW() AT TIME ZONE 'Asia/Jakarta' ${community_name}${community_description} 
+            ${province_name} ${city_name} ${interest_id} WHERE ID_COMMUNITY ILIKE LOWER('${community_id}')`)
+    } catch (error) {
+        isError = true
+        log.error(`ERROR | /community/editCommunity [username : "${users_username_token}"] - Error found while connect to DB - ${error}`)
+    } finally {
+        if(!isError){
+            respond.successResp(req, res, "nearbud-000-000", "Data berhasil diperbaharui", 1, 1, 1, result)
+            log.info(`SUCCESS | /community/editCommunity - Success return the result`)
+        } else {
+            return res.status(500).json({
+                "error_schema" : {
+                    "error_code" : "nearbud-003-001",
+                    "error_message" : `Error while connecting to DB`
+                }
+            })
+        }
+    }
+
 })

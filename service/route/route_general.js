@@ -57,7 +57,7 @@ app.get("/getSingleUser", user_auth_controller.tokenVerif, function (req, res) {
     general_controller.getSingleUser(req, res, users_id, users_name, users_username, users_username_token)
 })
 
-app.put("/updateProfile", user_auth_controller.tokenVerif, function(req, res){
+app.patch("/updateProfile", user_auth_controller.tokenVerif, function(req, res){
     let users_name = req.body.users_name
     let users_email = req.body.users_email
     let users_dob = req.body.users_dob

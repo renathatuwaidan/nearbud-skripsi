@@ -25,13 +25,20 @@ app.post("/registerUser", function(req, res){
     let users_username = req.body.users_username
     let users_password = req.body.users_password
     let agree_tnc = req.body.agree_tnc
+    let users_dob = req.body.users_dob
 
-    user_auth_controller.registerUser(req, res, users_name, users_email, users_username, users_password, agree_tnc)
+    user_auth_controller.registerUser(req, res, users_name, users_email, users_username, users_password, agree_tnc, users_dob)
+})
+
+app.get("/isTokenValid", user_auth_controller.tokenVerif, function(req, res){
+    let users_username_token = res.getHeader('users_username')
+    let token = res.getHeader('token')
+
+    user_auth_controller.isTokenValid(req, res, users_username_token, token)
 })
 
 // register user - optional
 app.patch("/registerUser/optional", user_auth_controller.tokenVerif, function(req, res){
-    let users_dob = req.body.users_dob
     let users_gender = req.body.users_gender
     let province_name = req.body.province_name
     let city_name = req.body.city_name
@@ -40,7 +47,7 @@ app.patch("/registerUser/optional", user_auth_controller.tokenVerif, function(re
     let users_community = req.body.users_community
     let users_username = res.getHeader('users_username')
 
-    user_auth_controller.registerUser_optional(req, res, users_dob, users_gender, province_name, city_name, users_description, users_interest, users_community, users_username)
+    user_auth_controller.registerUser_optional(req, res, users_gender, province_name, city_name, users_description, users_interest, users_community, users_username)
 })
 
 app.patch("/updatePassword", user_auth_controller.tokenVerif, function(req, res){
