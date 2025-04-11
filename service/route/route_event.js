@@ -16,7 +16,11 @@ app.get("/getEvents/preview", user_auth_controller.tokenVerif, function (req, re
     let category_id4 = req.query.category_id4
     let category_id5 = req.query.category_id5
     let event_date = req.query.event_date
-    let city_based = req.query.city_based
+    let city_id1 = req.query.city_id1
+    let city_id2 = req.query.city_id2
+    let city_id3 = req.query.city_id3
+    let city_id4 = req.query.city_id4
+    let city_id5 = req.query.city_id5
     let province_based = req.query.province_based
     let event_location = req.query.event_location 
     let event_number_participant = req.query.event_number_participant
@@ -27,8 +31,8 @@ app.get("/getEvents/preview", user_auth_controller.tokenVerif, function (req, re
     let users_username_token = res.getHeader('users_username')
 
     event_controller.getEventsPreview(req, res, interest_id1, interest_id2, interest_id3, interest_id4, interest_id5,category_id1, category_id2,
-         category_id3, category_id4, category_id5, city_based, province_based, event_location,event_date, event_number_participant, status, event_creator,
-         users_username_token, size, page)
+         category_id3, category_id4, category_id5, province_based, event_location,event_date, event_number_participant, status, event_creator,
+         users_username_token, size, page, city_id1, city_id2, city_id3, city_id4, city_id5)
 })
 
 app.get("/getEvents/isCreator", user_auth_controller.tokenVerif, function (req, res){

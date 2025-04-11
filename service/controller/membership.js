@@ -231,11 +231,12 @@ exports.addCommunityLink = asyncHandler(async function addCommunityLink(req, res
     let isError1 = false, result = []
     try {
         var query_result = await pool.query(`
-            INSERT INTO COMMUNITY_LINK(ID, ID_COMMUNITY, ID_USER) VALUES 
+            INSERT INTO COMMUNITY_LINK(ID, ID_COMMUNITY, ID_USER, CREATED) VALUES 
             (
                 (SELECT MAX(id) + 1 FROM COMMUNITY_LINK), 
                 (SELECT ID_COMMUNITY FROM COMMUNITY WHERE ID_COMMUNITY = '${community_id}'), 
-                (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username}'))
+                (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username}')), 
+                NOW() AT TIME ZONE 'Asia/Jakarta'
             )
         `)
     } catch (error) {
@@ -292,12 +293,12 @@ exports.addEventLink = asyncHandler(async function addEventLink(req, res, users_
             } else {
                 try {
                     console.log((`
-                        INSERT INTO EVENTS_LINK (ID_EVENT, ID_USER, IS_APPROVED) VALUES
-                        ('${event_id.toUpperCase()}', ${temp_query_user_id}, 'false')
+                        INSERT INTO EVENTS_LINK (ID_EVENT, ID_USER, IS_APPROVED, CREATED) VALUES
+                        ('${event_id.toUpperCase()}', ${temp_query_user_id}, 'false', NOW() AT TIME ZONE 'Asia/Jakarta')
                     `))
                     var query_result = await pool.query(`
-                        INSERT INTO EVENTS_LINK (ID_EVENT, ID_USER, IS_APPROVED) VALUES
-                        ('${event_id.toUpperCase()}', ${temp_query_user_id}, 'false')
+                        INSERT INTO EVENTS_LINK (ID_EVENT, ID_USER, IS_APPROVED, CREATED) VALUES
+                        ('${event_id.toUpperCase()}', ${temp_query_user_id}, 'false', NOW() AT TIME ZONE 'Asia/Jakarta')
                     `)
                 } catch (error) {
                     isError1 = true;
