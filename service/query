@@ -598,3 +598,5 @@ INSERT INTO public.community_link (id, created, modified, id_user, id_community,
 (63, NOW(), NULL, 'U005', 'C007', false),
 (64, NOW(), NULL, 'U006', 'C008', true);
 
+ALTER TABLE users
+ADD COLUMN is_verified boolean;

@@ -439,8 +439,8 @@ exports.addCommunity = asyncHandler(async function addEvent(req, res, community_
     community_name = utility.toTitleCase(community_name)
 
     try {
-        var query_result = await pool.query(`INSERT INTO COMMUNITY (NAME, ID_PROVINCE, ID_CITY, ID_INTEREST, DESCRIPTION) 
-                                            VALUES ('${community_name}', (SELECT ID FROM PROVINCE WHERE NAME ILIKE LOWER('${province_name}')),
+        var query_result = await pool.query(`INSERT INTO COMMUNITY (CREATED, NAME, ID_PROVINCE, ID_CITY, ID_INTEREST, DESCRIPTION) 
+                                            VALUES (NOW() AT TIME ZONE 'Asia/Jakarta', '${community_name}', (SELECT ID FROM PROVINCE WHERE NAME ILIKE LOWER('${province_name}')),
                                             (SELECT ID FROM CITY WHERE NAME ILIKE LOWER('${city_name}')), ${interest_id},'${community_description}')`)
     } catch (error) {
         isError = true
@@ -451,8 +451,8 @@ exports.addCommunity = asyncHandler(async function addEvent(req, res, community_
                 let isError1 = false
 
                 try {
-                    query_result_1 = await pool.query(`INSERT INTO IS_ADMIN (ID, ID_USER, ID_COMMUNITY) 
-                                                        VALUES ((SELECT MAX(ID)+1 FROM IS_ADMIN), (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')), 
+                    query_result_1 = await pool.query(`INSERT INTO IS_ADMIN (ID, CREATED, ID_USER, ID_COMMUNITY) 
+                                                        VALUES ((SELECT MAX(ID)+1 FROM IS_ADMIN), NOW() AT TIME ZONE 'Asia/Jakarta', (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')), 
                                                         (SELECT ID_COMMUNITY FROM COMMUNITY WHERE NAME ILIKE LOWER('${community_name}')))`)
                 } catch (error) {
                     isError1 = true
@@ -525,7 +525,7 @@ exports.editCommunity = asyncHandler(async function editCommunity(req, res, comm
         interest_id = `,ID_INTEREST = '${interest_id.toUpperCase()}'`
     } else { interest_id = '' }
 
-    console.log(`UPDATE COMMUNITY SET MODIFIED = NOW() ${community_name}${community_description} 
+    console.log(`UPDATE COMMUNITY SET MODIFIED = NOW() AT TIME ZONE 'Asia/Jakarta' ${community_name}${community_description} 
         ${province_name} ${city_name} ${interest_id} WHERE ID_COMMUNITY ILIKE LOWER('${community_id}')`)
 
     try {

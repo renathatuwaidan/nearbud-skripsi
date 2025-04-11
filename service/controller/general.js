@@ -494,9 +494,10 @@ exports.putInterestLink = asyncHandler (async function putInterestLink(req, res,
 
     try {
         var query_result = await pool.query(`
-            INSERT INTO INTEREST_LINK(ID, ID_INTEREST, ID_USER) VALUES 
+            INSERT INTO INTEREST_LINK(ID, CREATED, ID_INTEREST, ID_USER) VALUES 
             (
                 (SELECT MAX(id) + 1 FROM INTEREST_LINK), 
+                NOW() AT TIME ZONE 'Asia/Jakarta',
                 (SELECT ID FROM INTEREST WHERE ID = '${interest_id}'), 
                 (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username}'))
             )
@@ -662,8 +663,9 @@ exports.addReport = asyncHandler(async function addReport(req, res, reportee, re
     var isError = false, result = []
     try {
         var query_result = await pool.query(`INSERT INTO REPORT_LINK 
-                                            (id, ID_REPORTEE, ID_REPORTER, REPORT_TYPE, REPORT_DETAIL) VALUES 
+                                            (id, CREATED, ID_REPORTEE, ID_REPORTER, REPORT_TYPE, REPORT_DETAIL) VALUES 
                                             ( (SELECT MAX(ID)+1 FROM REPORT_LINK), 
+                                                NOW() AT TIME ZONE 'Asia/Jakarta', 
                                                 '${reportee.toUpperCase()}',
                                                 (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('%${users_username_token}%')),
                                                 (SELECT ID FROM REPORT_TYPE WHERE REPORT_TYPE ILIKE LOWER('%${report_type}%')),
