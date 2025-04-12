@@ -6,7 +6,8 @@ const respond = require("./respond")
 const utility = require("./utility")
 const event = require("./event")
 
-exports.getCommunityPreview = asyncHandler(async function getCommunityPreview(req, res, community_id, community_name, community_number_participant, category, interest_id1, interest_id2, interest_id3, interest_id4, interest_id5, city_based, province_based, status, page, size, users_username_token) {
+exports.getCommunityPreview = asyncHandler(async function getCommunityPreview(req, res, community_id, community_name, community_number_participant, category_id, interest_id1, interest_id2, interest_id3, interest_id4, interest_id5, 
+    city_id1, city_id2, city_id3, city_id4, city_id5, province_based, status, page, size, users_username_token) {
     let isError = false, result = [], query_interest = "", query_community_id = "", query_community_name = "", query_number_participant = "", query_category = "", query_city = "", query_province = "", query_status = ""
 
     var query_pagination = respond.query_pagination(req,res, page, size)
@@ -32,12 +33,18 @@ exports.getCommunityPreview = asyncHandler(async function getCommunityPreview(re
             query_number_participant = `AND ((SELECT COUNT(ID_USER) FROM COMMUNITY_LINK WHERE ID_COMMUNITY = A.ID_COMMUNITY AND IS_APPROVED = TRUE) <= ${community_number_participant})`
         }
 
-        if(category){
-            query_category = `AND ID_INTEREST IN (SELECT ID FROM INTEREST WHERE ID_CATEGORY = ${category})`
+        if(category_id){
+            query_category = `AND ID_INTEREST IN (SELECT ID FROM INTEREST WHERE ID_CATEGORY = ${category_id})`
         }
 
-        if(city_based){
-            query_city = `AND D.NAME ILIKE LOWER('${city_based}')`
+        if(city_id1 || city_id2 || city_id3 || city_id4 || city_id5){
+            if(city_id1) {city_id1 = `'${city_id1}'`} else {city_id1 = ''}
+            if(city_id2) {city_id2 = `,'${city_id2}'`} else {city_id2 = ''}
+            if(city_id3) {city_id3 = `,'${city_id3}'`} else {city_id3 = ''}
+            if(city_id4) {city_id4 = `,'${city_id4}'`} else {city_id4 = ''}
+            if(city_id5) {city_id5 = `,'${city_id5}'`} else {city_id5 = ''}
+
+            query_city = `AND A.ID_city IN (${city_id1} ${city_id2} ${city_id3} ${city_id4} ${city_id5})`
         }
 
         if(province_based){
@@ -61,12 +68,18 @@ exports.getCommunityPreview = asyncHandler(async function getCommunityPreview(re
                 query_number_participant = `AND ((SELECT COUNT(ID_USER) FROM COMMUNITY_LINK WHERE ID_COMMUNITY = A.ID_COMMUNITY AND IS_APPROVED = TRUE) <= ${community_number_participant})`
             }
     
-            if(category){
-                query_category = `AND ID_INTEREST IN (SELECT ID FROM INTEREST WHERE ID_CATEGORY = ${category})`
+            if(category_id){
+                query_category = `AND ID_INTEREST IN (SELECT ID FROM INTEREST WHERE ID_CATEGORY = ${category_id})`
             }
     
-            if(city_based){
-                query_city = `AND D.NAME ILIKE LOWER('${city_based}')`
+            if(city_id1 || city_id2 || city_id3 || city_id4 || city_id5){
+                if(city_id1) {city_id1 = `'${city_id1}'`} else {city_id1 = ''}
+                if(city_id2) {city_id2 = `,'${city_id2}'`} else {city_id2 = ''}
+                if(city_id3) {city_id3 = `,'${city_id3}'`} else {city_id3 = ''}
+                if(city_id4) {city_id4 = `,'${city_id4}'`} else {city_id4 = ''}
+                if(city_id5) {city_id5 = `,'${city_id5}'`} else {city_id5 = ''}
+    
+                query_city = `AND A.ID_city IN (${city_id1} ${city_id2} ${city_id3} ${city_id4} ${city_id5})`
             }
     
             if(province_based){
@@ -86,12 +99,18 @@ exports.getCommunityPreview = asyncHandler(async function getCommunityPreview(re
                     query_number_participant = `AND ((SELECT COUNT(ID_USER) FROM COMMUNITY_LINK WHERE ID_COMMUNITY = A.ID_COMMUNITY AND IS_APPROVED = TRUE) <= ${community_number_participant})`
                 }
         
-                if(category){
-                    query_category = `AND ID_INTEREST IN (SELECT ID FROM INTEREST WHERE ID_CATEGORY = ${category})`
+                if(category_id){
+                    query_category = `AND ID_INTEREST IN (SELECT ID FROM INTEREST WHERE ID_CATEGORY = ${category_id})`
                 }
         
-                if(city_based){
-                    query_city = `AND D.NAME ILIKE LOWER('${city_based}')`
+                if(city_id1 || city_id2 || city_id3 || city_id4 || city_id5){
+                    if(city_id1) {city_id1 = `'${city_id1}'`} else {city_id1 = ''}
+                    if(city_id2) {city_id2 = `,'${city_id2}'`} else {city_id2 = ''}
+                    if(city_id3) {city_id3 = `,'${city_id3}'`} else {city_id3 = ''}
+                    if(city_id4) {city_id4 = `,'${city_id4}'`} else {city_id4 = ''}
+                    if(city_id5) {city_id5 = `,'${city_id5}'`} else {city_id5 = ''}
+        
+                    query_city = `AND A.ID_city IN (${city_id1} ${city_id2} ${city_id3} ${city_id4} ${city_id5})`
                 }
         
                 if(province_based){
@@ -107,12 +126,18 @@ exports.getCommunityPreview = asyncHandler(async function getCommunityPreview(re
                 if(community_number_participant){
                     query_number_participant = `WHERE ((SELECT COUNT(ID_USER) FROM COMMUNITY_LINK WHERE ID_COMMUNITY = A.ID_COMMUNITY AND IS_APPROVED = TRUE) <= ${community_number_participant})`
                     
-                    if(category){
-                        query_category = `AND ID_INTEREST IN (SELECT ID FROM INTEREST WHERE ID_CATEGORY = ${category})`
+                    if(category_id){
+                        query_category = `AND ID_INTEREST IN (SELECT ID FROM INTEREST WHERE ID_CATEGORY = ${category_id})`
                     }
             
-                    if(city_based){
-                        query_city = `AND D.NAME ILIKE LOWER('${city_based}')`
+                    if(city_id1 || city_id2 || city_id3 || city_id4 || city_id5){
+                        if(city_id1) {city_id1 = `'${city_id1}'`} else {city_id1 = ''}
+                        if(city_id2) {city_id2 = `,'${city_id2}'`} else {city_id2 = ''}
+                        if(city_id3) {city_id3 = `,'${city_id3}'`} else {city_id3 = ''}
+                        if(city_id4) {city_id4 = `,'${city_id4}'`} else {city_id4 = ''}
+                        if(city_id5) {city_id5 = `,'${city_id5}'`} else {city_id5 = ''}
+            
+                        query_city = `AND A.ID_city IN (${city_id1} ${city_id2} ${city_id3} ${city_id4} ${city_id5})`
                     }
             
                     if(province_based){
@@ -125,11 +150,17 @@ exports.getCommunityPreview = asyncHandler(async function getCommunityPreview(re
                         }
                     }
                 } else {
-                    if(category){
-                        query_category = `WHERE ID_INTEREST IN (SELECT ID FROM INTEREST WHERE ID_CATEGORY = ${category})`
+                    if(category_id){
+                        query_category = `WHERE ID_INTEREST IN (SELECT ID FROM INTEREST WHERE ID_CATEGORY = ${category_id})`
                         
-                        if(city_based){
-                            query_city = `AND D.NAME ILIKE LOWER('${city_based}')`
+                        if(city_id1 || city_id2 || city_id3 || city_id4 || city_id5){
+                            if(city_id1) {city_id1 = `'${city_id1}'`} else {city_id1 = ''}
+                            if(city_id2) {city_id2 = `,'${city_id2}'`} else {city_id2 = ''}
+                            if(city_id3) {city_id3 = `,'${city_id3}'`} else {city_id3 = ''}
+                            if(city_id4) {city_id4 = `,'${city_id4}'`} else {city_id4 = ''}
+                            if(city_id5) {city_id5 = `,'${city_id5}'`} else {city_id5 = ''}
+                
+                            query_city = `AND A.ID_city IN (${city_id1} ${city_id2} ${city_id3} ${city_id4} ${city_id5})`
                         }
                 
                         if(province_based){
@@ -142,8 +173,14 @@ exports.getCommunityPreview = asyncHandler(async function getCommunityPreview(re
                             }
                         }
                     } else {
-                        if(city_based){
-                            query_city = `WHERE D.NAME ILIKE LOWER('${city_based}')`
+                        if(city_id1 || city_id2 || city_id3 || city_id4 || city_id5){
+                            if(city_id1) {city_id1 = `'${city_id1}'`} else {city_id1 = ''}
+                            if(city_id2) {city_id2 = `,'${city_id2}'`} else {city_id2 = ''}
+                            if(city_id3) {city_id3 = `,'${city_id3}'`} else {city_id3 = ''}
+                            if(city_id4) {city_id4 = `,'${city_id4}'`} else {city_id4 = ''}
+                            if(city_id5) {city_id5 = `,'${city_id5}'`} else {city_id5 = ''}
+                
+                            query_city = `AND A.ID_city IN (${city_id1} ${city_id2} ${city_id3} ${city_id4} ${city_id5})`
                             
                             if(province_based){
                                 query_province = `AND C.NAME ILIKE LOWER('${province_based}')`
