@@ -162,27 +162,9 @@ exports.verifyOtpEmail = asyncHandler(async function verifyOtpEmail(req, res, us
 })
 
 exports.registerUser = asyncHandler(async function registerUser(req, res, users_name, users_email, users_username, users_password, agree_tnc, users_dob) {
-    let isError = false, result = []
+    let isError = false, result = [], query =""
 
-    if(!utility.emailValidation(users_email)){
-        return res.status(500).json({
-            "error_schema" : {
-                "error_code" : "nearbud-001-001",
-                "error_message" : `Email tidak dalam format yang sesuai (example : user@domain.com)`
-            }
-        })
-    } else {
-        let validUser = await exports.checkExistedUser(users_username, users_email)
-        if(!validUser){
-            return res.status(500).json({
-                "error_schema" : {
-                    "error_code" : "nearbud-000-001",
-                    "error_message" : `Username atau email sudah digunakan`
-                }
-            })
-        }
-    }
-
+    
     if(!users_dob){
         return res.status(500).json({
             "error_schema" : {
@@ -200,15 +182,36 @@ exports.registerUser = asyncHandler(async function registerUser(req, res, users_
             })
         }
     }
-
+    
     const otp = utility.generateOtp()
-
-    console.log(`INSERT INTO USERS (NAME, USERNAME, EMAIL, PASSWORD, DATE_OF_BIRTH, IS_VERIFIED, OTP, CREATED) 
-        VALUES ('${utility.toTitleCase(users_name)}','${users_username.toLowerCase()}','${users_email.toLowerCase()}','${users_password}', '${users_dob}', 'false', '${otp}', NOW() AT TIME ZONE 'Asia/Jakarta')`)
+    
+    if(!utility.emailValidation(users_email)){
+        return res.status(500).json({
+            "error_schema" : {
+                "error_code" : "nearbud-001-001",
+                "error_message" : `Email tidak dalam format yang sesuai (example : user@domain.com)`
+            }
+        })
+    } else {
+        let validUser = await exports.checkExistedUser(users_username, users_email)
+        if(!validUser){
+            return res.status(500).json({
+                "error_schema" : {
+                    "error_code" : "nearbud-000-001",
+                    "error_message" : `Username atau email sudah digunakan`
+                }
+            })
+        }
+        if(validUser == "update_user"){
+            query = `UPDATE USERS SET OTP = ${otp}, OTP_CREATED = NOW() AT TIME ZONE 'Asia/Jakarta'`
+        } else if(validUser == true) {
+            query = `INSERT INTO USERS (NAME, USERNAME, EMAIL, PASSWORD, DATE_OF_BIRTH, IS_VERIFIED, OTP, CREATED, OTP_CREATED) 
+                    VALUES ('${utility.toTitleCase(users_name)}','${users_username.toLowerCase()}','${users_email.toLowerCase()}','${users_password}', '${users_dob}', 'false', ${otp}, NOW() AT TIME ZONE 'Asia/Jakarta', NOW() AT TIME ZONE 'Asia/Jakarta')`
+        }
+    }
 
     try {
-        var query_result = await pool.query(`INSERT INTO USERS (NAME, USERNAME, EMAIL, PASSWORD, DATE_OF_BIRTH, IS_VERIFIED, OTP, CREATED) 
-        VALUES ('${utility.toTitleCase(users_name)}','${users_username.toLowerCase()}','${users_email.toLowerCase()}','${users_password}', '${users_dob}', 'false', ${otp}, NOW() AT TIME ZONE 'Asia/Jakarta')`)
+        var query_result = await pool.query(query)
     } catch (error) {
         isError = true
         log.error(`ERROR | /auth/registerUser [username : "${users_username}"] - Error found while connect to DB - ${error}`)
@@ -445,16 +448,21 @@ exports.checkExistedUser = asyncHandler(async function checkExistedUser(username
     }
 
     try { 
-        var query_result = await pool.query(`SELECT * , COUNT (*) OVER () FROM USERS WHERE (USERNAME = '${username}' OR EMAIL = '${email}')`)
+        var query_result = await pool.query(`SELECT is_verified, COUNT (*) OVER () FROM USERS WHERE (USERNAME = '${username}' OR EMAIL = '${email}')`)
     } catch (error) {
         isError = true
         log.error(`ERROR | /auth/registerUser - checkExistUser [username : "${username}"] - Error found while connect to DB - ${error}`)
     } finally {
         if(!isError){
             if(query_result.rowCount == 0){
-                log.info(`SUCCESS /auth/registerUser - checkExistUser [username : "${username}"] - Success return the result`)
                 return true
-            } 
+            } else {
+                if(query_result.rows[0].is_verified == "true"){
+                    return false
+                } else {
+                    return "update_user"
+                }
+            }
         } else {
             return false
         }
