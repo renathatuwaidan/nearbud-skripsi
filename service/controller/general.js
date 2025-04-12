@@ -398,20 +398,26 @@ exports.getUserInterestCategory = asyncHandler(async function getUserInterestCat
     let result = [], isError = false
     console.log("219837982173")
 
-    console.log(`SELECT DISTINCT F.ID AS CATEGORY_ID, F.NAME AS CATEGORY_NAME, E.ID AS INTEREST_ID, E.NAME AS INTEREST_NAME
-        FROM USERS A 
-        JOIN INTEREST_LINK D ON A.id_user = D.id_user
-        JOIN INTEREST E ON D.id_interest = E.id
-        JOIN CATEGORY F ON E.id_category = F.id
-        WHERE A.ID_USER = '${users_id_user}'`)
+    console.log(`WITH QUERY_REVIEW AS (
+                    SELECT DISTINCT F.ID AS CATEGORY_ID, F.NAME AS CATEGORY_NAME, E.ID AS INTEREST_ID, E.NAME AS INTEREST_NAME, D.CREATED
+                    FROM USERS A
+                    JOIN INTEREST_LINK D ON A.id_user = D.id_user
+                    JOIN INTEREST E ON D.id_interest = E.id
+                    JOIN CATEGORY F ON E.id_category = F.id
+                    WHERE A.ID_USER = '${users_id_user}'
+                )
+                SELECT * FROM QUERY_REVIEW ORDER BY CREATED DESC LIMIT 3`)
 
     try {
-        var query_result = await pool.query(`SELECT DISTINCT F.ID AS CATEGORY_ID, F.NAME AS CATEGORY_NAME, E.ID AS INTEREST_ID, E.NAME AS INTEREST_NAME
-                                            FROM USERS A 
-                                            JOIN INTEREST_LINK D ON A.id_user = D.id_user
-                                            JOIN INTEREST E ON D.id_interest = E.id
-                                            JOIN CATEGORY F ON E.id_category = F.id
-                                            WHERE A.ID_USER = '${users_id_user}'`)
+        var query_result = await pool.query(`WITH QUERY_REVIEW AS (
+                                                SELECT DISTINCT F.ID AS CATEGORY_ID, F.NAME AS CATEGORY_NAME, E.ID AS INTEREST_ID, E.NAME AS INTEREST_NAME, D.CREATED
+                                                FROM USERS A
+                                                JOIN INTEREST_LINK D ON A.id_user = D.id_user
+                                                JOIN INTEREST E ON D.id_interest = E.id
+                                                JOIN CATEGORY F ON E.id_category = F.id
+                                                WHERE A.ID_USER = '${users_id_user}'
+                                            )
+                                            SELECT * FROM QUERY_REVIEW ORDER BY CREATED DESC LIMIT 3`)
     } catch (error) {
         isError = true
         log.error(`ERROR | /general/getUsers/getUserInterestCategory - Error found while connect to DB - ${error}`)
@@ -546,15 +552,17 @@ exports.updateProfile = asyncHandler (async function updatedProfile(req, res, us
         }
     }
 
-    if(!utility.emailValidation(users_email)){
-        return res.status(500).json({
-            "error_schema" : {
-                "error_code" : "nearbud-001-001",
-                "error_message" : `Email tidak dalam format yang sesuai (example : user@domain.com)`
-            }
-        })
-    } else {
-        query_users_email = `,EMAIL = '${users_email.toLowerCase()}'`
+    if(users_email){
+        if(!utility.emailValidation(users_email)){
+            return res.status(500).json({
+                "error_schema" : {
+                    "error_code" : "nearbud-001-001",
+                    "error_message" : `Email tidak dalam format yang sesuai (example : user@domain.com)`
+                }
+            })
+        } else {
+            query_users_email = `,EMAIL = '${users_email.toLowerCase()}'`
+        }
     }
     
     if(users_gender){
@@ -700,17 +708,22 @@ exports.addReport = asyncHandler(async function addReport(req, res, reportee, re
 
 exports.updatePassword = asyncHandler (async function updatePassword(req, res, password_new, password_old, users_username_token) {
     var isError = false, result = []
+
+    console.log(`UPDATE USERS SET MODIFIED = NOW(), PASSWORD = '${password_new}' WHERE USERNAME ILIKE LOWER('%${users_username_token}%') AND PASSWORD = '${password_old}'`)
     
     try {
-        var query_result = await pool.query(`UPDATE USERS SET MODIFIED = NOW() AT TIME ZONE 'Asia/Jakarta', PASSWORD = '${password_new}' WHERE USERNAME ILIKE LOWER('%${users_username_token}%') AND PASSWORD = '${password_old}'`)
+        var query_result = await pool.query(`UPDATE USERS SET MODIFIED = NOW(), PASSWORD = '${password_new}' WHERE USERNAME ILIKE LOWER('${users_username_token}') AND PASSWORD = '${password_old}'`)
     } catch (error) {
         isError = true
         log.error(`ERROR | /general/updatePassword [username : "${username}"] - Error found while connect to DB - ${error}`)
     } finally {
         if(!isError){
-            respond.successResp(req, res, "nearbud-000-000", "Data berhasil diperbaharui", 0, 0, 0, result)
-            log.info(`SUCCESS | /general/updatePassword - Success update the data`)
-
+            if(query_result.rowCount > 0){
+                respond.successResp(req, res, "nearbud-000-000", "Data berhasil diperbaharui", 0, 0, 0, result)
+                log.info(`SUCCESS | /general/updatePassword - Success update the data`)
+            } else {
+                respond.successResp(req, res, "nearbud-000-001", "Tidak ada data yang diperbaharui", 0, 0, 0, result)
+            }
         } else {
             return res.status(500).json({
                 "error_schema" : {
@@ -722,17 +735,17 @@ exports.updatePassword = asyncHandler (async function updatePassword(req, res, p
     }
 })
 
-exports.getReview = asyncHandler(async function getReview(req, res, reviewee_id, users_username_token, page, size){
+exports.getReview = asyncHandler(async function getReview(req, res, reviewee_id, users_username_token){
     let isError = false, result = [], query_where = ""
 
     if(reviewee_id){
-        query_where = `FROM REVIEW A JOIN USERS B ON A.ID_REVIEWEE = B.ID_USER
-                        JOIN USERS C ON A.ID_REVIEWER = C.ID_USER
-                        WHERE A.ID_REVIEWEE ILIKE LOWER('${reviewee_id}')`
-    } else if(users_username_token){
-        query_where = `FROM REVIEW A JOIN USERS B ON A.ID_REVIEWEE = B.ID_USER
-                        JOIN USERS C ON A.ID_REVIEWER = C.ID_USER
-                        WHERE A.ID_REVIEWEE = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}'))`
+        query_where = `FROM REVIEW A JOIN USERS C ON A.ID_REVIEWER = C.ID_USER
+                        WHERE A.ID_REVIEWEE IN (SELECT ID_COMMUNITY FROM IS_ADMIN WHERE ID_USER ILIKE LOWER('${reviewee_id}')) 
+                        OR A.ID_REVIEWEE IN (SELECT ID_EVENT FROM EVENTS WHERE ID_CREATOR ILIKE LOWER('${reviewee_id}'))`
+    } else if(!reviewee_id && users_username_token){
+        query_where = `FROM REVIEW A JOIN USERS C ON A.ID_REVIEWER = C.ID_USER
+                        WHERE A.ID_REVIEWEE IN (SELECT ID_COMMUNITY FROM IS_ADMIN WHERE ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}'))) 
+                        OR A.ID_REVIEWEE IN (SELECT ID_EVENT FROM EVENTS WHERE ID_CREATOR = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')))`
     }
 
     console.log(`SELECT (SELECT ROUND(AVG(rating),1) AS average_rating
@@ -742,7 +755,10 @@ exports.getReview = asyncHandler(async function getReview(req, res, reviewee_id,
         A.ID,
         A.REVIEW,
         A.ID_REVIEWEE AS REVIEWEE_ID,
-        B.NAME AS REVIEWEE,
+        CASE 
+            WHEN A.ID_REVIEWEE ILIKE 'E%' THEN (SELECT NAME FROM EVENTS WHERE ID_EVENT = A.ID_REVIEWEE)
+            WHEN A.ID_REVIEWEE ILIKE 'C%' THEN (SELECT NAME FROM COMMUNITY WHERE ID_COMMUNITY = A.ID_REVIEWEE)
+        END AS REVIEWEE,
         A.ID_REVIEWER AS REVIEWER_ID,
         C.NAME AS REVIEWER_NAME
         ${query_where}`)
@@ -755,7 +771,10 @@ exports.getReview = asyncHandler(async function getReview(req, res, reviewee_id,
                                             A.ID,
                                             A.REVIEW,
                                             A.ID_REVIEWEE AS REVIEWEE_ID,
-                                            B.NAME AS REVIEWEE,
+                                            CASE 
+                                                WHEN A.ID_REVIEWEE ILIKE 'E%' THEN (SELECT NAME FROM EVENTS WHERE ID_EVENT = A.ID_REVIEWEE)
+                                                WHEN A.ID_REVIEWEE ILIKE 'C%' THEN (SELECT NAME FROM COMMUNITY WHERE ID_COMMUNITY = A.ID_REVIEWEE)
+                                            END AS REVIEWEE,
                                             A.ID_REVIEWER AS REVIEWER_ID,
                                             C.NAME AS REVIEWER_NAME
                                             ${query_where}`)
@@ -782,7 +801,7 @@ exports.getReview = asyncHandler(async function getReview(req, res, reviewee_id,
                 } 
                 result.push(object)
 
-                respond.successResp(req, res, "nearbud-000-000", "Berhasil mendapatkan hasil", 1, 1, 1, result, 1)
+                respond.successResp(req, res, "nearbud-000-000", "Berhasil mendapatkan hasil", query_result.rowCount, query_result.rowCount, 1, result)
             } else {
                 respond.successResp(req, res, "nearbud-001-001", "Data tidak ditemukan", 0, 0, 0, result)
             }
