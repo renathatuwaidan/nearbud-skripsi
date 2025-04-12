@@ -66,7 +66,22 @@ exports.reqForgetPassword = asyncHandler(async function reqForgetPassword(req, r
     }
 })
 
-exports.verifyOtpEmail = asyncHandler(async function verifyOtpEmail(req, res, users_email, otp, process, newPassword){
+exports.resetPassword = asyncHandler(async function resetPassword(req, res, users_email, newPassword){
+    let isError1 = false
+
+    try {
+        var query_result = await pool.query(`UPDATE users SET MODIFIED = NOW() AT TIME ZONE 'Asia/Jakarta', PASSWORD = '${newPassword}' where email ILIKE LOWER('${users_email}') AND otp_created > NOW() AT TIME ZONE 'Asia/Jakarta' - INTERVAL '10 minutes'`)
+    } catch (error) {
+        isError1 = true
+        log.error(`ERROR | /auth/resetPassword [username : "${users_username}"] - Error found while connect to DB - ${error}`)
+    } finally {
+        if(!isError1){
+            await exports.successResp(req, res, "nearbud-000-000", "Password telah diperbaharui", 0, query_result.rowCount, 0, [])
+        }
+    }
+})
+
+exports.verifyOtpEmail = asyncHandler(async function verifyOtpEmail(req, res, users_email, otp, process){
     let isError = false
 
     if(!process || !users_email || !otp){
@@ -77,21 +92,10 @@ exports.verifyOtpEmail = asyncHandler(async function verifyOtpEmail(req, res, us
             }
         })
     }
-
-    if(process == "forget_password"){
-        if(!newPassword){
-            return res.status(500).json({
-                "error_schema" : {
-                    "error_code" : "nearbud-002-002",
-                    "error_message" : `Data newPassword tidak ditemukan`
-                }
-            })
-        }
-    }
-
+    
     try {
         var query_result = await pool.query(`select 
-                                                CASE WHEN otp_created < NOW() - INTERVAL '10 minutes' THEN 'Expired' 
+                                                CASE WHEN otp_created < NOW() AT TIME ZONE 'Asia/Jakarta' - INTERVAL '10 minutes' THEN 'Expired' 
                                                 ELSE 'Not Expired' END AS isExpired,
                                                 username, 
                                                 password
@@ -127,19 +131,13 @@ exports.verifyOtpEmail = asyncHandler(async function verifyOtpEmail(req, res, us
                             }
                         }
                         
-                    } else if (process == "forget_password"){
-                        let isError1 = false
-                        try {
-                            var query_result = await pool.query(`UPDATE users SET MODIFIED = NOW() AT TIME ZONE 'Asia/Jakarta', PASSWORD = '${newPassword}' where email ILIKE LOWER('${users_email}') and otp = '${otp}'`)
-                        } catch (error) {
-                            isError1 = true
-                            log.error(`ERROR | /auth/registerUser - forgetPassword [username : "${users_username}"] - Error found while connect to DB - ${error}`)
-                        } finally {
-                            if(!isError1){
-                                await exports.successResp(req, res, "nearbud-000-000", "Password telah diperbaharui", 0, query_result.rowCount, 0, [])
+                    } else {
+                        return res.status(200).json({
+                            "error_schema" : {
+                                "error_code" : "nearbud-000-000",
+                                "error_message" : `Token terverifikasi`
                             }
-                        }
-                        
+                        })
                     }
                 }
             } else {

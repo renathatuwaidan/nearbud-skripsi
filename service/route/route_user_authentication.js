@@ -34,7 +34,6 @@ app.post("/verifyOtpEmail", function(req, res){
     let users_email = req.body.users_email
     let otp = req.body.otp
     let process = req.body.process
-    let newPassword = req.body.newPassword
 
     user_auth_controller.verifyOtpEmail(req, res, users_email, otp, process, newPassword)
 })
@@ -43,6 +42,13 @@ app.post("/reqForgetPassword", function(req, res){
     let users_email = req.body.users_email
 
     user_auth_controller.reqForgetPassword(req, res, users_email)
+})
+
+app.post("/resetPassword", function(req, res){
+    let newPassword = req.body.newPassword
+    let users_email = req.body.users_email
+    
+    user_auth_controller.resetPassword(req, res, users_email, newPassword)
 })
 
 app.get("/isTokenValid", user_auth_controller.tokenVerif, function(req, res){
