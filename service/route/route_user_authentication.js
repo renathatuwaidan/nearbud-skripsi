@@ -35,7 +35,7 @@ app.post("/verifyOtpEmail", function(req, res){
     let otp = req.body.otp
     let process = req.body.process
 
-    user_auth_controller.verifyOtpEmail(req, res, users_email, otp, process, newPassword)
+    user_auth_controller.verifyOtpEmail(req, res, users_email, otp, process)
 })
 
 app.post("/reqForgetPassword", function(req, res){
