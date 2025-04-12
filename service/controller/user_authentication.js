@@ -194,6 +194,7 @@ exports.registerUser = asyncHandler(async function registerUser(req, res, users_
         })
     } else {
         let validUser = await exports.checkExistedUser(users_username, users_email)
+        console.log(validUser)
         if(!validUser){
             return res.status(500).json({
                 "error_schema" : {
@@ -455,10 +456,11 @@ exports.checkExistedUser = asyncHandler(async function checkExistedUser(username
         log.error(`ERROR | /auth/registerUser - checkExistUser [username : "${username}"] - Error found while connect to DB - ${error}`)
     } finally {
         if(!isError){
+            console.log(query_result.rows)
             if(query_result.rowCount == 0){
                 return true
             } else {
-                if(query_result.rows[0].is_verified == "true"){
+                if(query_result.rows[0].is_verified == true){
                     return false
                 } else {
                     return "update_user"
