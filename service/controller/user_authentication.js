@@ -506,7 +506,7 @@ exports.transporterEmail = function transporterEmail(otp, email, purpose){
                 <div style="font-size: 24px; font-weight: bold; margin: 20px 0; color: #1a73e8;">
                 ${otp}
                 </div>
-                <p>This code will expire in <strong>15 minutes</strong>.</p>
+                <p>This code will expire in <strong>10 minutes</strong>.</p>
                 <p>If you didn’t request a password reset, you can safely ignore this email or contact support.</p>
                 <br/>
                 <p>Thanks,<br/>The Nearbud Team</p>
