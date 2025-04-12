@@ -13,14 +13,19 @@ app.get("/getCommunity/preview", user_auth_controller.tokenVerif, function(req, 
     let interest_id3 = req.query.interest_id3 
     let interest_id4 = req.query.interest_id4
     let interest_id5 = req.query.interest_id5
-    let city_based = req.query.city_based
+    let city_id1 = req.query.city_id1
+    let city_id2 = req.query.city_id2   
+    let city_id3 = req.query.city_id3 
+    let city_id4 = req.query.city_id4
+    let city_id5 = req.query.city_id5
     let province_based = req.query.province_based 
     let status = req.query.status 
     let page = req.query.page
     let size = req.query.size 
     let users_username_token = res.getHeader('users_username')
 
-    community_controller.getCommunityPreview(req, res, community_id, community_name, community_number_participant, category_id, interest_id1, interest_id2, interest_id3, interest_id4, interest_id5, city_based, province_based, status, page, size, users_username_token)
+    community_controller.getCommunityPreview(req, res, community_id, community_name, community_number_participant, category_id, interest_id1, interest_id2, interest_id3, interest_id4, interest_id5, 
+        city_id1, city_id2, city_id3, city_id4, city_id5, province_based, status, page, size, users_username_token)
 })
 
 app.get("/getCommunity/detail", user_auth_controller.tokenVerif, function (req, res) {

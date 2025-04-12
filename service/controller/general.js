@@ -315,26 +315,24 @@ exports.getSingleUser = asyncHandler(async function getSingleUser(req, res, user
 
     console.log(`SELECT 
         DISTINCT A.ID_USER, A.NAME, A.USERNAME, A.GENDER, A.DATE_OF_BIRTH, A.DESCRIPTION, A.EMAIL, A.GENDER,
-        E.NAME AS PROVINCE_NAME, F.NAME AS CITY_NAME,
+        (SELECT NAME FROM PROVINCE WHERE ID = A.ID_PROVINCE) AS PROVINCE_NAME,
+		(SELECT NAME FROM CITY WHERE ID = A.ID_CITY) AS CITY_NAME,
         CASE WHEN A.id_user NOT IN (SELECT ID_REPORTEE FROM SUSPENDED) THEN 'No'
         ELSE 'Yes' END AS SUSPENDED
         ${query_user_id_1} ${query_users_name_1} ${query_users_username_1}
     FROM USERS A
-    JOIN PROVINCE E ON A.id_province = E.id
-    JOIN CITY F ON A.id_city = F.id
     ${query_where} ${query_user_id} ${query_users_name} ${query_users_username}
     ORDER BY A.ID_USER ${query_pagination} `)
     
     try {
         var query_result = await pool.query(`SELECT 
                 DISTINCT A.ID_USER, A.NAME, A.USERNAME, A.GENDER, A.DATE_OF_BIRTH, A.DESCRIPTION, A.EMAIL, A.GENDER,
-                E.NAME AS PROVINCE_NAME, F.NAME AS CITY_NAME,
+                (SELECT NAME FROM PROVINCE WHERE ID = A.ID_PROVINCE) AS PROVINCE_NAME,
+		        (SELECT NAME FROM CITY WHERE ID = A.ID_CITY) AS CITY_NAME,
                 CASE WHEN A.id_user NOT IN (SELECT ID_REPORTEE FROM SUSPENDED) THEN 'No'
                 ELSE 'Yes' END AS SUSPENDED
                 ${query_user_id_1} ${query_users_name_1} ${query_users_username_1}
             FROM USERS A
-            JOIN PROVINCE E ON A.id_province = E.id
-            JOIN CITY F ON A.id_city = F.id
             ${query_where} ${query_user_id} ${query_users_name} ${query_users_username}
             ORDER BY A.ID_USER ${query_pagination} `)
     } catch (error) {
