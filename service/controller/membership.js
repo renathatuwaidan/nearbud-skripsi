@@ -20,7 +20,7 @@ exports.getEventLink_preview = asyncHandler(async function getEventLink_preview(
         })
     }
 
-    if(!users_id){
+    if(!users_id && !community_id){
         query_from = "JOIN EVENTS_LINK G ON A.ID_EVENT = G.ID_EVENT"
         if(status.toLowerCase() == "attended"){
             query_status = `A.DATE < CURRENT_DATE AND G.IS_APPROVED = true AND G.ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}'))`
@@ -38,7 +38,7 @@ exports.getEventLink_preview = asyncHandler(async function getEventLink_preview(
                 }
             })
         }
-    } else {
+    } else if(users_id && !community_id) {
         query_from = "JOIN EVENTS_LINK G ON A.ID_EVENT = G.ID_EVENT"
         if(status.toLowerCase() == "attended"){
             query_status = `A.DATE < CURRENT_DATE AND G.IS_APPROVED = true AND G.ID_USER = (SELECT ID_USER FROM USERS WHERE ID_USER ILIKE LOWER('${users_id}'))`
@@ -59,6 +59,7 @@ exports.getEventLink_preview = asyncHandler(async function getEventLink_preview(
     }
 
     if(community_id){
+        console.log(status)
         if(status.toLowerCase() == "history"){
             query_status = `A.DATE < CURRENT_DATE AND A.ID_CREATOR ILIKE LOWER('${community_id}')`
         } else if(status.toLowerCase() == "active"){
@@ -67,7 +68,7 @@ exports.getEventLink_preview = asyncHandler(async function getEventLink_preview(
             return res.status(500).json({
                 "error_schema" : {
                     "error_code" : "nearbud-001-001",
-                    "error_message" : `Status tidak dalam format yang sesuai (Opsi : today, attended, rsvp, active)`
+                    "error_message" : `Status tidak dalam format yang sesuai (Opsi : history, active)`
                 }
             })
         }
