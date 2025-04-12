@@ -194,6 +194,7 @@ exports.registerUser = asyncHandler(async function registerUser(req, res, users_
         })
     } else {
         let validUser = await exports.checkExistedUser(users_username, users_email)
+        console.log(validUser)
         if(!validUser){
             return res.status(500).json({
                 "error_schema" : {
@@ -218,6 +219,7 @@ exports.registerUser = asyncHandler(async function registerUser(req, res, users_
     } finally {
         if(!isError){
             //sendEmail
+            console.log("masuk sini")
             await exports.transporterEmail(otp, users_email, "register")
 
             exports.successResp(req, res, "nearbud-000-000", "Data user berhasil ditambahkan", 0, query_result.rowCount, 0, result)
@@ -262,7 +264,7 @@ exports.registerUser_optional = asyncHandler(async function registerUser_optiona
         query_city_name = `,ID_CITY = (SELECT ID FROM CITY WHERE NAME ILIKE LOWER('%${city_name}%'))`
     }
 
-    if(city_name || province_name || users_description || users_gender || users_dob){
+    if(city_name || province_name || users_description || users_gender){
         var query_users_username = `WHERE USERNAME ILIKE LOWER('${users_username}')`
 
         try {
@@ -454,10 +456,11 @@ exports.checkExistedUser = asyncHandler(async function checkExistedUser(username
         log.error(`ERROR | /auth/registerUser - checkExistUser [username : "${username}"] - Error found while connect to DB - ${error}`)
     } finally {
         if(!isError){
+            console.log(query_result.rows)
             if(query_result.rowCount == 0){
                 return true
             } else {
-                if(query_result.rows[0].is_verified == "true"){
+                if(query_result.rows[0].is_verified == true){
                     return false
                 } else {
                     return "update_user"
@@ -497,7 +500,7 @@ exports.transporterEmail = function transporterEmail(otp, email, purpose){
             </div>`
     } else if(purpose == "forget_password"){
         subject = 'OTP Password Reset Request for Nearbud'
-        message = 
+        message =   
             `<div style="font-family: Arial, sans-serif; color: #333;">
                 <h2>Password Reset Request</h2>
                 <p>We received a request to reset your Nearbud account password.</p>
