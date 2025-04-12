@@ -346,6 +346,8 @@ exports.getSingleUser = asyncHandler(async function getSingleUser(req, res, user
                     var dob = new Date(query_result.rows[i].date_of_birth)
                     var age = utility.getAge(dob)
 
+                    console.log(query_result.rows[i])
+
                     var result_interest = await exports.getUserInterestCategory(req, res, query_result.rows[i].id_user)
 
                     if(query_result.rows[i].check_condition == 'Matched'){
@@ -394,9 +396,17 @@ exports.getSingleUser = asyncHandler(async function getSingleUser(req, res, user
 
 exports.getUserInterestCategory = asyncHandler(async function getUserInterestCategory(req, res, users_id_user, size) {
     let result = [], isError = false
+    console.log("219837982173")
+
+    console.log(`SELECT DISTINCT F.ID AS CATEGORY_ID, F.NAME AS CATEGORY_NAME, E.ID AS INTEREST_ID, E.NAME AS INTEREST_NAME
+        FROM USERS A 
+        JOIN INTEREST_LINK D ON A.id_user = D.id_user
+        JOIN INTEREST E ON D.id_interest = E.id
+        JOIN CATEGORY F ON E.id_category = F.id
+        WHERE A.ID_USER = '${users_id_user}'`)
 
     try {
-        var query_result = await pool.query(`SELECT F.ID AS CATEGORY_ID, F.NAME AS CATEGORY_NAME, E.ID AS INTEREST_ID, E.NAME AS INTEREST_NAME
+        var query_result = await pool.query(`SELECT DISTINCT F.ID AS CATEGORY_ID, F.NAME AS CATEGORY_NAME, E.ID AS INTEREST_ID, E.NAME AS INTEREST_NAME
                                             FROM USERS A 
                                             JOIN INTEREST_LINK D ON A.id_user = D.id_user
                                             JOIN INTEREST E ON D.id_interest = E.id
