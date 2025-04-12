@@ -165,7 +165,7 @@ exports.getEventsPreview = asyncHandler(async function getEventsPreview(req, res
                 if(city_id4){city_id4 = `,'${city_id4}'`} else city_id4 = ''
                 if(city_id5){city_id5 = `,'${city_id5}'`} else city_id5 = ''
         
-                query_city = `AND C.ID IN (${city_id1} ${city_id2} ${city_id3} ${city_id4} ${city_id5})`
+                query_city = `C.ID IN (${city_id1} ${city_id2} ${city_id3} ${city_id4} ${city_id5})`
 
                 if(province_based){
                     query_province_based = `AND E.NAME ILIKE LOWER('%${province_based}%')`
