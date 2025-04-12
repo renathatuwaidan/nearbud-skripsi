@@ -236,7 +236,7 @@ exports.getUser = asyncHandler(async function getUser(req, res, suspended, users
                         "users_suspended" : query_result.rows[i].suspended,
                         "province_name" : query_result.rows[i].province_name,
                         "city_name" : query_result.rows[i].city_name,
-                        "category-interest" : result_interest
+                        "category_interest" : result_interest
                     }
                     result.push(object)
                 }
@@ -369,7 +369,7 @@ exports.getSingleUser = asyncHandler(async function getSingleUser(req, res, user
                         "users_suspended" : query_result.rows[i].suspended,
                         "province_name" : query_result.rows[i].province_name,
                         "city_name" : query_result.rows[i].city_name,
-                        "category-interest" : result_interest,
+                        "category_interest" : result_interest,
                         "button_action" : button_action
                     }
                     result.push(object)
