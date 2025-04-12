@@ -95,7 +95,7 @@ exports.verifyOtpEmail = asyncHandler(async function verifyOtpEmail(req, res, us
     
     try {
         var query_result = await pool.query(`select 
-                                                CASE WHEN otp_created < NOW() AT TIME ZONE 'Asia/Jakarta' - INTERVAL '10 minutes' THEN 'Expired' 
+                                                CASE WHEN  otp_created < NOW() AT TIME ZONE 'Asia/Jakarta' - INTERVAL '10 minutes' THEN 'Expired' 
                                                 ELSE 'Not Expired' END AS isExpired,
                                                 username, 
                                                 password
