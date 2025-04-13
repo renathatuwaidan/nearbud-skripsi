@@ -501,6 +501,7 @@ exports.getEventsPreviewList = asyncHandler(async function getEventsPreviewList(
                                             E.NAME AS PROVINCE_BASED,
                                             A.DURATION,
                                             A.DESCRIPTION,
+                                            A.latitude, A.longitude,
                                             TO_CHAR(A.DATE, 'HH24:mi') AS START_TIME,
                                             (SELECT COUNT(*) FROM EVENTS_LINK WHERE ID_EVENT = A.ID_EVENT) AS CURRENT_PARTICIPANT
                                             FROM EVENTS A JOIN CATEGORY B ON A.ID_CATEGORY = B.ID
@@ -525,6 +526,7 @@ exports.getEventsPreviewList = asyncHandler(async function getEventsPreviewList(
                                             E.NAME AS PROVINCE_BASED,
                                             A.DURATION,
                                             A.DESCRIPTION,
+                                            A.latitude, A.longitude,
                                             A.DATE,
                                             TO_CHAR(A.DATE, 'HH24:mi') AS START_TIME,
                                             (SELECT COUNT(*) FROM EVENTS_LINK WHERE ID_EVENT = A.ID_EVENT) AS CURRENT_PARTICIPANT
@@ -546,6 +548,10 @@ exports.getEventsPreviewList = asyncHandler(async function getEventsPreviewList(
                     
                     var getEndTime = utility.getEndDate(query_result.rows[i].start_time, query_result.rows[i].duration)
                     var timestampEndDate = utility.timestampEndDate(query_result.rows[i].event_date, query_result.rows[i].duration)
+                    var event_coordinate = {
+                        "latitude" : query_result.rows[i].latitude,
+                        "longitude" : query_result.rows[i].longitude
+                    }
 
                     var object = {
                         "event_id" : query_result.rows[i].id_event,
@@ -553,6 +559,7 @@ exports.getEventsPreviewList = asyncHandler(async function getEventsPreviewList(
                         "event_description" : query_result.rows[i].description,
                         "event_creator" : query_result.rows[i].creator_name,
                         "event_location" : query_result.rows[i].location,
+                        "event_coordinate" : event_coordinate,
                         "event_city_based" : query_result.rows[i].city_based,
                         "event_province_based" : query_result.rows[i].province_based,
                         "event_time" : `${query_result.rows[i].start_time} - ${getEndTime} WIB`,
@@ -657,11 +664,15 @@ exports.getCreator = asyncHandler(async function getCreator(req, res, id_creator
 })
 
 exports.addEvent = asyncHandler(async function addEvent(req, res, event_name, event_description, event_date, event_duration,
-    event_location, event_city, event_address, event_number_participant, event_image, event_category, event_interest, event_creator, users_username_token) {
-    let isError = false, result = [], query_event_creator = ""
+    event_location, event_city, event_address, event_number_participant, event_image, event_category, event_interest, event_creator, event_coordinate, users_username_token) {
+    let isError = false, result = [], query_event_creator = "", query_event_coordinate_1 = "", query_event_coordinate_2 =""
 
     if(event_creator){
-        query_event_creator = `(SELECT ID_COMMUNITY FROM COMMUNITY WHERE ID_COMMUNITY ILIKE LOWER('${event_creator}'))`
+        if(event_creator.startsWith("C")){
+            query_event_creator = `(SELECT ID_COMMUNITY FROM COMMUNITY WHERE ID_COMMUNITY ILIKE LOWER('${event_creator}'))`
+        } else if(event_creator.startsWith("U")){
+            query_event_creator = `(SELECT ID_USER FROM USERS WHERE ID_USER ILIKE LOWER('${event_creator}'))`
+        }
     } else {
         query_event_creator = `(SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}'))`
     }
@@ -679,18 +690,27 @@ exports.addEvent = asyncHandler(async function addEvent(req, res, event_name, ev
                 }
             })
         } 
+    } 
+
+    if(event_coordinate){
+        query_event_coordinate_1 = `,LATITUDE, LONGITUDE`
+
+        latitude = event_coordinate.latitude
+        longitude = event_coordinate.longitude
+
+        query_event_coordinate_2 = `,'${latitude}','${longitude}'`
     }
 
     console.log(`INSERT INTO EVENTS (CREATED, ID_CATEGORY, ID_INTEREST, ID_CREATOR, NAME, DESCRIPTION, DATE, DURATION, 
-                                        CITY_BASED, LOCATION, ADDRESS, NUMBER_PARTICIPANT) VALUES 
+                                        CITY_BASED, LOCATION, ADDRESS, NUMBER_PARTICIPANT ${query_event_coordinate_1}) VALUES 
                                         (NOW() AT TIME ZONE 'Asia/Jakarta', '${event_category}','${event_interest}',${query_event_creator},'${event_name}','${event_description}','${event_date}','${event_duration}', ${query_city},
-                                        '${event_location}','${event_address}','${event_number_participant}')`)
+                                        '${event_location}','${event_address}','${event_number_participant}' ${query_event_coordinate_2})`)
 
     try {
         var query_result = await pool.query(`INSERT INTO EVENTS (CREATED, ID_CATEGORY, ID_INTEREST, ID_CREATOR, NAME, DESCRIPTION, DATE, DURATION, 
-                                        CITY_BASED, LOCATION, ADDRESS, NUMBER_PARTICIPANT) VALUES 
-                                        (NOW() AT TIME ZONE 'Asia/Jakarta', '${event_category}','${event_interest}',${query_event_creator},'${event_name}','${event_description}','${event_date}','${event_duration}', ${query_city},
-                                        '${event_location}','${event_address}','${event_number_participant}')`)
+                                CITY_BASED, LOCATION, ADDRESS, NUMBER_PARTICIPANT ${query_event_coordinate_1}) VALUES 
+                                (NOW() AT TIME ZONE 'Asia/Jakarta', '${event_category}','${event_interest}',${query_event_creator},'${event_name}','${event_description}','${event_date}','${event_duration}', ${query_city},
+                                '${event_location}','${event_address}','${event_number_participant}' ${query_event_coordinate_2})`)
     } catch (error) {
         isError = true
         log.error(`ERROR | /general/addEvent - Error found while connect to DB - ${error}`)
@@ -710,10 +730,10 @@ exports.addEvent = asyncHandler(async function addEvent(req, res, event_name, ev
 })
 
 exports.editEvent = asyncHandler(async function editEvent(req, res, event_id, event_name, event_description, event_date, event_duration, event_location, event_city, 
-    event_address, event_number_participant, event_image, event_category, event_interest, users_username_token) {
+    event_address, event_number_participant, event_image, event_category, event_interest, event_coordinate, users_username_token) {
 
     let isError = false, result = [], query_event_name = "", query_event_description = "", query_event_date = "", query_event_duration = "", query_event_category = ""
-    let query_event_location = "", query_event_city = "", query_event_address = "", query_event_number_participant = "", query_event_interest = ""
+    let query_event_location = "", query_event_city = "", query_event_address = "", query_event_number_participant = "", query_event_interest = "", query_event_coordinate = ""
     
     if(!event_id){
         return res.status(500).json({
@@ -787,16 +807,23 @@ exports.editEvent = asyncHandler(async function editEvent(req, res, event_id, ev
         query_event_interest = `, ID_INTEREST = (SELECT ID FROM INTEREST WHERE ID = '${event_interest}')`
     }
 
+    if(event_coordinate){
+        latitude = event_coordinate.latitude
+        longitude = event_coordinate.longitude
+
+        query_event_coordinate= `,LATITUDE = '${latitude}', LONGITUDE ='${longitude}'`
+    }
+
     // if(event_image){
     //     query_event_image = `, `
     // }
     
     console.log(`UPDATE EVENTS SET MODIFIED = UPDATE COMMUNITY SET MODIFIED = NOW() AT TIME ZONE 'Asia/Jakarta' ${query_event_category} ${query_event_interest} ${query_event_name} ${query_event_description} ${query_event_date} ${query_event_duration} ${query_event_city}
-                                        ${query_event_location} ${query_event_address} ${query_event_number_participant} ${query_event_category} ${query_event_interest} WHERE ID_EVENT ILIKE LOWER('${event_id}')`)
+                                        ${query_event_location} ${query_event_address} ${query_event_number_participant} ${query_event_category} ${query_event_interest} ${query_event_coordinate} WHERE ID_EVENT ILIKE LOWER('${event_id}')`)
 
     try {
         var query_result = await pool.query(`UPDATE EVENTS SET MODIFIED = NOW() AT TIME ZONE 'Asia/Jakarta' ${query_event_category} ${query_event_interest} ${query_event_name} ${query_event_description} ${query_event_date} ${query_event_duration} ${query_event_city}
-                                        ${query_event_location} ${query_event_address} ${query_event_number_participant} ${query_event_category} ${query_event_interest} WHERE ID_EVENT ILIKE LOWER('${event_id}')`)
+                                        ${query_event_location} ${query_event_address} ${query_event_number_participant} ${query_event_category} ${query_event_interest} ${query_event_coordinate} WHERE ID_EVENT ILIKE LOWER('${event_id}')`)
     } catch (error) {
         isError = true
         log.error(`ERROR | /general/editEvent - Error found while connect to DB - ${error}`)
@@ -819,10 +846,19 @@ exports.isCreator = asyncHandler(async function isCreator(res, res, id_creator, 
     let isError = false, query = ""
     console.log("masuk sndsj")
 
-    if(id_temp.startsWith("E") || id_temp.startsWith("e") ){
-        query = (`SELECT * FROM EVENTS WHERE ID_CREATOR ILIKE LOWER('${id_creator}') AND ID_EVENT ILIKE LOWER('${id_temp}')`)
-    } else {
-        query = (`SELECT * FROM IS_ADMIN WHERE ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${id_creator}')) AND ID_COMMUNITY ILIKE LOWER('${id_temp}')`)
+    if(id_temp.startsWith("E")){
+        console.log("jddued")
+        if(id_creator.startsWith('U0')){
+            query = (`SELECT * FROM EVENTS WHERE ID_CREATOR ILIKE LOWER('${id_creator}') AND ID_EVENT ILIKE LOWER('${id_temp}')`)
+        } else {
+            query = (`SELECT * FROM EVENTS WHERE ID_CREATOR = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${id_creator}')) AND ID_EVENT ILIKE LOWER('${id_temp}')`)
+        }
+    } else if (id_temp.startsWith("C")){
+        if(id_creator.startsWith('U00')||id_creator.startsWith('u00')){
+            query = (`SELECT * FROM IS_ADMIN WHERE ID_USER ILIKE LOWER('${id_creator}') AND ID_COMMUNITY ILIKE LOWER('${id_temp}')`)
+        } else {
+            query = (`SELECT * FROM IS_ADMIN WHERE ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${id_creator}')) AND ID_COMMUNITY ILIKE LOWER('${id_temp}')`)
+        }
     }
 
     console.log(query)
@@ -892,7 +928,8 @@ exports.getEventDetail = asyncHandler(async function getEventDetail(req, res, ev
             WHEN (SELECT IS_APPROVED FROM EVENTS_LINK WHERE ID_EVENT ILIKE LOWER('${event_id}') AND ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}'))) = 'true' THEN 'Accepted'
             WHEN (SELECT IS_APPROVED FROM EVENTS_LINK WHERE ID_EVENT ILIKE LOWER('${event_id}') AND ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}'))) = 'false' THEN 'Pending'
             ELSE 'Nothing'
-        END AS CONDITION
+        END AS CONDITION,
+        A.latitude, A.longitude,
         FROM EVENTS A JOIN CATEGORY B ON A.ID_CATEGORY = B.ID
         JOIN CITY C ON A.CITY_BASED = C.ID
         JOIN PROVINCE E ON C.ID_PROVINCE = E.ID
@@ -931,7 +968,8 @@ exports.getEventDetail = asyncHandler(async function getEventDetail(req, res, ev
                                                 WHEN (SELECT IS_APPROVED FROM EVENTS_LINK WHERE ID_EVENT ILIKE LOWER('${event_id}') AND ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}'))) = 'true' THEN 'Accepted'
                                                 WHEN (SELECT IS_APPROVED FROM EVENTS_LINK WHERE ID_EVENT ILIKE LOWER('${event_id}') AND ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}'))) = 'false' THEN 'Pending'
                                                 ELSE 'Nothing'
-                                            END AS CONDITION
+                                            END AS CONDITION,
+                                            A.latitude, A.longitude,
                                             FROM EVENTS A JOIN CATEGORY B ON A.ID_CATEGORY = B.ID
                                             JOIN INTEREST F ON B.ID = F.ID_CATEGORY
                                             JOIN CITY C ON A.CITY_BASED = C.ID
@@ -951,6 +989,11 @@ exports.getEventDetail = asyncHandler(async function getEventDetail(req, res, ev
                     var displayEndDateTime = utility.displayEndDateTime(query_result.rows[i].event_date, query_result.rows[i].duration)
                     var timestampEndDate = utility.timestampEndDate(query_result.rows[i].event_date, query_result.rows[i].duration)
                     var participantList = await membership.getParticipants(req, res, query_result.rows[i].id_event, "")
+
+                    var event_coordinate = {
+                        "latitude" : query_result.rows[i].latitude,
+                        "longitude" : query_result.rows[i].longitude
+                    }
 
                     var creator = [{
                         "event_creator_type" : query_result.rows[i].creator_type,
@@ -973,6 +1016,7 @@ exports.getEventDetail = asyncHandler(async function getEventDetail(req, res, ev
                         "event_province_based" : query_result.rows[i].province_based,
                         "event_location" : query_result.rows[i].location,
                         "event_address" : query_result.rows[i].address,
+                        "event_coordinate" : event_coordinate,
                         "event_creator" : creator,
                         "event_number_participant" : query_result.rows[i].number_participant,
                         "event_participant" : participantList,

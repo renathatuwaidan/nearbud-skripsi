@@ -59,10 +59,11 @@ app.post("/addEvent", user_auth_controller.tokenVerif, function(req, res){
     let event_category = req.body.event_category
     let event_interest = req.body.event_interest
     let event_creator = req.body.event_creator
+    let event_coordinate = req.body.event_coordinate
     let users_username_token = res.getHeader('users_username')
 
     event_controller.addEvent(req, res, event_name, event_description, event_date, event_duration, event_location, event_city, 
-        event_address, event_number_participant, event_image, event_category, event_interest, event_creator, users_username_token)
+        event_address, event_number_participant, event_image, event_category, event_interest, event_creator, event_coordinate, users_username_token)
 })
 
 app.patch("/editEvent", user_auth_controller.tokenVerif, function(req, res){
@@ -78,10 +79,11 @@ app.patch("/editEvent", user_auth_controller.tokenVerif, function(req, res){
     let event_image = req.body.event_image // onpending
     let event_category = req.body.event_category
     let event_interest = req.body.event_interest
+    let event_coordinate = req.body.event_coordinate
     let users_username_token = res.getHeader('users_username')
 
     event_controller.editEvent(req, res, event_id, event_name, event_description, event_date, event_duration, event_location, event_city, 
-        event_address, event_number_participant, event_image, event_category, event_interest, users_username_token)
+        event_address, event_number_participant, event_image, event_category, event_interest, event_coordinate, users_username_token)
 })
 
 app.get("/getEvents/detail", user_auth_controller.tokenVerif, function(req, res){

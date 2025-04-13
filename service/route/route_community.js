@@ -38,11 +38,11 @@ app.get("/getCommunity/detail", user_auth_controller.tokenVerif, function (req, 
 
 app.get("/getCommunity/isCreator", user_auth_controller.tokenVerif, function(req, res){
     let id_creator = req.query.id_creator
-    let id_community = req.query.id_community
+    let users_username_token = res.getHeader('users_username')
     let page = req.query.page
     let size = req.query.size
 
-    community_controller.getCommunityCreator(req, res, id_creator, id_community, page, size)
+    community_controller.getCommunityCreator(req, res, id_creator, users_username_token, page, size)
 })
 
 // tambahkan data event
@@ -75,8 +75,17 @@ app.patch("/editCommunity", user_auth_controller.tokenVerif, function(req, res){
 })
 
 // get bulletin
+app.get("/getBulletin", user_auth_controller.tokenVerif, function(req, res){
+    let community_id = req.query.community_id
+
+    community_controller.getBulletin(req, res, community_id)
+})
 
 // tambah bulletin
+// app.post("/addBulletin", user_auth_controller.tokenVerif, function(req, res){
+//     let users_username_token = res.getHeader('users_username')
+
+// })
 
 // edit bulletin
 
