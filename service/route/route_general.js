@@ -39,13 +39,22 @@ app.get("/getUser", user_auth_controller.tokenVerif, function (req, res){
     let users_username = req.query.users_username
     let users_gender = req.query.users_gender
     let category = req.query.category
-    let interest = req.query.interest
+    let interest_id1 = req.query.interest_id1
+    let interest_id2 = req.query.interest_id2   
+    let interest_id3 = req.query.interest_id3 
+    let interest_id4 = req.query.interest_id4
+    let interest_id5 = req.query.interest_id5
+    let city_id1 = req.query.city_id1
+    let city_id2 = req.query.city_id2   
+    let city_id3 = req.query.city_id3 
+    let city_id4 = req.query.city_id4
+    let city_id5 = req.query.city_id5
     let province = req.query.province
-    let city = req.query.city
     let page = req.query.page
     let size = req.query.size
 
-    general_controller.getUser(req, res, suspended, users_id, users_name, users_username, users_gender, category, interest, province, city, page, size)
+    general_controller.getUser(req, res, suspended, users_id, users_name, users_username, users_gender, category, province, interest_id1, interest_id2, 
+        interest_id3, interest_id4, interest_id5, city_id1, city_id2, city_id3, city_id4, city_id5, page, size)
 })
 
 app.get("/getSingleUser", user_auth_controller.tokenVerif, function (req, res) {

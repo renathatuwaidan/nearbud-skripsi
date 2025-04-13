@@ -145,7 +145,8 @@ exports.getCity = asyncHandler(async function getCity(req, res, province_id, pro
     }
 })
 
-exports.getUser = asyncHandler(async function getUser(req, res, suspended, users_id, users_name, users_username, users_gender, category, interest, province, city, page, size) {
+exports.getUser = asyncHandler(async function (req, res, suspended, users_id, users_name, users_username, users_gender, category, province, interest_id1, interest_id2, 
+    interest_id3, interest_id4, interest_id5, city_id1, city_id2, city_id3, city_id4, city_id5, page, size) {
     let query_suspended, query_users_id = "", query_users_name = "", query_users_username = "", query_users_gender = ""
     let query_category = "", query_interest = "", query_province = "", query_city = "", isError = false, result = []
     let query_join_intrest_link = ""
@@ -174,33 +175,68 @@ exports.getUser = asyncHandler(async function getUser(req, res, suspended, users
         query_users_gender = ` AND A.GENDER ILIKE LOWER('${users_gender}')`
     }
 
-    if(city){
-        query_city_name = ` AND A.ID_CITY = (SELECT ID FROM CITY ILIKE LOWER('%${city}%'))`
+    if(city_id1 || city_id2 || city_id3 || city_id4 || city_id5){
+        if(city_id1) {city_id1 = `'${city_id1}'`} else {city_id1 = ''}
+        if(city_id2) {city_id2 = `,'${city_id2}'`} else {city_id2 = ''}
+        if(city_id3) {city_id3 = `,'${city_id3}'`} else {city_id3 = ''}
+        if(city_id4) {city_id4 = `,'${city_id4}'`} else {city_id4 = ''}
+        if(city_id5) {city_id5 = `,'${city_id5}'`} else {city_id5 = ''}
+
+        query_city = ` AND F.ID IN (${city_id1} ${city_id2} ${city_id3} ${city_id4} ${city_id5})`
     }
 
-    if(city){
-        query_city_name = ` AND A.ID_PROVINCE = (SELECT ID FROM PROVINCE ILIKE LOWER('%${province}%'))`
+    if(province){
+        query_province = ` AND A.ID_PROVINCE = (SELECT ID FROM PROVINCE ILIKE LOWER('%${province}%'))`
     }
 
     // KALO ADA CATERGORY ATAU INTEREST
-    if(category || interest){
+    if(category || interest_id1 || interest_id2 || interest_id3 || interest_id4 || interest_id5){
         query_join_intrest_link = `JOIN INTEREST_LINK B ON A.ID_USER = B.ID_USER`
 
         if(category){
             query_category = ` AND D.NAME ILIKE LOWER('${category}')`
         }
         
-        if(interest){
-            query_interest = ` AND C.NAME ILIKE LOWER('${interest}')`
+        if(interest_id1 || interest_id2 || interest_id3 || interest_id4 || interest_id5){
+            if(interest_id1) {interest_id1 = `'${interest_id1}'`} else {interest_id1 = ''}
+            if(interest_id2) {interest_id2 = `,'${interest_id2}'`} else {interest_id2 = ''}
+            if(interest_id3) {interest_id3 = `,'${interest_id3}'`} else {interest_id3 = ''}
+            if(interest_id4) {interest_id4 = `,'${interest_id4}'`} else {interest_id4 = ''}
+            if(interest_id5) {interest_id5 = `,'${interest_id5}'`} else {interest_id5 = ''}
+
+            query_interest = ` AND B.ID_INTEREST IN (${interest_id1} ${interest_id2} ${interest_id3} ${interest_id4} ${interest_id5})`
         }
     } else {
         query_join_intrest_link = `LEFT JOIN INTEREST_LINK B ON A.ID_USER = B.ID_USER`
     }
 
+    console.log(`
+        WITH USER_QUERY AS (
+            SELECT DISTINCT (A.ID_USER), A.NAME, A.USERNAME,
+                E.NAME AS PROVINCE_NAME, F.NAME AS CITY_NAME,
+                CASE 
+                    WHEN A.id_user NOT IN (SELECT ID_REPORTEE FROM SUSPENDED) THEN 'No'
+                    ELSE 'Yes' 
+                END AS SUSPENDED
+            FROM USERS A 
+            JOIN PROVINCE E ON A.id_province = E.id
+            JOIN CITY F ON A.id_city = F.id
+            ${query_join_intrest_link}   
+            JOIN INTEREST C ON B.ID_INTEREST = C.ID
+            JOIN CATEGORY D ON C.id_category = D.ID
+            WHERE ${query_suspended} ${query_users_id} ${query_users_name} ${query_users_username} ${query_users_gender} 
+            ${query_category} ${query_interest} ${query_province} ${query_city}
+        )
+        SELECT *, 
+            COUNT(*) OVER() AS TOTAL_DATA
+        FROM USER_QUERY
+        ORDER BY ID_USER
+        ${query_pagination}`)
+
     try {
         var query_result = await pool.query(`
             WITH USER_QUERY AS (
-                SELECT DISTINCT A.ID_USER, A.NAME, A.USERNAME,
+                SELECT DISTINCT (A.ID_USER), A.NAME, A.USERNAME,
                     E.NAME AS PROVINCE_NAME, F.NAME AS CITY_NAME,
                     CASE 
                         WHEN A.id_user NOT IN (SELECT ID_REPORTEE FROM SUSPENDED) THEN 'No'
