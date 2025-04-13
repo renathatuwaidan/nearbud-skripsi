@@ -432,7 +432,7 @@ exports.getEventsPreview = asyncHandler(async function getEventsPreview(req, res
                                         )
                                         SELECT *, COUNT (*)OVER ()
                                         FROM EVENT_DATE_LIST
-                                        ORDER BY EVENT_DATE
+                                        ORDER BY EVENT_DATE DESC
                                         ${query_pagination}`)
     } catch (error) {
         console.log(error)
@@ -500,6 +500,7 @@ exports.getEventsPreviewList = asyncHandler(async function getEventsPreviewList(
                                             C.NAME AS CITY_BASED,
                                             E.NAME AS PROVINCE_BASED,
                                             A.DURATION,
+                                            A.DESCRIPTION,
                                             TO_CHAR(A.DATE, 'HH24:mi') AS START_TIME,
                                             (SELECT COUNT(*) FROM EVENTS_LINK WHERE ID_EVENT = A.ID_EVENT) AS CURRENT_PARTICIPANT
                                             FROM EVENTS A JOIN CATEGORY B ON A.ID_CATEGORY = B.ID
@@ -523,6 +524,7 @@ exports.getEventsPreviewList = asyncHandler(async function getEventsPreviewList(
                                             C.NAME AS CITY_BASED,
                                             E.NAME AS PROVINCE_BASED,
                                             A.DURATION,
+                                            A.DESCRIPTION,
                                             A.DATE,
                                             TO_CHAR(A.DATE, 'HH24:mi') AS START_TIME,
                                             (SELECT COUNT(*) FROM EVENTS_LINK WHERE ID_EVENT = A.ID_EVENT) AS CURRENT_PARTICIPANT
@@ -548,6 +550,7 @@ exports.getEventsPreviewList = asyncHandler(async function getEventsPreviewList(
                     var object = {
                         "event_id" : query_result.rows[i].id_event,
                         "event_name" : query_result.rows[i].name,
+                        "event_description" : query_result.rows[i].description,
                         "event_creator" : query_result.rows[i].creator_name,
                         "event_location" : query_result.rows[i].location,
                         "event_city_based" : query_result.rows[i].city_based,
@@ -589,7 +592,7 @@ exports.getCreator = asyncHandler(async function getCreator(req, res, id_creator
     var query_pagination = respond.query_pagination(req,res, page, size)
 
     console.log(`WITH EVENT_CREATOR AS (
-                                            SELECT DISTINCT (ID_EVENT), TO_CHAR(A.DATE, 'YYYY-MM-DD') AS EVENT_DATE 
+                                            SELECT DISTINCT (TO_CHAR(A.DATE, 'YYYY-MM-DD')) AS EVENT_DATE 
                                             FROM EVENTS A JOIN CATEGORY B ON A.ID_CATEGORY = B.ID
                                             JOIN CITY C ON A.CITY_BASED = C.ID
                                             JOIN PROVINCE E ON C.ID_PROVINCE = E.ID
@@ -603,7 +606,7 @@ exports.getCreator = asyncHandler(async function getCreator(req, res, id_creator
 
     try {
         var query_result = await pool.query(`WITH EVENT_CREATOR AS (
-                                            SELECT DISTINCT (ID_EVENT), TO_CHAR(A.DATE, 'YYYY-MM-DD') AS EVENT_DATE 
+                                            SELECT DISTINCT (TO_CHAR(A.DATE, 'YYYY-MM-DD')) AS EVENT_DATE 
                                             FROM EVENTS A JOIN CATEGORY B ON A.ID_CATEGORY = B.ID
                                             JOIN CITY C ON A.CITY_BASED = C.ID
                                             JOIN PROVINCE E ON C.ID_PROVINCE = E.ID
@@ -613,6 +616,7 @@ exports.getCreator = asyncHandler(async function getCreator(req, res, id_creator
                                         )
                                         SELECT *, COUNT (*)OVER ()
                                         FROM EVENT_CREATOR
+                                        ORDER BY EVENT_DATE DESC
                                         ${query_pagination}`)
     } catch (error) {
         isError = true
