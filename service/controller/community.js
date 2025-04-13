@@ -288,51 +288,48 @@ exports.getCommunityPreview = asyncHandler(async function getCommunityPreview(re
     }
 })
 
-exports.getCommunityCreator = asyncHandler(async function getCommunityCreator(req, res, id_creator, id_community, page, size) {
-    let isError = false, result = [], query_creator= "", query_community = ""
+exports.getCommunityCreator = asyncHandler(async function getCommunityCreator(req, res, id_creator, users_username_token, page, size) {
+    let isError = false, result = [], query_creator= ""
 
     var query_pagination = respond.query_pagination(req,res, page, size)
 
     if(id_creator){
-        query_creator = `WHERE ID_COMMUNITY IN (SELECT ID_COMMUNITY FROM IS_ADMIN WHERE ID_USER ILIKE LOWER('${id_creator}'))`
-
-        if(id_community){
-            query_community =  ``
-        }
+        query_creator = `A.ID_USER ILIKE LOWER('${id_creator}'`
+    } else {
+        query_creator = `A.ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}'))`
     }
 
+    console.log(`WITH COMMUNITY_ADMIN AS (
+                    SELECT A.ID_COMMUNITY, C.NAME
+                    FROM IS_ADMIN A JOIN USERS B ON A.ID_USER = B.ID_USER
+                    JOIN COMMUNITY C ON A.ID_COMMUNITY = C.ID_COMMUNITY
+                    WHERE ${query_creator}
+                ))
+                SELECT *, COUNT(*) OVER ()
+                FROM COMMUNITY_ADMIN
+                ${query_pagination}`)
+
     try {
-        var query_result = await pool.query(`WITH COMMUNITY_PREVIEW AS (
-                                                SELECT
-                                                    A.ID_COMMUNITY,
-                                                    A.NAME AS COMMUNITY_NAME,
-                                                    B.NAME AS INTEREST_NAME,
-                                                    D.NAME AS CITY_NAME,
-                                                    C.NAME AS PROVINCE_NAME,
-                                                    (SELECT COUNT(ID_USER) FROM COMMUNITY_LINK WHERE ID_COMMUNITY = A.ID_COMMUNITY AND IS_APPROVED = TRUE) AS MEMBER
-                                                FROM COMMUNITY A JOIN INTEREST B ON A.ID_INTEREST = B.ID
-                                                JOIN PROVINCE C ON A.ID_PROVINCE = C.ID 
-                                                JOIN CITY D ON A.ID_CITY = D.ID
-                                                ${query_interest} ${query_community_id} ${query_community_name} ${query_number_participant} 
-                                                ${query_category} ${query_city} ${query_province} ${query_status}
-                                            )
+        var query_result = await pool.query(`WITH COMMUNITY_ADMIN AS (
+                                                SELECT A.ID_COMMUNITY, C.NAME, 'on waiting firebase' AS ID_PROFILE
+                                                FROM IS_ADMIN A JOIN USERS B ON A.ID_USER = B.ID_USER
+                                                JOIN COMMUNITY C ON A.ID_COMMUNITY = C.ID_COMMUNITY
+                                                WHERE ${query_creator}
+                                            ))
                                             SELECT *, COUNT(*) OVER ()
-                                            FROM COMMUNITY_PREVIEW
+                                            FROM COMMUNITY_ADMIN
                                             ${query_pagination}`)
     } catch (error) {
         isError = true
-        log.error(`ERROR | /general/getProvince [username : "${username}" | email : "${email}"] - Error found while connect to DB - ${error}`)
+        log.error(`ERROR | /community/getCommunity/isCreator - Error found while connect to DB - ${error}`)
     } finally {
         if(!isError){
             if(query_result.rowCount > 0 ){
                 for( let i = 0; i < query_result.rowCount; i++){
                     var object = {
                         "community_id" : query_result.rows[i].id_community,
-                        "community_name" : query_result.rows[i].community_name,
-                        "interest_name" : query_result.rows[i].interest_name,
-                        "city_based" : query_result.rows[i].city_name,
-                        "province_based" : query_result.rows[i].province_based,
-                        "community_current_member" : query_result.rows[i].member
+                        "community_name" : query_result.rows[i].name,
+                        "id_profile" : query_result.rows[i].id_profile
                     }
                     result.push(object)
                 }
@@ -344,7 +341,7 @@ exports.getCommunityCreator = asyncHandler(async function getCommunityCreator(re
             } else {
                 respond.successResp(req, res, "nearbud-001-001", "Data tidak ditemukan", 0, 0, 0, result)
             }
-            log.info(`SUCCESS | /general/getCity - Success return the result`)
+            log.info(`SUCCESS | /community/getCommunity/isCreator - Success return the result`)
 
         } else {
             return res.status(500).json({
@@ -585,4 +582,72 @@ exports.editCommunity = asyncHandler(async function editCommunity(req, res, comm
         }
     }
 
+})
+
+exports.getBulletin = asyncHandler(async function getBulletin(req, res, community_id, page, size) {
+    let result = [], isError = false
+
+    var query_pagination = respond.query_pagination(req,res, page, size)
+
+    if(!community_id){
+        return res.status(500).json({
+            "error_schema" : {
+                "error_code" : "nearbud-001-000",
+                "error_message" : `Community ID tidak boleh kosong`
+            }
+        })
+    }
+
+    console.log(`WITH COMMUNITY_BULLETIN AS (
+                    SELECT *, (SELECT NAME FROM USERS WHERE ID_USER = A.ID_CREATOR) AS CREATOR_NAME FROM COMMUNITY_BULLETIN A 
+                    WHERE A.ID_COMMUNITY ILIKE LOWER('${community_id}') ORDER BY A.CREATED DESC
+                )
+                SELECT *, COUNT(*) OVER ()
+                FROM COMMUNITY_BULLETIN ${query_pagination}`)
+
+    try {
+        var query_result = await pool.query(`WITH COMMUNITY_BULLETIN AS (
+                                                SELECT *, (SELECT NAME FROM USERS WHERE ID_USER = A.ID_CREATOR) AS CREATOR_NAME FROM COMMUNITY_BULLETIN A 
+                                                WHERE A.ID_COMMUNITY ILIKE LOWER('${community_id}') ORDER BY A.CREATED DESC
+                                            )
+                                            SELECT *, COUNT(*) OVER ()
+                                            FROM COMMUNITY_BULLETIN ${query_pagination}`)
+    } catch (error) {
+        isError = true
+        log.error(`ERROR | /community/getBulletin - Error found while connect to DB - ${error}`)
+    } finally {
+        if(!isError){
+            if(query_result.rowCount > 0 ){
+                for( let i = 0; i < query_result.rowCount; i++){
+                    var fullDisplayDateTime = utility.fullDisplayDateTime(query_result.rows[i].created)
+
+                    var object = {
+                        "community_id" : query_result.rows[i].id_community,
+                        "bulletin_title" : query_result.rows[i].title,
+                        "bulletin_message" : query_result.rows[i].body,
+                        "bulletin_creator_id" : query_result.rows[i].id_creator,
+                        "bulletin_creator_name" : query_result.rows[i].creator_name,
+                        "bulletin_time_created" : fullDisplayDateTime,
+                        "id_picture" : 'pending firebase'
+                    }
+                    result.push(object)
+                }
+                var total_data = query_result.rows[0].count
+                var total_query_data = query_result.rowCount
+
+                respond.successResp(req, res, "nearbud-000-000", "Berhasil mendapatkan hasil", total_data, total_query_data, page, result, size)
+            } else {
+                respond.successResp(req, res, "nearbud-001-001", "Data tidak ditemukan", 0, 0, 0, result)
+            }
+            log.info(`SUCCESS | /community/getBulletin - Success return the result`)
+
+        } else {
+            return res.status(500).json({
+                "error_schema" : {
+                    "error_code" : "nearbud-003-001",
+                    "error_message" : `Error while connecting to DB`
+                }
+            })
+        }
+    }
 })
