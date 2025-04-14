@@ -304,7 +304,7 @@ exports.getCommunityCreator = asyncHandler(async function getCommunityCreator(re
                     FROM IS_ADMIN A JOIN USERS B ON A.ID_USER = B.ID_USER
                     JOIN COMMUNITY C ON A.ID_COMMUNITY = C.ID_COMMUNITY
                     WHERE ${query_creator}
-                ))
+                )
                 SELECT *, COUNT(*) OVER ()
                 FROM COMMUNITY_ADMIN
                 ${query_pagination}`)
@@ -315,7 +315,7 @@ exports.getCommunityCreator = asyncHandler(async function getCommunityCreator(re
                                                 FROM IS_ADMIN A JOIN USERS B ON A.ID_USER = B.ID_USER
                                                 JOIN COMMUNITY C ON A.ID_COMMUNITY = C.ID_COMMUNITY
                                                 WHERE ${query_creator}
-                                            ))
+                                            )
                                             SELECT *, COUNT(*) OVER ()
                                             FROM COMMUNITY_ADMIN
                                             ${query_pagination}`)

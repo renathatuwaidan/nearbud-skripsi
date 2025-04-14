@@ -82,10 +82,12 @@ app.get("/getBulletin", user_auth_controller.tokenVerif, function(req, res){
 })
 
 // tambah bulletin
-// app.post("/addBulletin", user_auth_controller.tokenVerif, function(req, res){
-//     let users_username_token = res.getHeader('users_username')
-
-// })
+app.post("/addBulletin", user_auth_controller.tokenVerif, function(req, res){
+    let users_username_token = res.getHeader('users_username')
+    let bulletin_title = req.body.bulletin_title
+    let bulletin_body = req.body.bulletin_bodyl
+    let 
+})
 
 // edit bulletin
 
