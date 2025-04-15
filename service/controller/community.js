@@ -699,7 +699,7 @@ exports.addCommunity = asyncHandler(async function addEvent(req, res, community_
     }
 })
 
-exports.editCommunity = asyncHandler(async function editCommunity(req, res, community_name, community_description, province_name, city_name, interest_id, users_username_token, community_id, id_profile) {
+exports.editCommunity = asyncHandler(async function editCommunity(req, res, community_name, community_description, province_name, city_name, interest_id, users_username_token, community_id, community_id_profile) {
     let isError = false, result = []
 
     if(!community_id){
@@ -742,16 +742,16 @@ exports.editCommunity = asyncHandler(async function editCommunity(req, res, comm
         interest_id = `,ID_INTEREST = '${interest_id.toUpperCase()}'`
     } else { interest_id = '' }
 
-    if(id_profile){
-        id_profile = `, ID_PROFILE = '${id_profile}'`
-    } else { id_profile = '' }
+    if(community_id_profile){
+        community_id_profile = `, ID_PROFILE = '${community_id_profile}'`
+    } else { community_id_profile = '' }
 
     console.log(`UPDATE COMMUNITY SET MODIFIED = NOW() ${community_name}${community_description} 
-        ${province_name} ${city_name} ${interest_id} ${id_profile} WHERE ID_COMMUNITY ILIKE LOWER('${community_id}')`)
+        ${province_name} ${city_name} ${interest_id} ${community_id_profile} WHERE ID_COMMUNITY ILIKE LOWER('${community_id}')`)
 
     try {
         query_result_1 = await pool.query(`UPDATE COMMUNITY SET MODIFIED = NOW() ${community_name}${community_description} 
-            ${province_name} ${city_name} ${interest_id} ${id_profile} WHERE ID_COMMUNITY ILIKE LOWER('${community_id}')`)
+            ${province_name} ${city_name} ${interest_id} ${community_id_profile} WHERE ID_COMMUNITY ILIKE LOWER('${community_id}')`)
     } catch (error) {
         isError = true
         log.error(`ERROR | /community/editCommunity [username : "${users_username_token}"] - Error found while connect to DB - ${error}`)
@@ -768,7 +768,6 @@ exports.editCommunity = asyncHandler(async function editCommunity(req, res, comm
             })
         }
     }
-
 })
 
 exports.getBulletin = asyncHandler(async function getBulletin(req, res, community_id, page, size) {
@@ -786,7 +785,7 @@ exports.getBulletin = asyncHandler(async function getBulletin(req, res, communit
     }
 
     console.log(`WITH COMMUNITY_BULLETIN AS (
-                    SELECT *, (SELECT NAME FROM USERS WHERE ID_USER = A.ID_CREATOR) AS CREATOR_NAME FROM COMMUNITY_BULLETIN A 
+                    SELECT a.created AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Jakarta' as CREATED_CONVERTED, a.*,a.created AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Jakarta' as CREATED_CONVERTED, a.*, (SELECT NAME FROM USERS WHERE ID_USER = A.ID_CREATOR) AS CREATOR_NAME, A.ID_PICTURE FROM COMMUNITY_BULLETIN A 
                     WHERE A.ID_COMMUNITY ILIKE LOWER('${community_id}') ORDER BY A.CREATED DESC
                 )
                 SELECT *, COUNT(*) OVER ()
@@ -794,7 +793,7 @@ exports.getBulletin = asyncHandler(async function getBulletin(req, res, communit
 
     try {
         var query_result = await pool.query(`WITH COMMUNITY_BULLETIN AS (
-                                                SELECT *, (SELECT NAME FROM USERS WHERE ID_USER = A.ID_CREATOR) AS CREATOR_NAME FROM COMMUNITY_BULLETIN A 
+                                                SELECT a.created AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Jakarta' as CREATED_CONVERTED, a.*, (SELECT NAME FROM USERS WHERE ID_USER = A.ID_CREATOR) AS CREATOR_NAME, A.ID_PICTURE FROM COMMUNITY_BULLETIN A 
                                                 WHERE A.ID_COMMUNITY ILIKE LOWER('${community_id}') ORDER BY A.CREATED DESC
                                             )
                                             SELECT *, COUNT(*) OVER ()
@@ -806,16 +805,17 @@ exports.getBulletin = asyncHandler(async function getBulletin(req, res, communit
         if(!isError){
             if(query_result.rowCount > 0 ){
                 for( let i = 0; i < query_result.rowCount; i++){
-                    var fullDisplayDateTime = utility.fullDisplayDateTime(query_result.rows[i].created)
+                    var fullDisplayDateTime = utility.fullDisplayDateTime(query_result.rows[i].created_converted)
 
                     var object = {
                         "community_id" : query_result.rows[i].id_community,
+                        "bulletin_id" : query_result.rows[i].id,
                         "bulletin_title" : query_result.rows[i].title,
                         "bulletin_message" : query_result.rows[i].body,
                         "bulletin_creator_id" : query_result.rows[i].id_creator,
                         "bulletin_creator_name" : query_result.rows[i].creator_name,
                         "bulletin_time_created" : fullDisplayDateTime,
-                        "id_picture" : 'pending firebase'
+                        "id_picture" : query_result.rows[i].id_picture
                     }
                     result.push(object)
                 }
@@ -828,6 +828,126 @@ exports.getBulletin = asyncHandler(async function getBulletin(req, res, communit
             }
             log.info(`SUCCESS | /community/getBulletin - Success return the result`)
 
+        } else {
+            return res.status(500).json({
+                "error_schema" : {
+                    "error_code" : "nearbud-003-001",
+                    "error_message" : `Error while connecting to DB`
+                }
+            })
+        }
+    }
+})
+
+exports.addBulletin = asyncHandler(async function getBulletin(req, res, community_id, bulletin_title, bulletin_body, bulletin_id_picture, users_username_token) {
+    let isError = false, result = []
+
+    if(!bulletin_title || !bulletin_body || !community_id){
+        return res.status(500).json({
+            "error_schema" : {
+                "error_code" : "nearbud-002-002",
+                "error_message" : `Data pada BODY tidak lengkap`
+            }
+        })
+    }
+
+    let isCreator = await event.isCreator(req, res, users_username_token, community_id)
+    console.log(isCreator)
+    if(isCreator == "notCreator"){
+        return res.status(500).json({
+            "error_schema" : {
+                "error_code" : "nearbud-002-001",
+                "error_message" : `Unauthorized, anda bukan Creator Community tersebut`
+            }
+        })
+    }
+
+    if(bulletin_id_picture){
+        bulletin_id_picture = `'${bulletin_id_picture}'`
+    } else { bulletin_id_picture = `''` }
+
+    console.log(`INSERT INTO COMMUNITY_BULLETIN (id, id_creator, id_community,title,body,id_picture)
+        VALUES(
+        (SELECT MAX(ID) + 1 FROM COMMUNITY_BULLETIN), 
+        (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')),
+        (SELECT ID_COMMUNITY FROM COMMUNITY WHERE ID_COMMUNITY ILIKE LOWER('${community_id}')),
+        '${utility.toTitleCase(bulletin_title)}','${bulletin_body}',${bulletin_id_picture})`)
+
+    try {
+        var query_result = await pool.query(`INSERT INTO COMMUNITY_BULLETIN (id, id_creator, id_community,title,body,id_picture)
+                                            VALUES(
+                                            (SELECT MAX(ID) + 1 FROM COMMUNITY_BULLETIN), 
+                                            (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')),
+                                            (SELECT ID_COMMUNITY FROM COMMUNITY WHERE ID_COMMUNITY ILIKE LOWER('${community_id}')),
+                                            '${utility.toTitleCase(bulletin_title)}','${bulletin_body}', ${bulletin_id_picture})`)
+    } catch (error) {
+        isError = true
+        log.error(`ERROR | /community/addBulletin [username : "${users_username_token}"] - Error found while connect to DB - ${error}`)
+    } finally {
+        if(!isError){
+            if(query_result.rowCount > 0 ){
+                respond.successResp(req, res, "nearbud-000-000", "Data berhasil ditambahkan", 1, 1, 1, result)
+                log.info(`SUCCESS | /community/addBulletin - Success return the result`)
+            } 
+        } else {
+            return res.status(500).json({
+                "error_schema" : {
+                    "error_code" : "nearbud-003-001",
+                    "error_message" : `Error while connecting to DB`
+                }
+            })
+        }
+    }
+})
+
+exports.editBulletin = asyncHandler(async function editBulletin(req, res, community_id, bulletin_title, bulletin_body, bulletin_id_picture, bulletin_id, users_username_token) {
+    let isError = false, result = []
+
+    if(!community_id || !bulletin_id){
+        return res.status(500).json({
+            "error_schema" : {
+                "error_code" : "nearbud-001-000",
+                "error_message" : `Community ID dan atau Bulletin tidak boleh kosong`
+            }
+        })
+    }
+
+    let isCreator = await event.isCreator(req, res, users_username_token, community_id)
+    console.log(isCreator)
+    if(isCreator == "notCreator"){
+        return res.status(500).json({
+            "error_schema" : {
+                "error_code" : "nearbud-002-001",
+                "error_message" : `Unauthorized, anda bukan Creator Community tersebut`
+            }
+        })
+    }
+
+    if(bulletin_id_picture){
+        bulletin_id_picture = `,ID_PICTURE = '${bulletin_id_picture}'`
+    } else { bulletin_id_picture = "" }
+
+    if(bulletin_title){
+        bulletin_title = `,TITLE = '${bulletin_title}'`
+    } else { bulletin_title = "" }
+
+    if(bulletin_body){
+        bulletin_body = `,BODY = '${bulletin_body}'`
+    } else { bulletin_body = "" }
+
+    console.log(`UPDATE COMMUNITY_BULLETIN SET MODIFIED = NOW() ${bulletin_id_picture} ${bulletin_title} ${bulletin_body} WHERE ID = ${bulletin_id} AND ID_COMMUNITY ILIKE LOWER('${community_id}')`)
+
+    try {
+        var query_result = await pool.query(`UPDATE COMMUNITY_BULLETIN SET MODIFIED = NOW() ${bulletin_id_picture} ${bulletin_title} ${bulletin_body} WHERE ID = ${bulletin_id}  AND ID_COMMUNITY ILIKE LOWER('${community_id}')`)
+    } catch (error) {
+        isError = true
+        log.error(`ERROR | /community/deleteBulletin - Error found while connect to DB - ${error}`)
+    } finally {
+        if(!isError){
+            if(query_result.rowCount > 0 ){
+                respond.successResp(req, res, "nearbud-000-000", "Data berhasil diperbaharui", 1, 1, 1, result)
+                log.info(`SUCCESS | /community/deleteBulletin - Success return the result`)
+            } 
         } else {
             return res.status(500).json({
                 "error_schema" : {

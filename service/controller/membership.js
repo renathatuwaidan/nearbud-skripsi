@@ -412,20 +412,19 @@ exports.getCommunityMember = asyncHandler(async function getCommunityMember(req,
     }
     
     console.log(`WITH LIST_PARTICIPANT AS (
-        SELECT DISTINCT ON (C.ID_USER)
-        C.ID_USER AS USERS_ID,
-        C.NAME AS USERS_NAME,
-        'MEMBER' as role, c.ID_PROFILE
-        FROM COMMUNITY_LINK A JOIN COMMUNITY B ON A.ID_COMMUNITY = B.ID_COMMUNITY
-        JOIN USERS C ON A.ID_USER = C.ID_USER
-        WHERE A.ID_COMMUNITY ILIKE LOWER('${community_id}')
-        UNION 
-        SELECT ID_USER, (SELECT NAME FROM USERS WHERE ID_USER = A.ID_USER), 'ADMIN' as role, (SELECT ID_PROFILE FROM USERS WHERE ID_USER = A.ID_USER) AS ID_PROFILE
-        FROM IS_ADMIN A WHERE ID_COMMUNITY ILIKE LOWER('${community_id}')
-    )
-    SELECT *, COUNT (*)OVER ()
-    FROM LIST_PARTICIPANT
-    `)
+            SELECT DISTINCT ON (C.ID_USER)
+            C.ID_USER AS USERS_ID,
+            C.NAME AS USERS_NAME,
+            'MEMBER' as role, c.ID_PROFILE
+            FROM COMMUNITY_LINK A JOIN COMMUNITY B ON A.ID_COMMUNITY = B.ID_COMMUNITY
+            JOIN USERS C ON A.ID_USER = C.ID_USER
+            WHERE A.ID_COMMUNITY ILIKE LOWER('${community_id}') AND A.IS_APPROVED = true
+            UNION 
+            SELECT ID_USER, (SELECT NAME FROM USERS WHERE ID_USER = A.ID_USER), 'ADMIN' as role, (SELECT ID_PROFILE FROM USERS WHERE ID_USER = A.ID_USER) AS ID_PROFILE
+            FROM IS_ADMIN A WHERE ID_COMMUNITY ILIKE LOWER('${community_id}')
+        )
+        SELECT *, COUNT (*)OVER ()
+        FROM LIST_PARTICIPANT`)
 
     try {
         var query_result = await pool.query(`WITH LIST_PARTICIPANT AS (
@@ -435,7 +434,7 @@ exports.getCommunityMember = asyncHandler(async function getCommunityMember(req,
                                             'MEMBER' as role, c.ID_PROFILE
                                             FROM COMMUNITY_LINK A JOIN COMMUNITY B ON A.ID_COMMUNITY = B.ID_COMMUNITY
                                             JOIN USERS C ON A.ID_USER = C.ID_USER
-                                            WHERE A.ID_COMMUNITY ILIKE LOWER('${community_id}')
+                                            WHERE A.ID_COMMUNITY ILIKE LOWER('${community_id}') AND A.IS_APPROVED = true
                                             UNION 
                                             SELECT ID_USER, (SELECT NAME FROM USERS WHERE ID_USER = A.ID_USER), 'ADMIN' as role, (SELECT ID_PROFILE FROM USERS WHERE ID_USER = A.ID_USER) AS ID_PROFILE
                                             FROM IS_ADMIN A WHERE ID_COMMUNITY ILIKE LOWER('${community_id}')
@@ -500,9 +499,11 @@ exports.getCommunity_preview = asyncHandler(async function getCommunity_preview(
     var query_pagination = respond.query_pagination(req,res, page, size)
 
     if(users_id){
-        query_user = `WHERE ID_COMMUNITY IN (SELECT ID_COMMUNITY FROM COMMUNITY_LINK WHERE ID_USER ILIKE LOWER('${users_id}') AND IS_APPROVED = TRUE)`
+        query_user = `WHERE ID_COMMUNITY IN (SELECT ID_COMMUNITY FROM COMMUNITY_LINK WHERE ID_USER ILIKE LOWER('${users_id}') AND IS_APPROVED = TRUE)
+                    OR ID_COMMUNITY IN (SELECT ID_COMMUNITY FROM IS_ADMIN WHERE ID_USER ILIKE LOWER('${users_id}') AND ID_COMMUNITY = A.ID_COMMUNITY) `
     } else {
-        query_user = `WHERE ID_COMMUNITY IN (SELECT ID_COMMUNITY FROM COMMUNITY_LINK WHERE ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')) AND IS_APPROVED = TRUE)`
+        query_user = `WHERE ID_COMMUNITY IN (SELECT ID_COMMUNITY FROM COMMUNITY_LINK WHERE ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')) AND IS_APPROVED = TRUE)
+        OR ID_COMMUNITY IN (SELECT ID_COMMUNITY FROM IS_ADMIN WHERE ID_USER ILIKE LOWER('${users_id}') AND ID_COMMUNITY = A.ID_COMMUNITY)`
     }
 
     console.log(`WITH COMMUNITY_PREVIEW AS (

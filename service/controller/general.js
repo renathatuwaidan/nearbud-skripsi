@@ -571,6 +571,8 @@ exports.putInterestLink = asyncHandler (async function putInterestLink(req, res,
 exports.updateProfile = asyncHandler (async function updatedProfile(req, res, users_name, users_email, users_dob, users_gender, users_province, users_city, users_description, interest, users_username_token, users_id_profile) {
     var isError = false, result = []
     var query_users_dob = "", query_users_gender = "", query_province_name = "", query_city_name = "", query_users_description = "", query_users_name = "", query_users_email = "", query_users_id_profile = ""
+    console.log("masuk")
+    console.log(req, res, users_name, users_email, users_dob, users_gender, users_province, users_city, users_description, interest, users_username_token, users_id_profile)
 
     if(users_name){
         query_users_name = `,NAME = '${utility.toTitleCase(users_name)}'`
@@ -634,6 +636,9 @@ exports.updateProfile = asyncHandler (async function updatedProfile(req, res, us
     if(users_city || users_province || users_description || users_gender || users_dob || users_id_profile){
         var query_users_username = `WHERE USERNAME ILIKE LOWER('${users_username_token}')`
 
+        console.log(`UPDATE USERS SET MODIFIED = NOW() ${query_users_dob} ${query_users_gender} ${query_users_description} 
+            ${query_province_name} ${query_city_name} ${query_users_name} ${query_users_email} ${query_users_id_profile} ${query_users_username}`)
+
         try {
             var query_result = await pool.query(`UPDATE USERS SET MODIFIED = NOW() ${query_users_dob} ${query_users_gender} ${query_users_description} 
                                 ${query_province_name} ${query_city_name} ${query_users_name} ${query_users_email} ${query_users_id_profile} ${query_users_username}`)
@@ -641,6 +646,7 @@ exports.updateProfile = asyncHandler (async function updatedProfile(req, res, us
             isError = true
             log.error(`ERROR | /auth/registerUser [username : "${users_username}"] - Error found while connect to DB - ${error}`)
         } finally {
+            console.log(query_result)
             if(isError){
                 return res.status(500).json({
                     "error_schema" : {
@@ -649,27 +655,31 @@ exports.updateProfile = asyncHandler (async function updatedProfile(req, res, us
                     }
                 })
             } else {
-                console.log(`DELETE FROM INTEREST_LINK WHERE ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}'))`)
-
-                try {
-                    var query_result = await pool.query(`DELETE FROM INTEREST_LINK WHERE ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}'))`)
-                } catch (error) {
-                    isError = true
-                    log.error(`ERROR | /general/updateProfile - DELETE EXISTING INTEREST [username : "${users_username_token}"] - Error found while connecting to DB - ${error}`);
-                } finally {
-                    if(!isError){
-                        for (const item of interest) {
-                            await exports.putInterestLink(req, res, users_username_token, item.interest_id)
-                        }
-                        respond.successResp(req, res, "nearbud-000-000", "Berhasil memperbaharui data", 0, 0, 0, result)
-                    } else {
-                        return res.status(500).json({
-                            "error_schema" : {
-                                "error_code" : "nearbud-003-001",
-                                "error_message" : `Error while connecting to DB`
+                if(interest){
+                    console.log(`DELETE FROM INTEREST_LINK WHERE ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}'))`)
+    
+                    try {
+                        var query_result = await pool.query(`DELETE FROM INTEREST_LINK WHERE ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}'))`)
+                    } catch (error) {
+                        isError = true
+                        log.error(`ERROR | /general/updateProfile - DELETE EXISTING INTEREST [username : "${users_username_token}"] - Error found while connecting to DB - ${error}`);
+                    } finally {
+                        if(!isError){
+                            for (const item of interest) {
+                                await exports.putInterestLink(req, res, users_username_token, item.interest_id)
                             }
-                        })
+                            respond.successResp(req, res, "nearbud-000-000", "Berhasil memperbaharui data", 0, 0, 0, result)
+                        } else {
+                            return res.status(500).json({
+                                "error_schema" : {
+                                    "error_code" : "nearbud-003-001",
+                                    "error_message" : `Error while connecting to DB`
+                                }
+                            })
+                        }
                     }
+                } else {
+                    respond.successResp(req, res, "nearbud-000-000", "Berhasil memperbaharui data", 0, 0, 0, result)
                 }
             }
         }
@@ -780,44 +790,39 @@ exports.getReview = asyncHandler(async function getReview(req, res, reviewee_id,
     let isError = false, result = [], query_where = ""
 
     if(reviewee_id){
-        query_where = `FROM REVIEW A JOIN USERS C ON A.ID_REVIEWER = C.ID_USER
-                        WHERE A.ID_REVIEWEE IN (SELECT ID_COMMUNITY FROM IS_ADMIN WHERE ID_USER ILIKE LOWER('${reviewee_id}')) 
-                        OR A.ID_REVIEWEE IN (SELECT ID_EVENT FROM EVENTS WHERE ID_CREATOR ILIKE LOWER('${reviewee_id}'))`
-    } else if(!reviewee_id && users_username_token){
-        query_where = `FROM REVIEW A JOIN USERS C ON A.ID_REVIEWER = C.ID_USER
-                        WHERE A.ID_REVIEWEE IN (SELECT ID_COMMUNITY FROM IS_ADMIN WHERE ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}'))) 
-                        OR A.ID_REVIEWEE IN (SELECT ID_EVENT FROM EVENTS WHERE ID_CREATOR = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')))`
+        query_where = `WHERE A.ID_REVIEWEE IN (SELECT ID_EVENT FROM EVENTS WHERE ID_CREATOR ILIKE LOWER('${reviewee_id}'))`
+    } else {
+        query_where = `WHERE A.ID_REVIEWEE IN (SELECT ID_EVENT FROM EVENTS WHERE ID_CREATOR = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')))`
     }
 
-    console.log(`SELECT (SELECT ROUND(AVG(rating),1) AS average_rating
-        FROM review
-        WHERE id_reviewee = A.ID_REVIEWEE	
-        GROUP BY id_reviewee) AS AVG_RATING,
-        A.ID,
-        A.REVIEW,
-        A.ID_REVIEWEE AS REVIEWEE_ID,
-        CASE 
-            WHEN A.ID_REVIEWEE ILIKE 'E%' THEN (SELECT NAME FROM EVENTS WHERE ID_EVENT = A.ID_REVIEWEE)
-            WHEN A.ID_REVIEWEE ILIKE 'C%' THEN (SELECT NAME FROM COMMUNITY WHERE ID_COMMUNITY = A.ID_REVIEWEE)
-        END AS REVIEWEE,
-        A.ID_REVIEWER AS REVIEWER_ID,
-        C.NAME AS REVIEWER_NAME
-        ${query_where}`)
+    console.log(`SELECT (SELECT ROUND(AVG(RATING))
+                    FROM review
+                    WHERE id_reviewee = A.id_reviewee
+                    GROUP BY id_reviewee) AS AVG_RATING,
+                    A.ID,
+                    A.REVIEW,
+                    A.ID_REVIEWEE AS REVIEWEE_ID,
+                    CASE
+                        WHEN A.ID_REVIEWEE ILIKE 'E%' THEN (SELECT NAME FROM EVENTS WHERE ID_EVENT = A.ID_REVIEWEE)
+                        WHEN A.ID_REVIEWEE ILIKE 'U%' THEN (SELECT NAME FROM USERS WHERE ID_USER = A.ID_REVIEWEE)
+                    END AS REVIEWEE,
+                    (SELECT ID_USER FROM USERS WHERE ID_USER ILIKE LOWER(A.ID_REVIEWER)) AS REVIEWER_ID,
+                    (SELECT NAME FROM USERS WHERE ID_USER ILIKE LOWER(A.ID_REVIEWER)) AS REVIEWER_NAME
+                FROM REVIEW A
+                ${query_where}`)
 
     try {
-        var query_result = await pool.query(`SELECT (SELECT ROUND(AVG(rating),1) AS average_rating
-                                            FROM review
-                                            WHERE id_reviewee = A.ID_REVIEWEE	
-                                            GROUP BY id_reviewee) AS AVG_RATING,
-                                            A.ID,
-                                            A.REVIEW,
-                                            A.ID_REVIEWEE AS REVIEWEE_ID,
-                                            CASE 
-                                                WHEN A.ID_REVIEWEE ILIKE 'E%' THEN (SELECT NAME FROM EVENTS WHERE ID_EVENT = A.ID_REVIEWEE)
-                                                WHEN A.ID_REVIEWEE ILIKE 'C%' THEN (SELECT NAME FROM COMMUNITY WHERE ID_COMMUNITY = A.ID_REVIEWEE)
-                                            END AS REVIEWEE,
-                                            A.ID_REVIEWER AS REVIEWER_ID,
-                                            C.NAME AS REVIEWER_NAME
+        var query_result = await pool.query(`SELECT (SELECT ROUND(AVG(RATING))
+                                                FROM review
+                                                WHERE id_reviewee = A.id_reviewee
+                                                GROUP BY id_reviewee) AS AVG_RATING,
+                                                A.ID,
+                                                A.REVIEW,
+                                                A.ID_REVIEWEE AS REVIEWEE_ID,
+                                                (SELECT NAME FROM EVENTS WHERE ID_EVENT = A.ID_REVIEWEE) AS REVIEWEE,
+                                                (SELECT ID_USER FROM USERS WHERE ID_USER ILIKE LOWER(A.ID_REVIEWER)) AS REVIEWER_ID,
+                                                (SELECT NAME FROM USERS WHERE ID_USER ILIKE LOWER(A.ID_REVIEWER)) AS REVIEWER_NAME
+                                            FROM REVIEW A
                                             ${query_where}`)
     } catch (error) {
         isError = true
@@ -829,9 +834,11 @@ exports.getReview = asyncHandler(async function getReview(req, res, reviewee_id,
                 for( let i = 0; i < query_result.rowCount; i++){
                     var rating_individu = {
                         "review_id" : query_result.rows[i].id,
-                        "review_message" : query_result.rows[i].review,
-                        "review_reviewer_id" : query_result.rows[i].reviewer_id,
-                        "review_reviewer_name" : query_result.rows[i].reviewer_name
+                        "reviewee_id" : query_result.rows[i].reviewee_id,
+                        "reviewee_name" : query_result.rows[i].reviewee,
+                        "reviewer_id" : query_result.rows[i].reviewer_id,
+                        "reviewer_name" : query_result.rows[i].reviewer_name,
+                        "review_message" : query_result.rows[i].review
                     }
                     temp.push(rating_individu)
                 }
@@ -859,10 +866,127 @@ exports.getReview = asyncHandler(async function getReview(req, res, reviewee_id,
     }
 })
 
-exports.getRoomIdList - asyncHandler(async function getRoomIdList(req, res, users_username_token) {
-    try {
-        
-    } catch (error) {
-        
+exports.addReview = asyncHandler(async function getReview(req, res, reviewee_id, reviewer_id, rating, review, users_username_token) {
+    var isError = false, result = [], query_reviewer = ""
+
+    if(!rating||!review||!reviewee_id){
+        return res.status(500).json({
+            "error_schema" : {
+                "error_code" : "nearbud-002-002",
+                "error_message" : `Data pada BODY tidak lengkap`
+            }
+        })
     }
+
+    if(reviewer_id){
+        query_reviewer = `(SELECT ID_USER FROM USERS WHERE ID_USER ILIKE LOWER('${reviewer_id}'))`
+    } else {
+        query_reviewer = `(SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}'))`
+    }
+
+    console.log(`INSERT INTO REVIEW 
+                (ID_REVIEWEE, ID_REVIEWER, RATING, REVIEW) VALUES 
+                ( '${reviewee_id.toUpperCase()}', 
+                    ${query_reviewer}, 
+                    '${rating}',
+                    '${review}'
+                )`)
+
+    try {
+        var query_result = await pool.query(`INSERT INTO REVIEW 
+                                            (ID_REVIEWEE, ID_REVIEWER, RATING, REVIEW) VALUES 
+                                            ( '${reviewee_id.toUpperCase()}', 
+                                                ${query_reviewer}, 
+                                                '${rating}',
+                                                '${review}'
+                                            )`)
+    } catch (error) {
+        isError = true
+        log.error(`ERROR | /general/addReview - Error found while connect to DB - ${error}`)
+    } finally {
+        if(!isError){
+            respond.successResp(req, res, "nearbud-000-000", "Data berhasil ditambahkan", 0, 0, 0, result)
+            log.info(`SUCCESS | /general/addReview - Success added the data`)
+        } else {
+            return res.status(500).json({
+                "error_schema" : {
+                    "error_code" : "nearbud-003-001",
+                    "error_message" : `Error while connecting to DB`
+                }
+            })
+        }
+    }
+})
+
+exports.getRoomIdList = asyncHandler(async function getRoomIdList(req, res, users_username_token, page, size){
+    let isError = false, result = []
+
+    var query_pagination = respond.query_pagination(req,res, page, size)
+
+    console.log(`WITH CHAT_LIST AS (SELECT id_chat, (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')) as id_user_1, id_user_2 FROM CHAT WHERE ID_USER_1 = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')) -- PRVATE CHAT
+        UNION
+        SELECT (SELECT room_chat_id FROM COMMUNITY WHERE ID_COMMUNITY = A.ID_COMMUNITY) as id_chat, (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')) as id_user_1, A.id_community as id_user_2 FROM COMMUNITY_LINK A 
+            WHERE A.ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')) AND A.IS_APPROVED = TRUE -- by community yang diikutin
+        UNION
+        SELECT (SELECT room_chat_id FROM EVENTS WHERE ID_EVENT = B.ID_EVENT) as id_chat, (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')) as id_user_1, B.ID_EVENT as id_user_2 FROM EVENTS_LINK B 
+            WHERE B.ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')) AND B.IS_APPROVED = TRUE -- by event yang diikutin
+        UNION 
+        SELECT (SELECT room_chat_id FROM COMMUNITY WHERE ID_COMMUNITY = C.ID_COMMUNITY) as id_chat, (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')) as id_user_1, C.ID_COMMUNITY as id_user_2 FROM COMMUNITY C 
+            WHERE C.ID_COMMUNITY IN (SELECT ID_COMMUNITY FROM IS_ADMIN WHERE ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')) 
+            AND ID_COMMUNITY = C.ID_COMMUNITY) -- by community yang dia admin
+        UNION
+        SELECT (SELECT room_chat_id FROM EVENTS WHERE ID_EVENT = D.ID_EVENT) as id_chat, (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')) as id_user_1, D.ID_EVENT as id_user_2 FROM EVENTS D
+            WHERE D.ID_CREATOR = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}'))) -- by event yang dia create
+        SELECT *, COUNT(*) OVER ()
+        FROM CHAT_LIST
+        ${query_pagination}`)
+
+    try {
+        var query_result = await pool.query(`WITH CHAT_LIST AS (SELECT id_chat, (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')) as id_user_1, id_user_2 FROM CHAT WHERE ID_USER_1 = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')) -- PRVATE CHAT
+            UNION
+            SELECT (SELECT room_chat_id FROM COMMUNITY WHERE ID_COMMUNITY = A.ID_COMMUNITY) as id_chat, (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')) as id_user_1, A.id_community as id_user_2 FROM COMMUNITY_LINK A 
+                WHERE A.ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')) AND A.IS_APPROVED = TRUE -- by community yang diikutin
+            UNION
+            SELECT (SELECT room_chat_id FROM EVENTS WHERE ID_EVENT = B.ID_EVENT) as id_chat, (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')) as id_user_1, B.ID_EVENT as id_user_2 FROM EVENTS_LINK B 
+                WHERE B.ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')) AND B.IS_APPROVED = TRUE -- by event yang diikutin
+            UNION 
+            SELECT (SELECT room_chat_id FROM COMMUNITY WHERE ID_COMMUNITY = C.ID_COMMUNITY) as id_chat, (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')) as id_user_1, C.ID_COMMUNITY as id_user_2 FROM COMMUNITY C 
+                WHERE C.ID_COMMUNITY IN (SELECT ID_COMMUNITY FROM IS_ADMIN WHERE ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')) 
+                AND ID_COMMUNITY = C.ID_COMMUNITY) -- by community yang dia admin
+            UNION
+            SELECT (SELECT room_chat_id FROM EVENTS WHERE ID_EVENT = D.ID_EVENT) as id_chat, (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')) as id_user_1, D.ID_EVENT as id_user_2 FROM EVENTS D
+                WHERE D.ID_CREATOR = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}'))) -- by event yang dia create
+            SELECT *, COUNT(*) OVER ()
+            FROM CHAT_LIST
+            ${query_pagination}`)
+    } catch (error) {
+        isError = true
+        log.error(`ERROR | /general/getRoomIdList - Error found while connect to DB - ${error}`)
+    } finally {
+        if(!isError){
+            if(query_result.rowCount > 0 ){
+                for( let i = 0; i < query_result.rowCount; i++){
+                    var object = {
+                        "room_id" : query_result.rows[i].id_chat,
+                        "id_user_1" : query_result.rows[i].id_user_1,
+                        "id_user_2" : query_result.rows[i].id_user_2
+                    } 
+                    result.push(object)
+                }
+                respond.successResp(req, res, "nearbud-000-000", "Berhasil mendapatkan hasil", query_result.rowCount, query_result.rowCount, 1, result)
+            } else {
+                respond.successResp(req, res, "nearbud-001-001", "Data tidak ditemukan", 0, 0, 0, result)
+            }
+            log.info(`SUCCESS | /general/getRoomIdList - Success return the result`)
+
+        } else {
+            return res.status(500).json({
+                "error_schema" : {
+                    "error_code" : "nearbud-003-001",
+                    "error_message" : `Error while connecting to DB`
+                }
+            })
+        }
+    }
+
 })
