@@ -7,7 +7,7 @@ const events = require("./event")
 const utility = require("./utility")
 
 exports.getEventLink_preview = asyncHandler(async function getEventLink_preview(req, res, users_id, community_id, status, users_username_token, page, size) {
-    let isError = false, result = [], query_status = "", query_from = ""
+    let isError = false, result = [], query_status = "", query_from = "", query_conditional_1 = "", query_conditional_2 = ""
 
     var query_pagination = respond.query_pagination(req,res, page, size)
 
@@ -20,50 +20,14 @@ exports.getEventLink_preview = asyncHandler(async function getEventLink_preview(
         })
     }
 
-    if(!users_id && !community_id){
-        query_from = "JOIN EVENTS_LINK G ON A.ID_EVENT = G.ID_EVENT"
-        if(status.toLowerCase() == "attended"){
-            query_status = `A.DATE < CURRENT_DATE AND G.IS_APPROVED = true AND G.ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}'))`
-        } else if (status.toLowerCase() == "active"){
-            query_status = `A.DATE >= CURRENT_DATE AND G.IS_APPROVED = true AND G.ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}'))`
-        } else if(status.toLowerCase() == "rsvp"){
-            query_status = `A.DATE >= CURRENT_DATE AND A.ID_EVENT IN (SELECT ID_EVENT FROM EVENTS WHERE ID_CREATOR IN (SELECT ID_COMMUNITY FROM COMMUNITY_LINK WHERE ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}'))))`
-        } else if (status.toLowerCase() == "today"){
-            query_status = `A.DATE = CURRENT_DATE AND G.IS_APPROVED = true AND G.ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}'))`
-        } else {
-            return res.status(500).json({
-                "error_schema" : {
-                    "error_code" : "nearbud-001-001",
-                    "error_message" : `Status tidak dalam format yang sesuai (Opsi : today, attended, rsvp, active)`
-                }
-            })
-        }
-    } else if(users_id && !community_id) {
-        query_from = "JOIN EVENTS_LINK G ON A.ID_EVENT = G.ID_EVENT"
-        if(status.toLowerCase() == "attended"){
-            query_status = `A.DATE < CURRENT_DATE AND G.IS_APPROVED = true AND G.ID_USER = (SELECT ID_USER FROM USERS WHERE ID_USER ILIKE LOWER('${users_id}'))`
-        } else if (status.toLowerCase() == "active"){
-            query_status = `A.DATE >= CURRENT_DATE AND G.IS_APPROVED = true AND G.ID_USER = (SELECT ID_USER FROM USERS WHERE ID_USER ILIKE LOWER('${users_id}'))`
-        } else if(status.toLowerCase() == "rsvp"){
-            query_status = `A.DATE >= CURRENT_DATE AND A.ID_EVENT IN (SELECT ID_EVENT FROM EVENTS WHERE ID_CREATOR IN (SELECT ID_COMMUNITY FROM COMMUNITY_LINK WHERE ID_USER = (SELECT ID_USER FROM USERS WHERE ID_USER ILIKE LOWER('${users_id}'))))`
-        } else if(status.toLowerCase() == "today"){
-            query_status = `A.DATE = CURRENT_DATE AND G.IS_APPROVED = true AND G.ID_USER = (SELECT ID_USER FROM USERS WHERE ID_USER ILIKE LOWER('${users_id}'))`
-        } else {
-            return res.status(500).json({
-                "error_schema" : {
-                    "error_code" : "nearbud-001-001",
-                    "error_message" : `Status tidak dalam format yang sesuai (Opsi : today, attended, rsvp, active)`
-                }
-            })
-        }
-    }
-
-    if(community_id){
-        console.log(status)
+    if(community_id && !users_id){
+        let query_order = ""
         if(status.toLowerCase() == "history"){
-            query_status = `A.DATE < CURRENT_DATE AND A.ID_CREATOR ILIKE LOWER('${community_id}')`
+            query_status = `B.DATE < (CURRENT_DATE AT TIME ZONE 'Asia/Jakarta')::DATE`
+            query_order = `ORDER BY EVENT_DATE DESC`
         } else if(status.toLowerCase() == "active"){
-            query_status = `A.DATE >= CURRENT_DATE AND A.ID_CREATOR ILIKE LOWER('${community_id}')`
+            query_status = `B.DATE >= (CURRENT_DATE AT TIME ZONE 'Asia/Jakarta')::DATE`
+            query_order = `ORDER BY EVENT_DATE ASC`
         } else {
             return res.status(500).json({
                 "error_schema" : {
@@ -72,47 +36,121 @@ exports.getEventLink_preview = asyncHandler(async function getEventLink_preview(
                 }
             })
         }
+
+        query_conditional_1 = `WITH EVENT_DATE_LIST AS (
+                                SELECT TO_CHAR(A.DATE, 'YYYY-MM-DD') AS event_date
+                                FROM EVENTS A WHERE A.ID_CREATOR ILIKE LOWER('${community_id}')
+                                AND ID_EVENT IN (SELECT B.ID_EVENT FROM EVENTS B WHERE ${query_status})
+                            )
+                            SELECT *, COUNT (*)OVER ()
+                            FROM EVENT_DATE_LIST
+                            ${query_order}`
+
+        query_conditional_2 = `(SELECT ID_EVENT
+                                FROM EVENTS A WHERE A.ID_CREATOR ILIKE LOWER('${community_id}')
+                                AND A.ID_EVENT IN (SELECT B.ID_EVENT FROM EVENTS B WHERE ${query_status}))`
+    } else {
+        let getUser = ""
+        
+        if(!users_id && !community_id){
+            getUser = `(SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}'))`
+        } else if(users_id && !community_id) {
+            getUser =  `(SELECT ID_USER FROM USERS WHERE ID_USER ILIKE LOWER('${users_id}'))`          
+        }
+        
+        if(status.toLowerCase() == "today"){
+            query_conditional_1 = `WITH EVENT_DATE_LIST AS (
+                                    SELECT TO_CHAR(DATE, 'YYYY-MM-DD') AS event_date
+                                    FROM EVENTS
+                                    WHERE ID_EVENT IN (SELECT A.ID_EVENT FROM EVENTS A WHERE A.DATE::DATE = (CURRENT_DATE AT TIME ZONE 'Asia/Jakarta')::DATE) AND 
+                                    ID_EVENT NOT IN (SELECT ID_EVENT FROM EVENTS_LINK WHERE ID_USER = ${getUser} AND IS_APPROVED = true)
+                                    UNION
+                                    SELECT TO_CHAR(DATE, 'YYYY-MM-DD') AS event_date
+                                    FROM EVENTS C WHERE ID_CREATOR = ${getUser} 
+                                    AND ID_EVENT IN (SELECT A.ID_EVENT FROM EVENTS A WHERE A.DATE::DATE = (CURRENT_DATE AT TIME ZONE 'Asia/Jakarta')::DATE)
+                                    UNION 
+                                    SELECT TO_CHAR(DATE, 'YYYY-MM-DD') AS event_date
+                                    FROM EVENTS D WHERE ID_CREATOR IN (SELECT ID_COMMUNITY FROM IS_ADMIN WHERE ID_USER = ${getUser})
+                                    AND ID_EVENT IN (SELECT A.ID_EVENT FROM EVENTS A WHERE A.DATE::DATE = (CURRENT_DATE AT TIME ZONE 'Asia/Jakarta')::DATE)
+                                )
+                                SELECT *, COUNT (*)OVER ()
+                                FROM EVENT_DATE_LIST
+                                ORDER BY EVENT_DATE DESC
+                                ${query_pagination}`
+
+            query_conditional_2 = `(SELECT ID_EVENT
+                                    FROM EVENTS
+                                    WHERE ID_EVENT IN (SELECT A.ID_EVENT FROM EVENTS A WHERE A.DATE::DATE = (CURRENT_DATE AT TIME ZONE 'Asia/Jakarta')::DATE) AND 
+                                    ID_EVENT NOT IN (SELECT ID_EVENT FROM EVENTS_LINK WHERE ID_USER = ${getUser} AND IS_APPROVED = true)
+                                    UNION
+                                    SELECT ID_EVENT
+                                    FROM EVENTS C WHERE ID_CREATOR = ${getUser} 
+                                    AND ID_EVENT IN (SELECT A.ID_EVENT FROM EVENTS A WHERE A.DATE::DATE = (CURRENT_DATE AT TIME ZONE 'Asia/Jakarta')::DATE)
+                                    UNION 
+                                    SELECT ID_EVENT
+                                    FROM EVENTS D WHERE ID_CREATOR IN (SELECT ID_COMMUNITY FROM IS_ADMIN WHERE ID_USER = ${getUser})
+                                    AND ID_EVENT IN (SELECT A.ID_EVENT FROM EVENTS A WHERE A.DATE::DATE = (CURRENT_DATE AT TIME ZONE 'Asia/Jakarta')::DATE))`
+        } else {
+            if (status.toLowerCase() == "active"){
+                query_status = `A.DATE >= (CURRENT_DATE AT TIME ZONE 'Asia/Jakarta')`
+            } else if(status.toLowerCase() == "rsvp"){
+                query_status = `A.DATE >= (CURRENT_DATE AT TIME ZONE 'Asia/Jakarta')`
+            } else if(status.toLowerCase() == "attended"){
+                query_status = `A.DATE < (CURRENT_DATE AT TIME ZONE 'Asia/Jakarta')`
+            } else {
+                return res.status(500).json({
+                    "error_schema" : {
+                        "error_code" : "nearbud-001-001",
+                        "error_message" : `Status tidak dalam format yang sesuai (Opsi : today, attended, rsvp, active)`
+                    }
+                })
+            }
+
+            query_conditional_1 = `WITH EVENT_DATE_LIST AS (
+                            SELECT TO_CHAR((SELECT DATE FROM EVENTS WHERE ID_EVENT = B.ID_EVENT), 'YYYY-MM-DD') AS event_date
+                            FROM EVENTS_LINK B
+                            WHERE ID_EVENT IN (SELECT A.ID_EVENT FROM EVENTS A WHERE ${query_status}) AND ID_USER = ${getUser} AND IS_APPROVED = true
+                            UNION
+                            SELECT TO_CHAR(DATE, 'YYYY-MM-DD') AS event_date
+                            FROM EVENTS C WHERE ID_CREATOR = ${getUser} 
+                            AND ID_EVENT IN (SELECT A.ID_EVENT FROM EVENTS A WHERE ${query_status})
+                            UNION 
+                            SELECT TO_CHAR(DATE, 'YYYY-MM-DD') AS event_date
+                            FROM EVENTS D WHERE ID_CREATOR IN (SELECT ID_COMMUNITY FROM IS_ADMIN WHERE ID_USER = ${getUser})
+                            AND ID_EVENT IN (SELECT A.ID_EVENT FROM EVENTS A WHERE ${query_status})
+                        )
+                        SELECT *, COUNT (*)OVER ()
+                        FROM EVENT_DATE_LIST
+                        ORDER BY EVENT_DATE DESC
+                        ${query_pagination}`
+
+            query_conditional_2 = `(SELECT B.ID_EVENT
+                                FROM EVENTS_LINK B
+                                WHERE ID_EVENT IN (SELECT A.ID_EVENT FROM EVENTS A WHERE ${query_status}) AND ID_USER = ${getUser} AND IS_APPROVED = true
+                                UNION
+                                SELECT ID_EVENT
+                                FROM EVENTS C WHERE ID_CREATOR = ${getUser} 
+                                AND ID_EVENT IN (SELECT A.ID_EVENT FROM EVENTS A WHERE ${query_status})
+                                UNION 
+                                SELECT ID_EVENT
+                                FROM EVENTS D WHERE ID_CREATOR IN (SELECT ID_COMMUNITY FROM IS_ADMIN WHERE ID_USER = ${getUser})
+                                AND ID_EVENT IN (SELECT A.ID_EVENT FROM EVENTS A WHERE ${query_status}))`
+        }
     }
 
-    console.log(query_status)
-
-    console.log(`WITH EVENT_DATE_LIST AS (
-                                            SELECT DISTINCT TO_CHAR(A.DATE, 'YYYY-MM-DD') AS EVENT_DATE 
-                                            FROM EVENTS A JOIN CATEGORY B ON A.ID_CATEGORY = B.ID
-                                            ${query_from}
-                                            JOIN CITY C ON A.CITY_BASED = C.ID
-                                            JOIN PROVINCE E ON C.ID_PROVINCE = E.ID
-                                            JOIN CATEGORY D ON A.ID_CATEGORY = D.ID 
-                                            JOIN INTEREST F ON F.ID_CATEGORY = D.ID
-                                            WHERE ${query_status}
-                                        )
-                                        SELECT *, COUNT (*)OVER ()
-                                        FROM EVENT_DATE_LIST
-                                        ${query_pagination}`)
+    console.log(query_conditional_1)
 
     try {
-        var query_result = await pool.query(`WITH EVENT_DATE_LIST AS (
-                                            SELECT DISTINCT TO_CHAR(A.DATE, 'YYYY-MM-DD') AS EVENT_DATE 
-                                            FROM EVENTS A JOIN CATEGORY B ON A.ID_CATEGORY = B.ID
-                                            ${query_from}
-                                            JOIN CITY C ON A.CITY_BASED = C.ID
-                                            JOIN PROVINCE E ON C.ID_PROVINCE = E.ID
-                                            JOIN CATEGORY D ON A.ID_CATEGORY = D.ID 
-                                            JOIN INTEREST F ON F.ID_CATEGORY = D.ID
-                                            WHERE ${query_status}
-                                        )
-                                        SELECT *, COUNT (*)OVER ()
-                                        FROM EVENT_DATE_LIST
-                                        ${query_pagination}`)
+        var query_result = await pool.query(query_conditional_1)
     } catch (error) {
         isError = true
         log.error(`ERROR | /membership/getEvents/preview - Error found while connect to DB - ${error}`)
     } finally {
         if(!isError){
-            if(query_result.rowCount > 0 ){
+            if(query_result.rowCount > 0 ){ 
                 for( let i = 0; i < query_result.rowCount; i++){
                     var result_list = await events.getEventsPreviewList(req, res, query_result.rows[i].event_date, "", "", "", "",
-                        "", "", "", "", "", query_status, query_from)
+                        "", "", "", "", "", "", "", query_conditional_2)
                     var fullDisplayDate = utility.fullDisplayDate(query_result.rows[i].event_date)
 
                     var object = {
@@ -168,6 +206,7 @@ exports.getParticipants = asyncHandler(async function getParticipants(req, res, 
                                                 SELECT DISTINCT ON (C.ID_USER)
                                                 C.ID_USER AS USERS_ID,
                                                 C.NAME AS USERS_NAME,
+                                                C.ID_PROFILE,
                                                 CASE WHEN (SELECT ROUND(AVG(rating), 1) AS average_rating
                                                             FROM review
                                                             WHERE id_reviewee = A.ID_USER
@@ -186,6 +225,7 @@ exports.getParticipants = asyncHandler(async function getParticipants(req, res, 
                                                 SELECT DISTINCT ON (C.ID_USER)
                                                 C.ID_USER AS USERS_ID,
                                                 C.NAME AS USERS_NAME,
+                                                C.ID_PROFILE,
                                                 CASE WHEN (SELECT ROUND(AVG(rating), 1) AS average_rating
                                                             FROM review
                                                             WHERE id_reviewee = A.ID_USER
@@ -208,7 +248,8 @@ exports.getParticipants = asyncHandler(async function getParticipants(req, res, 
                     var object = {
                         "users_id" : query_result.rows[i].users_id,
                         "users_name" : query_result.rows[i].users_name,
-                        "users_avg_rating" : query_result.rows[i].avg_rating
+                        "users_avg_rating" : query_result.rows[i].avg_rating,
+                        "users_id_profile" : query_result.rows[i].id_profile
                     }
                     result.push(object)
                 }
@@ -229,30 +270,60 @@ exports.getParticipants = asyncHandler(async function getParticipants(req, res, 
 })
 
 exports.addCommunityLink = asyncHandler(async function addCommunityLink(req, res, community_id, users_username) {
-    let isError1 = false, result = []
+    let isError1 = false, result = [], isError = false
+
+    console.log(`SELECT * FROM COMMUNITY_LINK WHERE ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username}'))
+        AND ID_COMMUNITY = (SELECT ID_COMMUNITY FROM COMMUNITY WHERE ID_COMMUNITY = '${community_id}')`)
+
     try {
-        var query_result = await pool.query(`
-            INSERT INTO COMMUNITY_LINK(ID, ID_COMMUNITY, ID_USER, CREATED) VALUES 
-            (
-                (SELECT MAX(id) + 1 FROM COMMUNITY_LINK), 
-                (SELECT ID_COMMUNITY FROM COMMUNITY WHERE ID_COMMUNITY = '${community_id}'), 
-                (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username}')), 
-                NOW() AT TIME ZONE 'Asia/Jakarta'
-            )
-        `)
+        var query_result = await pool.query(`SELECT * FROM COMMUNITY_LINK WHERE ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username}'))
+                            AND ID_COMMUNITY = (SELECT ID_COMMUNITY FROM COMMUNITY WHERE ID_COMMUNITY = '${community_id}')`)
     } catch (error) {
-        isError1 = true;
-        log.error(`ERROR | /membership/addCommunityLink [username : "${users_username}"] - Error found while connecting to DB - ${error}`);
+        isError = true
+        log.error(`ERROR | /membership/addCommunityLink - Error found while connecting to DB - ${error}`);
     } finally {
-        if (isError1) {
+        if(!isError){
+            if(query_result.rowCount > 0){
+                return res.status(500).json({
+                    "error_schema": {
+                        "error_code": "nearbud-000-001",
+                        "error_message": `Data sudah pernah ditambahkan`
+                    }
+                })
+            } else {
+                try {
+                    var query_result = await pool.query(`
+                        INSERT INTO COMMUNITY_LINK(ID, ID_COMMUNITY, ID_USER, CREATED) VALUES 
+                        (
+                            (SELECT MAX(id) + 1 FROM COMMUNITY_LINK), 
+                            (SELECT ID_COMMUNITY FROM COMMUNITY WHERE ID_COMMUNITY = '${community_id}'), 
+                            (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username}')), 
+                            NOW()'
+                        )
+                    `)
+                } catch (error) {
+                    isError1 = true;
+                    log.error(`ERROR | /membership/addCommunityLink - Error found while connecting to DB - ${error}`);
+                } finally {
+                    if (isError1) {
+                        return res.status(500).json({
+                            "error_schema": {
+                                "error_code": "nearbud-003-001",
+                                "error_message": `Error while connecting to DB`
+                            }
+                        })
+                    } else {
+                        respond.successResp(req, res, "nearbud-000-000", "Berhasil menambahkan data", 0, 0, 0, result)
+                    }
+                }
+            }
+        } else {
             return res.status(500).json({
                 "error_schema": {
                     "error_code": "nearbud-003-001",
-                    "error_message": `Error while connecting to DB - Failed to Update Community Link`
+                    "error_message": `Error while connecting to DB`
                 }
-            });
-        } else {
-            respond.successResp(req, res, "nearbud-000-000", "Berhasil menambahkan data", 0, 0, 0, result)
+            })
         }
     }
 })
@@ -295,11 +366,11 @@ exports.addEventLink = asyncHandler(async function addEventLink(req, res, users_
                 try {
                     console.log((`
                         INSERT INTO EVENTS_LINK (ID_EVENT, ID_USER, IS_APPROVED, CREATED) VALUES
-                        ('${event_id.toUpperCase()}', ${temp_query_user_id}, 'false', NOW() AT TIME ZONE 'Asia/Jakarta')
+                        ('${event_id.toUpperCase()}', ${temp_query_user_id}, 'false', NOW())
                     `))
                     var query_result = await pool.query(`
                         INSERT INTO EVENTS_LINK (ID_EVENT, ID_USER, IS_APPROVED, CREATED) VALUES
-                        ('${event_id.toUpperCase()}', ${temp_query_user_id}, 'false', NOW() AT TIME ZONE 'Asia/Jakarta')
+                        ('${event_id.toUpperCase()}', ${temp_query_user_id}, 'false', NOW())
                     `)
                 } catch (error) {
                     isError1 = true;
@@ -341,31 +412,37 @@ exports.getCommunityMember = asyncHandler(async function getCommunityMember(req,
     }
     
     console.log(`WITH LIST_PARTICIPANT AS (
-                                                SELECT DISTINCT ON (C.ID_USER)
-                                                C.ID_USER AS USERS_ID,
-                                                C.NAME AS USERS_NAME,
-                                                (SELECT ID_USER FROM IS_ADMIN WHERE ID_COMMUNITY ILIKE LOWER('${community_id}')) as ADMIN_ID,
-	                                            (select name from users where id_user = (SELECT ID_USER FROM IS_ADMIN WHERE ID_COMMUNITY ILIKE LOWER('${community_id}'))) AS ADMIN_NAME
-                                                FROM COMMUNITY_LINK A JOIN COMMUNITY B ON A.ID_COMMUNITY = B.ID_COMMUNITY
-                                                JOIN USERS C ON A.ID_USER = C.ID_USER
-                                                WHERE A.ID_COMMUNITY ILIKE LOWER('${community_id}') AND A.ID_USER NOT IN (SELECT ID_USER FROM IS_ADMIN WHERE ID_COMMUNITY ILIKE LOWER('${community_id}'))
-                                            )
-                                            SELECT *, COUNT (*)OVER ()
-                                            FROM LIST_PARTICIPANT`)
+        SELECT DISTINCT ON (C.ID_USER)
+        C.ID_USER AS USERS_ID,
+        C.NAME AS USERS_NAME,
+        'MEMBER' as role, c.ID_PROFILE
+        FROM COMMUNITY_LINK A JOIN COMMUNITY B ON A.ID_COMMUNITY = B.ID_COMMUNITY
+        JOIN USERS C ON A.ID_USER = C.ID_USER
+        WHERE A.ID_COMMUNITY ILIKE LOWER('${community_id}')
+        UNION 
+        SELECT ID_USER, (SELECT NAME FROM USERS WHERE ID_USER = A.ID_USER), 'ADMIN' as role, (SELECT ID_PROFILE FROM USERS WHERE ID_USER = A.ID_USER) AS ID_PROFILE
+        FROM IS_ADMIN A WHERE ID_COMMUNITY ILIKE LOWER('${community_id}')
+    )
+    SELECT *, COUNT (*)OVER ()
+    FROM LIST_PARTICIPANT
+    `)
 
     try {
         var query_result = await pool.query(`WITH LIST_PARTICIPANT AS (
-                                                SELECT DISTINCT ON (C.ID_USER)
-                                                C.ID_USER AS USERS_ID,
-                                                C.NAME AS USERS_NAME,
-                                                (SELECT ID_USER FROM IS_ADMIN WHERE ID_COMMUNITY ILIKE LOWER('${community_id}')) as ADMIN_ID,
-                                                (select name from users where id_user = (SELECT ID_USER FROM IS_ADMIN WHERE ID_COMMUNITY ILIKE LOWER('${community_id}'))) AS ADMIN_NAME
-                                                FROM COMMUNITY_LINK A JOIN COMMUNITY B ON A.ID_COMMUNITY = B.ID_COMMUNITY
-                                                JOIN USERS C ON A.ID_USER = C.ID_USER
-                                                WHERE A.ID_COMMUNITY ILIKE LOWER('${community_id}') AND A.ID_USER NOT IN (SELECT ID_USER FROM IS_ADMIN WHERE ID_COMMUNITY ILIKE LOWER('${community_id}'))
-                                            )
-                                            SELECT *, COUNT (*)OVER ()
-                                            FROM LIST_PARTICIPANT`)
+                                            SELECT DISTINCT ON (C.ID_USER)
+                                            C.ID_USER AS USERS_ID,
+                                            C.NAME AS USERS_NAME,
+                                            'MEMBER' as role, c.ID_PROFILE
+                                            FROM COMMUNITY_LINK A JOIN COMMUNITY B ON A.ID_COMMUNITY = B.ID_COMMUNITY
+                                            JOIN USERS C ON A.ID_USER = C.ID_USER
+                                            WHERE A.ID_COMMUNITY ILIKE LOWER('${community_id}')
+                                            UNION 
+                                            SELECT ID_USER, (SELECT NAME FROM USERS WHERE ID_USER = A.ID_USER), 'ADMIN' as role, (SELECT ID_PROFILE FROM USERS WHERE ID_USER = A.ID_USER) AS ID_PROFILE
+                                            FROM IS_ADMIN A WHERE ID_COMMUNITY ILIKE LOWER('${community_id}')
+                                        )
+                                        SELECT *, COUNT (*)OVER ()
+                                        FROM LIST_PARTICIPANT
+                                        `)
     } catch (error) {
         isError = true
         log.error(`ERROR | /membership/getCommunityMember - Error found while connect to DB - ${error}`)
@@ -374,19 +451,21 @@ exports.getCommunityMember = asyncHandler(async function getCommunityMember(req,
             if(query_result.rowCount > 0 ){
                 let admin = [], members = []
                 for( let i = 0; i < query_result.rowCount; i++){
-                    var object = {
-                        "users_id" : query_result.rows[i].users_id,
-                        "users_name" : query_result.rows[i].users_name
+                    console.log(query_result.rows[i].role)
+                    if(query_result.rows[i].role == "MEMBER"){
+                        members.push({
+                            "users_id" : query_result.rows[i].users_id,
+                            "users_name" : query_result.rows[i].users_name,
+                            "users_id_profile" : query_result.rows[i].id_profile
+                        })
+                    } else if(query_result.rows[i].role == "ADMIN"){
+                        admin.push({
+                            "admin_id" : query_result.rows[i].users_id,
+                            "admin_name" : query_result.rows[i].users_name,
+                            "admin_id_profile" : query_result.rows[i].id_profile
+                        })
                     }
-                    members.push(object)
                 }
-
-                var object = {
-                    "admin_id" : query_result.rows[0].admin_id,
-                    "admin_name" : query_result.rows[0].admin_name
-                }
-
-                admin.push(object)
 
                 var object1 = {
                     "community_admin" : admin,
@@ -433,6 +512,7 @@ exports.getCommunity_preview = asyncHandler(async function getCommunity_preview(
                         B.NAME AS INTEREST_NAME,
                         D.NAME AS CITY_NAME,
                         C.NAME AS PROVINCE_NAME,
+                        A.ID_PROFILE,
                         (SELECT COUNT(ID_USER) FROM COMMUNITY_LINK WHERE ID_COMMUNITY = A.ID_COMMUNITY AND IS_APPROVED = TRUE) AS MEMBER
                     FROM COMMUNITY A JOIN INTEREST B ON A.ID_INTEREST = B.ID
                     JOIN PROVINCE C ON A.ID_PROVINCE = C.ID 
@@ -451,6 +531,7 @@ exports.getCommunity_preview = asyncHandler(async function getCommunity_preview(
                                                     B.NAME AS INTEREST_NAME,
                                                     D.NAME AS CITY_NAME,
                                                     C.NAME AS PROVINCE_NAME,
+                                                    A.ID_PROFILE,
                                                     (SELECT COUNT(ID_USER) FROM COMMUNITY_LINK WHERE ID_COMMUNITY = A.ID_COMMUNITY AND IS_APPROVED = TRUE) AS MEMBER
                                                 FROM COMMUNITY A JOIN INTEREST B ON A.ID_INTEREST = B.ID
                                                 JOIN PROVINCE C ON A.ID_PROVINCE = C.ID 
@@ -470,6 +551,7 @@ exports.getCommunity_preview = asyncHandler(async function getCommunity_preview(
                     var object = {
                         "community_id" : query_result.rows[i].id_community,
                         "community_name" : query_result.rows[i].community_name,
+                        "community_id_profile" : query_result.rows[i].id_profile,
                         "interest_name" : query_result.rows[i].interest_name,
                         "city_based" : query_result.rows[i].city_name,
                         "province_based" : query_result.rows[i].province_based,
@@ -502,7 +584,7 @@ exports.updateEventLink = asyncHandler(async function updateEventLink(req, res, 
     let isError = false, isError1 = false, result = [], query = ""
 
     if(decision == "approved"){
-        query = `UPDATE EVENTS_LINK SET MODIFIED = NOW() AT TIME ZONE 'Asia/Jakarta', IS_APPROVED = 'true' WHERE ID_USER ILIKE LOWER('${users_id}') AND ID_EVENT ILIKE LOWER('${event_id}')`
+        query = `UPDATE EVENTS_LINK SET MODIFIED = NOW(), IS_APPROVED = 'true' WHERE ID_USER ILIKE LOWER('${users_id}') AND ID_EVENT ILIKE LOWER('${event_id}')`
     } else if (decision == "reject") {
         query = `DELETE FROM EVENTS_LINK WHERE ID_USER ILIKE LOWER('${users_id}') AND ID_EVENT ILIKE LOWER('${event_id}')`
     }

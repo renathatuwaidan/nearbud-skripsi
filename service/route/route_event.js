@@ -63,7 +63,7 @@ app.post("/addEvent", user_auth_controller.tokenVerif, function(req, res){
     let users_username_token = res.getHeader('users_username')
 
     event_controller.addEvent(req, res, event_name, event_description, event_date, event_duration, event_location, event_city, 
-        event_address, event_number_participant, event_image, event_category, event_interest, event_creator, event_coordinate, users_username_token)
+        event_address, event_number_participant, event_image, event_category, event_interest, event_creator, event_coordinate, users_username_token, event_profile)
 })
 
 app.patch("/editEvent", user_auth_controller.tokenVerif, function(req, res){

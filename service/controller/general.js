@@ -212,7 +212,7 @@ exports.getUser = asyncHandler(async function (req, res, suspended, users_id, us
 
     console.log(`
         WITH USER_QUERY AS (
-            SELECT DISTINCT (A.ID_USER), A.NAME, A.USERNAME,
+            SELECT DISTINCT (A.ID_USER), A.NAME, A.USERNAME, A.ID_PROFILE,
                 E.NAME AS PROVINCE_NAME, F.NAME AS CITY_NAME,
                 CASE 
                     WHEN A.id_user NOT IN (SELECT ID_REPORTEE FROM SUSPENDED) THEN 'No'
@@ -236,7 +236,7 @@ exports.getUser = asyncHandler(async function (req, res, suspended, users_id, us
     try {
         var query_result = await pool.query(`
             WITH USER_QUERY AS (
-                SELECT DISTINCT (A.ID_USER), A.NAME, A.USERNAME,
+                SELECT DISTINCT (A.ID_USER), A.NAME, A.USERNAME, A.ID_PROFILE,
                     E.NAME AS PROVINCE_NAME, F.NAME AS CITY_NAME,
                     CASE 
                         WHEN A.id_user NOT IN (SELECT ID_REPORTEE FROM SUSPENDED) THEN 'No'
@@ -270,6 +270,7 @@ exports.getUser = asyncHandler(async function (req, res, suspended, users_id, us
                         "users_name" : query_result.rows[i].name,
                         "users_username" : query_result.rows[i].username,
                         "users_suspended" : query_result.rows[i].suspended,
+                        "users_id_profile" : query_result.rows[i].id_profile,
                         "province_name" : query_result.rows[i].province_name,
                         "city_name" : query_result.rows[i].city_name,
                         "category_interest" : result_interest
@@ -326,31 +327,31 @@ exports.getSingleUser = asyncHandler(async function getSingleUser(req, res, user
     if(users_id || users_name || users_username || users_username_token)  query_where = "WHERE"
 
     if(!users_username && !users_id && !users_name){
-        query_users_username = `A.USERNAME ILIKE LOWER('%${users_username_token}%')`
+        query_users_username = `A.USERNAME ILIKE LOWER('${users_username_token}')`
     } else {
         if(users_username){
-            query_users_username = `A.USERNAME ILIKE LOWER('%${users_username}%')`
+            query_users_username = `A.USERNAME ILIKE LOWER('${users_username}')`
             if(users_id){
-                query_user_id = `AND A.ID_USER ILIKE LOWER('%${users_id}%')`
+                query_user_id = `AND A.ID_USER ILIKE LOWER('${users_id}')`
             } 
             if(users_name){
-                query_users_name = `AND A.NAME ILIKE LOWER('%${users_name}%')`
+                query_users_name = `AND A.NAME ILIKE LOWER('${users_name}')`
             }
         } else {
             if(users_id){
-                query_user_id = `A.ID_USER ILIKE LOWER('%${users_id}%')`
+                query_user_id = `A.ID_USER ILIKE LOWER('${users_id}')`
 
                 if(users_name){
-                    query_users_name = `AND A.NAME ILIKE LOWER('%${users_name}%')`
+                    query_users_name = `AND A.NAME ILIKE LOWER('${users_name}')`
                 }
             } else {
-                query_users_name = `A.NAME ILIKE LOWER('%${users_name}%')`
+                query_users_name = `A.NAME ILIKE LOWER('${users_name}')`
             }
         }
     }
 
     console.log(`SELECT 
-        DISTINCT A.ID_USER, A.NAME, A.USERNAME, A.GENDER, A.DATE_OF_BIRTH, A.DESCRIPTION, A.EMAIL, A.GENDER,
+        DISTINCT A.ID_USER, A.NAME, A.USERNAME, A.GENDER, A.DATE_OF_BIRTH, A.DESCRIPTION, A.EMAIL, A.GENDER, A.ID_PROFILE,
         (SELECT NAME FROM PROVINCE WHERE ID = A.ID_PROVINCE) AS PROVINCE_NAME,
 		(SELECT NAME FROM CITY WHERE ID = A.ID_CITY) AS CITY_NAME,
         CASE WHEN A.id_user NOT IN (SELECT ID_REPORTEE FROM SUSPENDED) THEN 'No'
@@ -362,7 +363,7 @@ exports.getSingleUser = asyncHandler(async function getSingleUser(req, res, user
     
     try {
         var query_result = await pool.query(`SELECT 
-                DISTINCT A.ID_USER, A.NAME, A.USERNAME, A.GENDER, A.DATE_OF_BIRTH, A.DESCRIPTION, A.EMAIL, A.GENDER,
+                DISTINCT A.ID_USER, A.NAME, A.USERNAME, A.GENDER, A.DATE_OF_BIRTH, A.DESCRIPTION, A.EMAIL, A.GENDER,A.ID_PROFILE,
                 (SELECT NAME FROM PROVINCE WHERE ID = A.ID_PROVINCE) AS PROVINCE_NAME,
 		        (SELECT NAME FROM CITY WHERE ID = A.ID_CITY) AS CITY_NAME,
                 CASE WHEN A.id_user NOT IN (SELECT ID_REPORTEE FROM SUSPENDED) THEN 'No'
@@ -387,9 +388,9 @@ exports.getSingleUser = asyncHandler(async function getSingleUser(req, res, user
                     var result_interest = await exports.getUserInterestCategory(req, res, query_result.rows[i].id_user)
 
                     if(query_result.rows[i].check_condition == 'Matched'){
-                        button_action = false
-                    } else {
                         button_action = true
+                    } else {
+                        button_action = false
                     }
 
                     var object = {
@@ -403,10 +404,11 @@ exports.getSingleUser = asyncHandler(async function getSingleUser(req, res, user
                         "users_email" : query_result.rows[i].email,
                         "users_gender" : query_result.rows[i].users_gender,
                         "users_suspended" : query_result.rows[i].suspended,
+                        "users_id_profile" : query_result.rows[i].id_profile,
                         "province_name" : query_result.rows[i].province_name,
                         "city_name" : query_result.rows[i].city_name,
                         "category_interest" : result_interest,
-                        "button_action" : button_action
+                        "isPersonal" : button_action
                     }
                     result.push(object)
                 }
@@ -432,7 +434,6 @@ exports.getSingleUser = asyncHandler(async function getSingleUser(req, res, user
 
 exports.getUserInterestCategory = asyncHandler(async function getUserInterestCategory(req, res, users_id_user, size) {
     let result = [], isError = false
-    console.log("219837982173")
 
     console.log(`WITH QUERY_REVIEW AS (
                     SELECT DISTINCT F.ID AS CATEGORY_ID, F.NAME AS CATEGORY_NAME, E.ID AS INTEREST_ID, E.NAME AS INTEREST_NAME, D.CREATED
@@ -547,7 +548,7 @@ exports.putInterestLink = asyncHandler (async function putInterestLink(req, res,
             INSERT INTO INTEREST_LINK(ID, CREATED, ID_INTEREST, ID_USER) VALUES 
             (
                 (SELECT MAX(id) + 1 FROM INTEREST_LINK), 
-                NOW() AT TIME ZONE 'Asia/Jakarta',
+                NOW(),
                 (SELECT ID FROM INTEREST WHERE ID = '${interest_id}'), 
                 (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username}'))
             )
@@ -567,9 +568,9 @@ exports.putInterestLink = asyncHandler (async function putInterestLink(req, res,
     }
 })
 
-exports.updateProfile = asyncHandler (async function updatedProfile(req, res, users_name, users_email, users_dob, users_gender, users_province, users_city, users_description, interest, users_username_token) {
+exports.updateProfile = asyncHandler (async function updatedProfile(req, res, users_name, users_email, users_dob, users_gender, users_province, users_city, users_description, interest, users_username_token, users_id_profile) {
     var isError = false, result = []
-    var query_users_dob = "", query_users_gender = "", query_province_name = "", query_city_name = "", query_users_description = "", query_users_name = "", query_users_email = ""
+    var query_users_dob = "", query_users_gender = "", query_province_name = "", query_city_name = "", query_users_description = "", query_users_name = "", query_users_email = "", query_users_id_profile = ""
 
     if(users_name){
         query_users_name = `,NAME = '${utility.toTitleCase(users_name)}'`
@@ -626,12 +627,16 @@ exports.updateProfile = asyncHandler (async function updatedProfile(req, res, us
         query_city_name = `,ID_CITY = (SELECT ID FROM CITY WHERE NAME ILIKE LOWER('%${users_city}%'))`
     }
 
-    if(users_city || users_province || users_description || users_gender || users_dob){
+    if(users_id_profile){
+        query_users_id_profile = `, ID_PROFILE = '${users_id_profile}'`
+    }
+
+    if(users_city || users_province || users_description || users_gender || users_dob || users_id_profile){
         var query_users_username = `WHERE USERNAME ILIKE LOWER('${users_username_token}')`
 
         try {
-            var query_result = await pool.query(`UPDATE USERS SET MODIFIED = NOW() AT TIME ZONE 'Asia/Jakarta' ${query_users_dob} ${query_users_gender} ${query_users_description} 
-                                ${query_province_name} ${query_city_name} ${query_users_name} ${query_users_email} ${query_users_username}`)
+            var query_result = await pool.query(`UPDATE USERS SET MODIFIED = NOW() ${query_users_dob} ${query_users_gender} ${query_users_description} 
+                                ${query_province_name} ${query_city_name} ${query_users_name} ${query_users_email} ${query_users_id_profile} ${query_users_username}`)
         } catch (error) {
             isError = true
             log.error(`ERROR | /auth/registerUser [username : "${users_username}"] - Error found while connect to DB - ${error}`)
@@ -644,10 +649,10 @@ exports.updateProfile = asyncHandler (async function updatedProfile(req, res, us
                     }
                 })
             } else {
-                console.log(`DELETE FROM INTEREST_LINK WHERE ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('%${users_username_token}%'))`)
+                console.log(`DELETE FROM INTEREST_LINK WHERE ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}'))`)
 
                 try {
-                    var query_result = await pool.query(`DELETE FROM INTEREST_LINK WHERE ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('%${users_username_token}%'))`)
+                    var query_result = await pool.query(`DELETE FROM INTEREST_LINK WHERE ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}'))`)
                 } catch (error) {
                     isError = true
                     log.error(`ERROR | /general/updateProfile - DELETE EXISTING INTEREST [username : "${users_username_token}"] - Error found while connecting to DB - ${error}`);
@@ -717,9 +722,9 @@ exports.addReport = asyncHandler(async function addReport(req, res, reportee, re
         var query_result = await pool.query(`INSERT INTO REPORT_LINK 
                                             (id, CREATED, ID_REPORTEE, ID_REPORTER, REPORT_TYPE, REPORT_DETAIL) VALUES 
                                             ( (SELECT MAX(ID)+1 FROM REPORT_LINK), 
-                                                NOW() AT TIME ZONE 'Asia/Jakarta', 
+                                                NOW(), 
                                                 '${reportee.toUpperCase()}',
-                                                (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('%${users_username_token}%')),
+                                                (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')),
                                                 (SELECT ID FROM REPORT_TYPE WHERE REPORT_TYPE ILIKE LOWER('%${report_type}%')),
                                                 '${report_detail}'
                                             )`)
@@ -745,7 +750,7 @@ exports.addReport = asyncHandler(async function addReport(req, res, reportee, re
 exports.updatePassword = asyncHandler (async function updatePassword(req, res, password_new, password_old, users_username_token) {
     var isError = false, result = []
 
-    console.log(`UPDATE USERS SET MODIFIED = NOW(), PASSWORD = '${password_new}' WHERE USERNAME ILIKE LOWER('%${users_username_token}%') AND PASSWORD = '${password_old}'`)
+    console.log(`UPDATE USERS SET MODIFIED = NOW(), PASSWORD = '${password_new}' WHERE USERNAME ILIKE LOWER('${users_username_token}') AND PASSWORD = '${password_old}'`)
     
     try {
         var query_result = await pool.query(`UPDATE USERS SET MODIFIED = NOW(), PASSWORD = '${password_new}' WHERE USERNAME ILIKE LOWER('${users_username_token}') AND PASSWORD = '${password_old}'`)
@@ -851,5 +856,13 @@ exports.getReview = asyncHandler(async function getReview(req, res, reviewee_id,
                 }
             })
         }
+    }
+})
+
+exports.getRoomIdList - asyncHandler(async function getRoomIdList(req, res, users_username_token) {
+    try {
+        
+    } catch (error) {
+        
     }
 })
