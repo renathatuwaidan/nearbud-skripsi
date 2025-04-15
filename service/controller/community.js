@@ -52,7 +52,7 @@ exports.getCommunityPreview = asyncHandler(async function getCommunityPreview(re
         }
 
         if(status){
-            if(status.toLowerCase == 'available'){
+            if(status.toLowerCase() == 'available'){
                 query_status = `AND ID_COMMUNITY NOT IN (SELECT ID_COMMUNITY FROM COMMUNITY_LINK WHERE ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER ('${users_username_token}')) AND IS_APPROVED = 'true')`
             }
         }
@@ -87,7 +87,7 @@ exports.getCommunityPreview = asyncHandler(async function getCommunityPreview(re
             }
 
             if(status){
-                if(status.toLowerCase == 'available'){
+                if(status.toLowerCase() == 'available'){
                     query_status = `AND ID_COMMUNITY NOT IN (SELECT ID_COMMUNITY FROM COMMUNITY_LINK WHERE ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER ('${users_username_token}')) AND IS_APPROVED = 'true')`
                 }
             }
@@ -118,7 +118,7 @@ exports.getCommunityPreview = asyncHandler(async function getCommunityPreview(re
                 }
 
                 if(status){
-                    if(status.toLowerCase == 'available'){
+                    if(status.toLowerCase() == 'available'){
                         query_status = `AND ID_COMMUNITY NOT IN (SELECT ID_COMMUNITY FROM COMMUNITY_LINK WHERE ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER ('${users_username_token}')) AND IS_APPROVED = 'true')`
                     }
                 }
@@ -145,7 +145,7 @@ exports.getCommunityPreview = asyncHandler(async function getCommunityPreview(re
                     }
 
                     if(status){
-                        if(status.toLowerCase == 'available'){
+                        if(status.toLowerCase() == 'available'){
                             query_status = `AND ID_COMMUNITY NOT IN (SELECT ID_COMMUNITY FROM COMMUNITY_LINK WHERE ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER ('${users_username_token}')) AND IS_APPROVED = 'true')`
                         }
                     }
@@ -168,7 +168,7 @@ exports.getCommunityPreview = asyncHandler(async function getCommunityPreview(re
                         }
 
                         if(status){
-                            if(status.toLowerCase == 'available'){
+                            if(status.toLowerCase() == 'available'){
                                 query_status = `AND ID_COMMUNITY NOT IN (SELECT ID_COMMUNITY FROM COMMUNITY_LINK WHERE ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER ('${users_username_token}')) AND IS_APPROVED = 'true')`
                             }
                         }
@@ -180,14 +180,14 @@ exports.getCommunityPreview = asyncHandler(async function getCommunityPreview(re
                             if(city_id4) {city_id4 = `,'${city_id4}'`} else {city_id4 = ''}
                             if(city_id5) {city_id5 = `,'${city_id5}'`} else {city_id5 = ''}
                 
-                            query_city = `AND A.ID_city IN (${city_id1} ${city_id2} ${city_id3} ${city_id4} ${city_id5})`
+                            query_city = `WHERE A.ID_city IN (${city_id1} ${city_id2} ${city_id3} ${city_id4} ${city_id5})`
                             
                             if(province_based){
                                 query_province = `AND C.NAME ILIKE LOWER('${province_based}')`
                             }
 
                             if(status){
-                                if(status.toLowerCase == 'available'){
+                                if(status.toLowerCase() == 'available'){
                                     query_status = `AND ID_COMMUNITY NOT IN (SELECT ID_COMMUNITY FROM COMMUNITY_LINK WHERE ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER ('${users_username_token}')) AND IS_APPROVED = 'true')`
                                 }
                             }
@@ -196,14 +196,14 @@ exports.getCommunityPreview = asyncHandler(async function getCommunityPreview(re
                                 query_province = `WHERE C.NAME ILIKE LOWER('${province_based}')`
 
                                 if(status){
-                                    if(status.toLowerCase == 'available'){
+                                    if(status.toLowerCase() == 'available'){
                                         query_status = `AND ID_COMMUNITY NOT IN (SELECT ID_COMMUNITY FROM COMMUNITY_LINK WHERE ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER ('${users_username_token}')) AND IS_APPROVED = 'true')`
                                     }
                                 }
                             } else {
                                 if(status){
-                                    if(status.toLowerCase == 'available'){
-                                        query_status = `ID_COMMUNITY NOT IN (SELECT ID_COMMUNITY FROM COMMUNITY_LINK WHERE ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER ('${users_username_token}')) AND IS_APPROVED = 'true')`
+                                    if(status.toLowerCase() == 'available'){
+                                        query_status = `WHERE ID_COMMUNITY NOT IN (SELECT ID_COMMUNITY FROM COMMUNITY_LINK WHERE ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER ('${users_username_token}')) AND IS_APPROVED = 'true')`
                                     }
                                 }
                             }
@@ -214,7 +214,6 @@ exports.getCommunityPreview = asyncHandler(async function getCommunityPreview(re
         }        
     }
 
-
     console.log(`WITH COMMUNITY_PREVIEW AS (
         SELECT
             A.ID_COMMUNITY,
@@ -222,6 +221,7 @@ exports.getCommunityPreview = asyncHandler(async function getCommunityPreview(re
             B.NAME AS INTEREST_NAME,
             D.NAME AS CITY_NAME,
             C.NAME AS PROVINCE_NAME,
+            A.ID_PROFILE,
             (SELECT COUNT(ID_USER) FROM COMMUNITY_LINK WHERE ID_COMMUNITY = A.ID_COMMUNITY AND IS_APPROVED = TRUE) AS MEMBER
         FROM COMMUNITY A JOIN INTEREST B ON A.ID_INTEREST = B.ID
         JOIN PROVINCE C ON A.ID_PROVINCE = C.ID 
@@ -240,6 +240,7 @@ exports.getCommunityPreview = asyncHandler(async function getCommunityPreview(re
                                                     B.NAME AS INTEREST_NAME,
                                                     D.NAME AS CITY_NAME,
                                                     C.NAME AS PROVINCE_NAME,
+                                                    A.ID_PROFILE,
                                                     (SELECT COUNT(ID_USER) FROM COMMUNITY_LINK WHERE ID_COMMUNITY = A.ID_COMMUNITY AND IS_APPROVED = TRUE) AS MEMBER
                                                 FROM COMMUNITY A JOIN INTEREST B ON A.ID_INTEREST = B.ID
                                                 JOIN PROVINCE C ON A.ID_PROVINCE = C.ID 
@@ -263,7 +264,8 @@ exports.getCommunityPreview = asyncHandler(async function getCommunityPreview(re
                         "interest_name" : query_result.rows[i].interest_name,
                         "city_based" : query_result.rows[i].city_name,
                         "province_based" : query_result.rows[i].province_based,
-                        "community_current_member" : query_result.rows[i].member
+                        "community_current_member" : query_result.rows[i].member,
+                        "community_id_profile" : query_result.rows[i].id_profile 
                     }
                     result.push(object)
                 }
@@ -294,13 +296,13 @@ exports.getCommunityCreator = asyncHandler(async function getCommunityCreator(re
     var query_pagination = respond.query_pagination(req,res, page, size)
 
     if(id_creator){
-        query_creator = `A.ID_USER ILIKE LOWER('${id_creator}'`
+        query_creator = `A.ID_USER ILIKE LOWER('${id_creator}')`
     } else {
         query_creator = `A.ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}'))`
     }
 
     console.log(`WITH COMMUNITY_ADMIN AS (
-                    SELECT A.ID_COMMUNITY, C.NAME
+                    SELECT A.ID_COMMUNITY, C.NAME, c.ID_PROFILE
                     FROM IS_ADMIN A JOIN USERS B ON A.ID_USER = B.ID_USER
                     JOIN COMMUNITY C ON A.ID_COMMUNITY = C.ID_COMMUNITY
                     WHERE ${query_creator}
@@ -311,7 +313,7 @@ exports.getCommunityCreator = asyncHandler(async function getCommunityCreator(re
 
     try {
         var query_result = await pool.query(`WITH COMMUNITY_ADMIN AS (
-                                                SELECT A.ID_COMMUNITY, C.NAME, 'on waiting firebase' AS ID_PROFILE
+                                                SELECT A.ID_COMMUNITY, C.NAME, C.ID_PROFILE
                                                 FROM IS_ADMIN A JOIN USERS B ON A.ID_USER = B.ID_USER
                                                 JOIN COMMUNITY C ON A.ID_COMMUNITY = C.ID_COMMUNITY
                                                 WHERE ${query_creator}
@@ -329,7 +331,7 @@ exports.getCommunityCreator = asyncHandler(async function getCommunityCreator(re
                     var object = {
                         "community_id" : query_result.rows[i].id_community,
                         "community_name" : query_result.rows[i].name,
-                        "id_profile" : query_result.rows[i].id_profile
+                        "community_id_profile" : query_result.rows[i].id_profile
                     }
                     result.push(object)
                 }
@@ -348,6 +350,180 @@ exports.getCommunityCreator = asyncHandler(async function getCommunityCreator(re
                 "error_schema" : {
                     "error_code" : "nearbud-003-001",
                     "error_message" : `Error while connecting to DB`
+                }
+            })
+        }
+    }
+})
+
+exports.addAdmin = asyncHandler(async function addAdmin(req, res, id_user, id_community, users_username_token) {
+    let isError1 = false, result = [], isError = false, isError2 = false
+
+    if(!id_user || !id_community){
+        return res.status(500).json({
+            "error_schema" : {
+                "error_code" : "nearbud-002-002",
+                "error_message" : `Data pada BODY tidak lengkap`
+            }
+        })
+    }
+
+    console.log( `SELECT * FROM IS_ADMIN WHERE ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')) AND ID_COMMUNITY ILIKE LOWER('${id_community}')`)
+
+    try {
+        var query_result = await pool.query( `SELECT * FROM IS_ADMIN WHERE ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')) AND ID_COMMUNITY ILIKE LOWER('${id_community}')`)
+    } catch (error) {
+        isError = true
+        log.error(`ERROR | /community/addAdmin - Error found while connecting to DB - ${error}`);
+    } finally {
+        if(!isError){
+            if(query_result.rowCount == 0){
+                return res.status(500).json({
+                    "error_schema": {
+                        "error_code": "nearbud-000-001",
+                        "error_message": `Unauthorized, anda bukan admin dari komunitas`
+                    }
+                })
+            } else {
+                try {
+                    var query_result = await pool.query(`
+                        INSERT INTO IS_ADMIN(ID, ID_COMMUNITY, ID_USER, CREATED) VALUES 
+                        (
+                            (SELECT MAX(id) + 1 FROM IS_ADMIN), 
+                            (SELECT ID_COMMUNITY FROM COMMUNITY WHERE ID_COMMUNITY ILIKE LOWER('${id_community}')), 
+                            (SELECT ID_USER FROM USERS WHERE ID_USER ILIKE LOWER('${id_user}')), 
+                            NOW()
+                        )
+                    `)
+                } catch (error) {
+                    isError1 = true;
+                    log.error(`ERROR | /community/addAdmin - Error found while connecting to DB - ${error}`);
+                } finally {
+                    if (isError1) {
+                        return res.status(500).json({
+                            "error_schema": {
+                                "error_code": "nearbud-003-001",
+                                "error_message": `Error while connecting to DB`
+                            }
+                        })
+                    } else {
+                        try {
+                            var query_result = await pool.query(`
+                                DELETE FROM COMMUNITY_LINK WHERE ID_USER ILIKE LOWER('${id_user}') AND ID_COMMUNITY ILIKE LOWER('${id_community}')
+                            `)
+                        } catch (error) {
+                            isError2 = true
+                            log.error(`ERROR | /community/addAdmin - Error found while connecting to DB - ${error}`);
+                        } finally {
+                            if(!isError2){
+                                respond.successResp(req, res, "nearbud-000-000", "Berhasil menambahkan data", 0, 0, 0, result)
+                            } else {
+                                return res.status(500).json({
+                                    "error_schema": {
+                                        "error_code": "nearbud-003-001",
+                                        "error_message": `Error while connecting to DB`
+                                    }
+                                })
+                            }
+                        }
+                    }
+                }
+            }
+        } else {
+            return res.status(500).json({
+                "error_schema": {
+                    "error_code": "nearbud-003-001",
+                    "error_message": `Error while connecting to DB`
+                }
+            })
+        }
+    }
+})
+
+exports.deleteAdmin = asyncHandler(async function deleteAdmin(req, res, id_user, id_community, users_username_token) {
+    let isError1 = false, result = [], isError = false, isError2 = false
+
+    if(!id_user || !id_community){
+        return res.status(500).json({
+            "error_schema" : {
+                "error_code" : "nearbud-002-002",
+                "error_message" : `Data pada BODY tidak lengkap`
+            }
+        })
+    }
+
+    console.log( `SELECT * FROM IS_ADMIN WHERE ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')) AND ID_COMMUNITY ILIKE LOWER('${id_community}')`)
+
+    try {
+        var query_result = await pool.query( `SELECT * FROM IS_ADMIN WHERE ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')) AND ID_COMMUNITY ILIKE LOWER('${id_community}')`)
+    } catch (error) {
+        isError = true
+        log.error(`ERROR | /community/addAdmin - Error found while connecting to DB - ${error}`);
+    } finally {
+        if(!isError){
+            if(query_result.rowCount == 0){
+                return res.status(500).json({
+                    "error_schema": {
+                        "error_code": "nearbud-000-001",
+                        "error_message": `Unauthorized, anda bukan admin dari komunitas`
+                    }
+                })
+            } else {
+                try {
+                    var query_result = await pool.query(`
+                        DELETE FROM IS_ADMIN WHERE ID_USER ILIKE LOWER('${id_user}') AND ID_COMMUNITY ILIKE LOWER('${id_community}')
+                    `)
+                } catch (error) {
+                    isError1 = true;
+                    log.error(`ERROR | /community/addAdmin - Error found while connecting to DB - ${error}`);
+                } finally {
+                    if (isError1) {
+                        return res.status(500).json({
+                            "error_schema": {
+                                "error_code": "nearbud-003-001",
+                                "error_message": `Error while connecting to DB`
+                            }
+                        })
+                    } else {
+                        console.log(`
+                            INSERT INTO COMMUNITY_LINK (ID, ID_COMMUNITY, ID_USER, IS_APPROVED) 
+                            VALUES ((SELECT MAX(ID) + 1 FROM COMMUNITY_LINK),
+                            (SELECT ID_COMMUNITY FROM COMMUNITY WHERE ID_COMMUNITY ILIKE LOWER('${id_community}')), 
+                            (SELECT ID_USER FROM USERS WHERE ID_USER ILIKE LOWER('${id_user}')), 
+                            'true')
+                        `)
+
+                        try {
+                            var query_result = await pool.query(`
+                                INSERT INTO COMMUNITY_LINK (ID, ID_COMMUNITY, ID_USER, IS_APPROVED) 
+                                VALUES ((SELECT MAX(ID) + 1 FROM COMMUNITY_LINK),
+                                (SELECT ID_COMMUNITY FROM COMMUNITY WHERE ID_COMMUNITY ILIKE LOWER('${id_community}')), 
+                                (SELECT ID_USER FROM USERS WHERE ID_USER ILIKE LOWER('${id_user}')), 
+                                'true')
+                            `)
+                        } catch (error) {
+                            isError2 = true
+                            log.error(`ERROR | /community/addAdmin - Error found while connecting to DB - ${error}`);
+                        } finally {
+                            if(!isError2){
+                                respond.successResp(req, res, "nearbud-000-000", "Berhasil menghapus data", 0, 0, 0, result)
+                            } else {
+                                return res.status(500).json({
+                                    "error_schema": {
+                                        "error_code": "nearbud-003-001",
+                                        "error_message": `Error while connecting to DB`
+                                    }
+                                })
+                            }
+                        }
+                    }
+                }
+            }
+        } else {
+            return res.status(500).json({
+                "error_schema": {
+                    "error_code": "nearbud-003-001",
+                    "error_message": `Error while connecting to DB`
                 }
             })
         }
@@ -377,13 +553,14 @@ exports.getCommunityDetail = asyncHandler(async function getCommunityDetail(req,
                 A.ID_COMMUNITY,
                 A.NAME AS COMMUNITY_NAME,
                 A.DESCRIPTION,
+                A.ID_PROFILE,
                 (SELECT COUNT(ID_EVENT) FROM EVENTS WHERE ID_CREATOR = A.ID_COMMUNITY) AS CREATED_EVENT,
                 (SELECT COUNT(ID_USER) FROM COMMUNITY_LINK WHERE ID_COMMUNITY = A.ID_COMMUNITY AND IS_APPROVED = TRUE) AS MEMBER,
                 B.NAME AS INTEREST_NAME,
                 D.NAME AS CITY_NAME,
                 C.NAME AS PROVINCE_NAME,
                 CASE 
-                    WHEN ((SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')) = (SELECT ID_USER FROM IS_ADMIN WHERE ID_COMMUNITY = A.ID_COMMUNITY)) THEN 'isCreator'
+                    WHEN ((SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')) = (SELECT ID_USER FROM IS_ADMIN WHERE ID_COMMUNITY = A.ID_COMMUNITY AND ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')))) THEN 'isCreator'
                     WHEN ((SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')) IN (SELECT ID_USER FROM COMMUNITY_LINK WHERE ID_COMMUNITY = A.ID_COMMUNITY AND IS_APPROVED = TRUE)) THEN 'Accepted'
                     WHEN ((SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')) IN (SELECT ID_USER FROM COMMUNITY_LINK WHERE ID_COMMUNITY = A.ID_COMMUNITY AND IS_APPROVED = FALSE)) THEN 'Pending'
                     ELSE 'Nothing'
@@ -407,13 +584,14 @@ exports.getCommunityDetail = asyncHandler(async function getCommunityDetail(req,
                                                     B.NAME AS INTEREST_NAME,
                                                     D.NAME AS CITY_NAME,
                                                     C.NAME AS PROVINCE_NAME,
+                                                    A.ID_PROFILE,
                                                     CASE 
-                                                        WHEN ((SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')) = (SELECT ID_USER FROM IS_ADMIN WHERE ID_COMMUNITY = A.ID_COMMUNITY)) THEN 'isCreator'
+                                                        WHEN ((SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')) = (SELECT ID_USER FROM IS_ADMIN WHERE ID_COMMUNITY = A.ID_COMMUNITY AND ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')))) THEN 'isCreator'
                                                         WHEN ((SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')) IN (SELECT ID_USER FROM COMMUNITY_LINK WHERE ID_COMMUNITY = A.ID_COMMUNITY AND IS_APPROVED = TRUE)) THEN 'Accepted'
                                                         WHEN ((SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')) IN (SELECT ID_USER FROM COMMUNITY_LINK WHERE ID_COMMUNITY = A.ID_COMMUNITY AND IS_APPROVED = FALSE)) THEN 'Pending'
                                                         ELSE 'Nothing'
                                                     END AS USER_STATUS
-                                                FROM COMMUNITY A JOIN INTEREST B ON A.ID_INTEREST = B.ID
+                                                    FROM COMMUNITY A JOIN INTEREST B ON A.ID_INTEREST = B.ID
                                                 JOIN PROVINCE C ON A.ID_PROVINCE = C.ID
                                                 JOIN CITY D ON A.ID_CITY = D.ID
                                                 ${query_community}
@@ -431,6 +609,7 @@ exports.getCommunityDetail = asyncHandler(async function getCommunityDetail(req,
                         "community_id" : query_result.rows[i].id_community,
                         "community_name" : query_result.rows[i].community_name,
                         "community_description" : query_result.rows[i].description,
+                        "community_id_profile" : query_result.rows[i].id_profile,
                         "interest_name" : query_result.rows[i].interest_name,
                         "city_based" : query_result.rows[i].city_name,
                         "province_based" : query_result.rows[i].province_name,
@@ -458,7 +637,7 @@ exports.getCommunityDetail = asyncHandler(async function getCommunityDetail(req,
     }
 })
 
-exports.addCommunity = asyncHandler(async function addEvent(req, res, community_name, community_description, province_name, city_name, interest_id, users_username_token){
+exports.addCommunity = asyncHandler(async function addEvent(req, res, community_name, community_description, province_name, city_name, interest_id, users_username_token, community_id_profile){
     let isError = false, result = []
 
     if(!community_name || !community_description || !province_name || !city_name || !interest_id){
@@ -470,12 +649,16 @@ exports.addCommunity = asyncHandler(async function addEvent(req, res, community_
         })
     }
 
+    if(!community_id_profile){
+        id_profile = ""
+    }
+
     community_name = utility.toTitleCase(community_name)
 
     try {
-        var query_result = await pool.query(`INSERT INTO COMMUNITY (CREATED, NAME, ID_PROVINCE, ID_CITY, ID_INTEREST, DESCRIPTION) 
-                                            VALUES (NOW() AT TIME ZONE 'Asia/Jakarta', '${community_name}', (SELECT ID FROM PROVINCE WHERE NAME ILIKE LOWER('${province_name}')),
-                                            (SELECT ID FROM CITY WHERE NAME ILIKE LOWER('${city_name}')), ${interest_id},'${community_description}')`)
+        var query_result = await pool.query(`INSERT INTO COMMUNITY (CREATED, NAME, ID_PROVINCE, ID_CITY, ID_INTEREST, DESCRIPTION, ID_PROFILE) 
+                                            VALUES (NOW(), '${community_name}', (SELECT ID FROM PROVINCE WHERE NAME ILIKE LOWER('${province_name}')),
+                                            (SELECT ID FROM CITY WHERE NAME ILIKE LOWER('${city_name}')), ${interest_id},'${community_description}', '${community_id_profile}')`)
     } catch (error) {
         isError = true
         log.error(`ERROR | /community/addCommunity [username : "${users_username_token}"] - Error found while connect to DB - ${error}`)
@@ -486,7 +669,7 @@ exports.addCommunity = asyncHandler(async function addEvent(req, res, community_
 
                 try {
                     query_result_1 = await pool.query(`INSERT INTO IS_ADMIN (ID, CREATED, ID_USER, ID_COMMUNITY) 
-                                                        VALUES ((SELECT MAX(ID)+1 FROM IS_ADMIN), NOW() AT TIME ZONE 'Asia/Jakarta', (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')), 
+                                                        VALUES ((SELECT MAX(ID)+1 FROM IS_ADMIN), NOW(), (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')), 
                                                         (SELECT ID_COMMUNITY FROM COMMUNITY WHERE NAME ILIKE LOWER('${community_name}')))`)
                 } catch (error) {
                     isError1 = true
@@ -516,7 +699,7 @@ exports.addCommunity = asyncHandler(async function addEvent(req, res, community_
     }
 })
 
-exports.editCommunity = asyncHandler(async function editCommunity(req, res, community_name, community_description, province_name, city_name, interest_id, users_username_token, community_id) {
+exports.editCommunity = asyncHandler(async function editCommunity(req, res, community_name, community_description, province_name, city_name, interest_id, users_username_token, community_id, id_profile) {
     let isError = false, result = []
 
     if(!community_id){
@@ -559,12 +742,16 @@ exports.editCommunity = asyncHandler(async function editCommunity(req, res, comm
         interest_id = `,ID_INTEREST = '${interest_id.toUpperCase()}'`
     } else { interest_id = '' }
 
-    console.log(`UPDATE COMMUNITY SET MODIFIED = NOW() AT TIME ZONE 'Asia/Jakarta' ${community_name}${community_description} 
-        ${province_name} ${city_name} ${interest_id} WHERE ID_COMMUNITY ILIKE LOWER('${community_id}')`)
+    if(id_profile){
+        id_profile = `, ID_PROFILE = '${id_profile}'`
+    } else { id_profile = '' }
+
+    console.log(`UPDATE COMMUNITY SET MODIFIED = NOW() ${community_name}${community_description} 
+        ${province_name} ${city_name} ${interest_id} ${id_profile} WHERE ID_COMMUNITY ILIKE LOWER('${community_id}')`)
 
     try {
-        query_result_1 = await pool.query(`UPDATE COMMUNITY SET MODIFIED = NOW() AT TIME ZONE 'Asia/Jakarta' ${community_name}${community_description} 
-            ${province_name} ${city_name} ${interest_id} WHERE ID_COMMUNITY ILIKE LOWER('${community_id}')`)
+        query_result_1 = await pool.query(`UPDATE COMMUNITY SET MODIFIED = NOW() ${community_name}${community_description} 
+            ${province_name} ${city_name} ${interest_id} ${id_profile} WHERE ID_COMMUNITY ILIKE LOWER('${community_id}')`)
     } catch (error) {
         isError = true
         log.error(`ERROR | /community/editCommunity [username : "${users_username_token}"] - Error found while connect to DB - ${error}`)

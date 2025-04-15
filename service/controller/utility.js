@@ -1,8 +1,12 @@
 const asyncHandler = require("express-async-handler")
+
 const dayjs = require('dayjs')
 require('dayjs/locale/id');
 const utc = require('dayjs/plugin/utc');
-dayjs.extend(utc);
+const timezone = require('dayjs/plugin/timezone');
+dayjs.extend(utc)
+dayjs.extend(timezone)
+
 const log = require("../utils/logger")
 const config = require("../config/general")
 
@@ -97,10 +101,10 @@ exports.displayEndDateTime = function displayEndDateTime(eventDate, eventDuratio
 }
 
 exports.timestampEndDate = function timestampEndDate(eventDate, eventDuration) {
-    const startDate = dayjs(eventDate).utc()
+    const startDate = dayjs(eventDate).tz('Asia/Jakarta')
     const endDate = startDate.add(eventDuration, 'minute')
 
-    return endDate.toISOString()
+    return dayjs.utc(endDate).tz('Asia/Jakarta').format('YYYY-MM-DDTHH:mm:ss')
 };
 
 exports.convertdbDate = function convertdbDate(date){

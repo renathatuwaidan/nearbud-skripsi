@@ -74,10 +74,11 @@ app.patch("/updateProfile", user_auth_controller.tokenVerif, function(req, res){
     let users_province = req.body.users_province
     let users_city = req.body.users_city
     let users_description = req.body.users_description
+    let users_id_profile = req.body.users_id_profile
     let interest = req.body.interest
     let users_username_token = res.getHeader('users_username')
 
-    general_controller.updateProfile(req, res, users_name, users_email, users_dob, users_gender, users_province, users_city, users_description, interest, users_username_token)
+    general_controller.updateProfile(req, res, users_name, users_email, users_dob, users_gender, users_province, users_city, users_description, interest, users_username_token, users_id_profile)
 })
 
 app.put("/updatePassword", user_auth_controller.tokenVerif, function(req, res){
@@ -109,6 +110,12 @@ app.get("/getReview", user_auth_controller.tokenVerif, function(req, res){
     let users_username_token = res.getHeader('users_username')
     
     general_controller.getReview(res, res, reviewee_id, users_username_token)
+})
+
+app.get("/getRoomIdList", user_auth_controller.tokenVerif, function(req, res){
+    let users_username_token = res.getHeader('users_username')
+
+    general_controller.getRoomIdList(req, res, users_username_token)
 })
 
 module.exports = app

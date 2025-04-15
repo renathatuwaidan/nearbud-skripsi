@@ -4,6 +4,11 @@ const log = require("../utils/logger")
 const utility = require("./utility")
 const respond = require('./respond')
 const membership = require("./membership")
+const dayjs = require('dayjs')
+const utc = require('dayjs/plugin/utc');
+const timezone = require('dayjs/plugin/timezone');
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 exports.getEventsPreview = asyncHandler(async function getEventsPreview(req, res, interest_id1, interest_id2, interest_id3, interest_id4, interest_id5,category_id1, category_id2, category_id3, category_id4, category_id5, province_based, event_location,event_date, event_number_participant, status, event_creator, users_username_token, size, page, city_id1, city_id2, city_id3, city_id4, city_id5) {
     var query_interest = "", query_category = "", query_city = "", query_province_based = "", query_event_location = "", query_event_number_participant = "", query_where = "", query_event_date = "", query_status = "", query_event_creator = "", isError = false, result = []
@@ -33,16 +38,13 @@ exports.getEventsPreview = asyncHandler(async function getEventsPreview(req, res
 
         if(event_date){
             if(event_date == "today"){
-                var temp_eventDate = Date.now()
-                event_date = utility.convertdbDate()
-
-                var tempDate = utility.convertdbDate(event_date)
-                query_event_date = `AND A.DATE::DATE = '${tempDate}'`
+                query_event_date = `AND A.DATE >= (NOW() AT TIME ZONE 'Asia/Jakarta')
+                                    AND A.DATE <= (NOW() AT TIME ZONE 'Asia/Jakarta') + INTERVAL '1 day'`
             }
 
             if(event_date == "now"){
-                query_event_date = `AND DATE >= NOW() 
-                                    AND DATE <= NOW() + INTERVAL '6 hours'`
+                query_event_date = `AND A.DATE >= (NOW() AT TIME ZONE 'Asia/Jakarta')
+                                    AND A.DATE <= (NOW() AT TIME ZONE 'Asia/Jakarta') + INTERVAL '6 hours'`
             }
         }
     
@@ -61,7 +63,7 @@ exports.getEventsPreview = asyncHandler(async function getEventsPreview(req, res
         }
     
         if(event_location){
-            query_event_location = `AND A.LOCATION ILIKE LOWER('%${event_location}%')`
+            query_event_location = `AND A.LOCATION ILIKE LOWER('${event_location}')`
         }
     
         if(event_number_participant){
@@ -102,16 +104,13 @@ exports.getEventsPreview = asyncHandler(async function getEventsPreview(req, res
         
             if(event_date){
                 if(event_date == "today"){
-                    var temp_eventDate = Date.now()
-                    event_date = utility.convertdbDate()
-    
-                    var tempDate = utility.convertdbDate(event_date)
-                    query_event_date = `AND A.DATE::DATE = '${tempDate}'`
+                    query_event_date = `AND A.DATE >= (NOW() AT TIME ZONE 'Asia/Jakarta')
+                                        AND A.DATE <= (NOW() AT TIME ZONE 'Asia/Jakarta') + INTERVAL '1 day'`
                 }
     
                 if(event_date == "now"){
-                    query_event_date = `AND DATE >= NOW() 
-                                        AND DATE <= NOW() + INTERVAL '6 hours'`
+                    query_event_date = `AND A.DATE >= (NOW() AT TIME ZONE 'Asia/Jakarta')
+                                        AND A.DATE <= (NOW() AT TIME ZONE 'Asia/Jakarta') + INTERVAL '6 hours'`
                 }
             }
 
@@ -173,16 +172,13 @@ exports.getEventsPreview = asyncHandler(async function getEventsPreview(req, res
 
                 if(event_date){
                     if(event_date == "today"){
-                        var temp_eventDate = Date.now()
-                        event_date = utility.convertdbDate()
-
-                        var tempDate = utility.convertdbDate(event_date)
-                        query_event_date = `AND A.DATE::DATE = '${tempDate}'`
+                        query_event_date = `AND A.DATE >= (NOW() AT TIME ZONE 'Asia/Jakarta')
+                                            AND A.DATE <= (NOW() AT TIME ZONE 'Asia/Jakarta') + INTERVAL '1 day'`
                     }
 
                     if(event_date == "now"){
-                        query_event_date = `AND DATE >= NOW() 
-                                            AND DATE <= NOW() + INTERVAL '6 hours'`
+                        query_event_date = `AND A.DATE >= (NOW() AT TIME ZONE 'Asia/Jakarta')
+                                            AND A.DATE <= (NOW() AT TIME ZONE 'Asia/Jakarta') + INTERVAL '6 hours'`
                     }
                 }
             
@@ -224,16 +220,13 @@ exports.getEventsPreview = asyncHandler(async function getEventsPreview(req, res
 
                     if(event_date){
                         if(event_date == "today"){
-                            var temp_eventDate = Date.now()
-                            event_date = utility.convertdbDate()
-            
-                            var tempDate = utility.convertdbDate(event_date)
-                            query_event_date = `AND A.DATE::DATE = '${tempDate}'`
+                            query_event_date = `AND A.DATE >= (NOW() AT TIME ZONE 'Asia/Jakarta')
+                                                AND A.DATE <= (NOW() AT TIME ZONE 'Asia/Jakarta') + INTERVAL '1 day'`
                         }
             
                         if(event_date == "now"){
-                            query_event_date = `AND DATE >= NOW() 
-                                                AND DATE <= NOW() + INTERVAL '6 hours'`
+                            query_event_date = `AND A.DATE >= (NOW() AT TIME ZONE 'Asia/Jakarta')
+                                                AND A.DATE <= (NOW() AT TIME ZONE 'Asia/Jakarta') + INTERVAL '6 hours'`
                         }
                     }
                 
@@ -297,16 +290,13 @@ exports.getEventsPreview = asyncHandler(async function getEventsPreview(req, res
                             
                             if(event_date){
                                 if(event_date == "today"){
-                                    var temp_eventDate = Date.now()
-                                    event_date = utility.convertdbDate()
-                    
-                                    var tempDate = utility.convertdbDate(event_date)
-                                    query_event_date = `AND A.DATE::DATE = '${tempDate}'`
+                                    query_event_date = `AND A.DATE >= (NOW() AT TIME ZONE 'Asia/Jakarta')
+                                                        AND A.DATE <= (NOW() AT TIME ZONE 'Asia/Jakarta') + INTERVAL '1 day'`
                                 }
                     
                                 if(event_date == "now"){
-                                    query_event_date = `AND DATE >= NOW() 
-                                                        AND DATE <= NOW() + INTERVAL '6 hours'`
+                                    query_event_date = `AND A.DATE >= (NOW() AT TIME ZONE 'Asia/Jakarta')
+                                                        AND A.DATE <= (NOW() AT TIME ZONE 'Asia/Jakarta') + INTERVAL '6 hours'`
                                 }
                             }
 
@@ -334,16 +324,13 @@ exports.getEventsPreview = asyncHandler(async function getEventsPreview(req, res
                         } else {
                             if(event_date){
                                 if(event_date == "today"){
-                                    var temp_eventDate = Date.now()
-                                    event_date = utility.convertdbDate()
-
-                                    var tempDate = utility.convertdbDate(event_date)
-                                    query_event_date = `A.DATE::DATE = '${tempDate}'`
+                                    query_event_date = `A.DATE >= (NOW() AT TIME ZONE 'Asia/Jakarta')
+                                                        AND A.DATE <= (NOW() AT TIME ZONE 'Asia/Jakarta') + INTERVAL '1 day'`
                                 }
 
                                 if(event_date == "now"){
-                                    query_event_date = `DATE >= NOW() 
-                                                        AND DATE <= NOW() + INTERVAL '6 hours'`
+                                    query_event_date = `A.DATE >= (NOW() AT TIME ZONE 'Asia/Jakarta')
+                                                        AND A.DATE <= (NOW() AT TIME ZONE 'Asia/Jakarta') + INTERVAL '6 hours'`
                                 }
 
                                 if(status){
@@ -474,13 +461,13 @@ exports.getEventsPreview = asyncHandler(async function getEventsPreview(req, res
 })
 
 exports.getEventsPreviewList = asyncHandler(async function getEventsPreviewList(req, res, event_date, query_interest, query_category, query_city_based, query_event_date,
-    query_province_based, query_event_location, query_event_number_participant, query_creator, query_community, query_status, query_from) {
+    query_province_based, query_event_location, query_event_number_participant, query_creator, query_community, query_status, query_from, query_events) {
     let result = [], isError = false, query_and = ""
 
-    if(query_interest || query_category || query_city_based || query_event_location || query_event_number_participant || query_community || query_creator) query_and = `AND`
+    if(query_interest || query_category || query_city_based || query_event_location || query_event_number_participant || query_community || query_creator || query_events) query_and = `AND`
 
     if(event_date){
-        query_event_date = `A.date::date = '${event_date}'`
+        query_event_date = `A.DATE::date = '${event_date}'`
     }
 
     if(query_status){
@@ -489,29 +476,35 @@ exports.getEventsPreviewList = asyncHandler(async function getEventsPreviewList(
 
     if(!query_from) query_from = ""
 
+    if(query_events){
+        query_events = `ID_EVENT IN ${query_events}`
+    } else { query_events = ""}
+
     console.log(`SELECT DISTINCT ON (ID_EVENT)
-                                            A.ID_EVENT,
-                                            A.NAME,
-                                            CASE 
-                                                WHEN A.ID_CREATOR LIKE 'C%' THEN (SELECT NAME FROM COMMUNITY WHERE ID_COMMUNITY = A.ID_CREATOR)
-                                                WHEN A.ID_CREATOR LIKE 'U%' THEN (SELECT NAME FROM USERS WHERE ID_USER = A.ID_CREATOR)
-                                            END AS CREATOR_NAME,
-                                            A.LOCATION,
-                                            C.NAME AS CITY_BASED,
-                                            E.NAME AS PROVINCE_BASED,
-                                            A.DURATION,
-                                            A.DESCRIPTION,
-                                            A.latitude, A.longitude,
-                                            TO_CHAR(A.DATE, 'HH24:mi') AS START_TIME,
-                                            (SELECT COUNT(*) FROM EVENTS_LINK WHERE ID_EVENT = A.ID_EVENT) AS CURRENT_PARTICIPANT
-                                            FROM EVENTS A JOIN CATEGORY B ON A.ID_CATEGORY = B.ID
-                                            ${query_from}
-                                            JOIN CITY C ON A.CITY_BASED = C.ID
-                                            JOIN PROVINCE E ON C.ID_PROVINCE = E.ID
-                                            JOIN CATEGORY D ON A.ID_CATEGORY = D.ID 
-                                            JOIN INTEREST F ON F.ID_CATEGORY = D.ID
-                                            WHERE ${query_event_date} ${query_and} ${query_interest} ${query_category} ${query_city_based}
-                                            ${query_province_based} ${query_event_location} ${query_event_number_participant} ${query_creator} ${query_community} ${query_status}`)
+                    A.ID_EVENT,
+                    A.NAME,
+                    CASE 
+                        WHEN A.ID_CREATOR LIKE 'C%' THEN (SELECT NAME FROM COMMUNITY WHERE ID_COMMUNITY = A.ID_CREATOR)
+                        WHEN A.ID_CREATOR LIKE 'U%' THEN (SELECT NAME FROM USERS WHERE ID_USER = A.ID_CREATOR)
+                    END AS CREATOR_NAME,
+                    A.LOCATION,
+                    C.NAME AS CITY_BASED,
+                    E.NAME AS PROVINCE_BASED,
+                    A.DURATION,
+                    A.DESCRIPTION,
+                    A.latitude, A.longitude,
+                    A.DATE AS EVENT_DATE,
+                    A.ID_PROFILE,
+                    TO_CHAR(A.DATE, 'HH24:mi') AS START_TIME,
+                    (SELECT COUNT(*) FROM EVENTS_LINK WHERE ID_EVENT = A.ID_EVENT AND IS_APPROVED = true) AS CURRENT_PARTICIPANT
+                    FROM EVENTS A JOIN CATEGORY B ON A.ID_CATEGORY = B.ID
+                    ${query_from}
+                    JOIN CITY C ON A.CITY_BASED = C.ID
+                    JOIN PROVINCE E ON C.ID_PROVINCE = E.ID
+                    JOIN CATEGORY D ON A.ID_CATEGORY = D.ID 
+                    JOIN INTEREST F ON F.ID_CATEGORY = D.ID
+                    WHERE ${query_event_date} ${query_and} ${query_interest} ${query_category} ${query_city_based}
+                    ${query_province_based} ${query_event_location} ${query_event_number_participant} ${query_creator} ${query_community} ${query_status} ${query_events}`)
 
     try {
         var query_result = await pool.query(`SELECT DISTINCT ON (ID_EVENT)
@@ -526,10 +519,11 @@ exports.getEventsPreviewList = asyncHandler(async function getEventsPreviewList(
                                             E.NAME AS PROVINCE_BASED,
                                             A.DURATION,
                                             A.DESCRIPTION,
+                                            A.ID_PROFILE,
                                             A.latitude, A.longitude,
-                                            A.DATE,
+                                            A.DATE AS EVENT_DATE,
                                             TO_CHAR(A.DATE, 'HH24:mi') AS START_TIME,
-                                            (SELECT COUNT(*) FROM EVENTS_LINK WHERE ID_EVENT = A.ID_EVENT) AS CURRENT_PARTICIPANT
+                                            (SELECT COUNT(*) FROM EVENTS_LINK WHERE ID_EVENT = A.ID_EVENT AND IS_APPROVED = true) AS CURRENT_PARTICIPANT
                                             FROM EVENTS A JOIN CATEGORY B ON A.ID_CATEGORY = B.ID
                                             ${query_from}
                                             JOIN CITY C ON A.CITY_BASED = C.ID
@@ -537,7 +531,7 @@ exports.getEventsPreviewList = asyncHandler(async function getEventsPreviewList(
                                             JOIN CATEGORY D ON A.ID_CATEGORY = D.ID 
                                             JOIN INTEREST F ON F.ID_CATEGORY = D.ID
                                             WHERE ${query_event_date} ${query_and} ${query_interest} ${query_category} ${query_city_based}
-                                            ${query_province_based} ${query_event_location} ${query_event_number_participant} ${query_creator} ${query_community} ${query_status}`)
+                                            ${query_province_based} ${query_event_location} ${query_event_number_participant} ${query_creator} ${query_community} ${query_status} ${query_events}`)
     } catch (error) {
         isError = true
         log.error(`ERROR | /event/getEvents/preview getEventsPreviewList - Error found while connect to DB - ${error}`)
@@ -545,9 +539,13 @@ exports.getEventsPreviewList = asyncHandler(async function getEventsPreviewList(
         if(!isError){
             if(query_result.rowCount > 0 ){
                 for( let i = 0; i < query_result.rowCount; i++){
-                    
+
+                    console.log("query_result.rows[i].start_time -- " + query_result.rows[i].start_time)
+                    console.log("query_result.rows[i].event_date -- " + query_result.rows[i].event_date)
+
                     var getEndTime = utility.getEndDate(query_result.rows[i].start_time, query_result.rows[i].duration)
                     var timestampEndDate = utility.timestampEndDate(query_result.rows[i].event_date, query_result.rows[i].duration)
+
                     var event_coordinate = {
                         "latitude" : query_result.rows[i].latitude,
                         "longitude" : query_result.rows[i].longitude
@@ -557,13 +555,14 @@ exports.getEventsPreviewList = asyncHandler(async function getEventsPreviewList(
                         "event_id" : query_result.rows[i].id_event,
                         "event_name" : query_result.rows[i].name,
                         "event_description" : query_result.rows[i].description,
+                        "event_id_profile" : query_result.rows[i].id_profile,
                         "event_creator" : query_result.rows[i].creator_name,
                         "event_location" : query_result.rows[i].location,
                         "event_coordinate" : event_coordinate,
                         "event_city_based" : query_result.rows[i].city_based,
                         "event_province_based" : query_result.rows[i].province_based,
                         "event_time" : `${query_result.rows[i].start_time} - ${getEndTime} WIB`,
-                        "event_start_date_timestamp" : query_result.rows[i].date,
+                        "event_start_date_timestamp" : dayjs.utc(query_result.rows[i].event_date).tz('Asia/Jakarta').format('YYYY-MM-DDTHH:mm:ss'),
                         "event_end_date_timestamp" : timestampEndDate,
                         "current_participant_number" : query_result.rows[i].current_participant
                     }
@@ -633,7 +632,7 @@ exports.getCreator = asyncHandler(async function getCreator(req, res, id_creator
             if(query_result.rowCount > 0 ){
                 for( let i = 0; i < query_result.rowCount; i++){
                     var result_list = await exports.getEventsPreviewList(req, res, query_result.rows[i].event_date, "", "", "", "",
-                        "", "", "", query_creator, query_community, "")
+                        "", "", "", query_creator, query_community, "", "")
                     var fullDisplayDate = utility.fullDisplayDate(query_result.rows[i].event_date)
 
                     var object = {
@@ -665,7 +664,7 @@ exports.getCreator = asyncHandler(async function getCreator(req, res, id_creator
 
 exports.addEvent = asyncHandler(async function addEvent(req, res, event_name, event_description, event_date, event_duration,
     event_location, event_city, event_address, event_number_participant, event_image, event_category, event_interest, event_creator, event_coordinate, users_username_token) {
-    let isError = false, result = [], query_event_creator = "", query_event_coordinate_1 = "", query_event_coordinate_2 =""
+    let isError = false, result = [], query_event_creator = "", query_event_coordinate_1 = "", query_event_coordinate_2 ="", query_img_1 = "", query_img_2= ""
 
     if(event_creator){
         if(event_creator.startsWith("C")){
@@ -692,6 +691,11 @@ exports.addEvent = asyncHandler(async function addEvent(req, res, event_name, ev
         } 
     } 
 
+    if(event_image){
+        query_img_1 = `,ID_PROFILE`
+        query_img_2 = `,'${event_image}'`
+    }
+
     if(event_coordinate){
         query_event_coordinate_1 = `,LATITUDE, LONGITUDE`
 
@@ -702,15 +706,15 @@ exports.addEvent = asyncHandler(async function addEvent(req, res, event_name, ev
     }
 
     console.log(`INSERT INTO EVENTS (CREATED, ID_CATEGORY, ID_INTEREST, ID_CREATOR, NAME, DESCRIPTION, DATE, DURATION, 
-                                        CITY_BASED, LOCATION, ADDRESS, NUMBER_PARTICIPANT ${query_event_coordinate_1}) VALUES 
-                                        (NOW() AT TIME ZONE 'Asia/Jakarta', '${event_category}','${event_interest}',${query_event_creator},'${event_name}','${event_description}','${event_date}','${event_duration}', ${query_city},
-                                        '${event_location}','${event_address}','${event_number_participant}' ${query_event_coordinate_2})`)
+                                        CITY_BASED, LOCATION, ADDRESS, ID_PROFILE, NUMBER_PARTICIPANT ${query_img_1} ${query_event_coordinate_1}) VALUES 
+                                        (NOW(), '${event_category}','${event_interest}',${query_event_creator},'${event_name}','${event_description}','${event_date}','${event_duration}', ${query_city},
+                                        '${event_location}','${event_address}','${event_number_participant}' ${query_img_2} ${query_event_coordinate_2})`)
 
     try {
         var query_result = await pool.query(`INSERT INTO EVENTS (CREATED, ID_CATEGORY, ID_INTEREST, ID_CREATOR, NAME, DESCRIPTION, DATE, DURATION, 
-                                CITY_BASED, LOCATION, ADDRESS, NUMBER_PARTICIPANT ${query_event_coordinate_1}) VALUES 
-                                (NOW() AT TIME ZONE 'Asia/Jakarta', '${event_category}','${event_interest}',${query_event_creator},'${event_name}','${event_description}','${event_date}','${event_duration}', ${query_city},
-                                '${event_location}','${event_address}','${event_number_participant}' ${query_event_coordinate_2})`)
+                                CITY_BASED, LOCATION, ADDRESS, ID_PROFILE, NUMBER_PARTICIPANT ${query_img_1} ${query_event_coordinate_1}) VALUES 
+                                (NOW(), '${event_category}','${event_interest}',${query_event_creator},'${event_name}','${event_description}','${event_date}','${event_duration}', ${query_city},
+                                '${event_location}','${event_address}','${event_number_participant}' ${query_img_2} ${query_event_coordinate_2})`)
     } catch (error) {
         isError = true
         log.error(`ERROR | /general/addEvent - Error found while connect to DB - ${error}`)
@@ -732,7 +736,7 @@ exports.addEvent = asyncHandler(async function addEvent(req, res, event_name, ev
 exports.editEvent = asyncHandler(async function editEvent(req, res, event_id, event_name, event_description, event_date, event_duration, event_location, event_city, 
     event_address, event_number_participant, event_image, event_category, event_interest, event_coordinate, users_username_token) {
 
-    let isError = false, result = [], query_event_name = "", query_event_description = "", query_event_date = "", query_event_duration = "", query_event_category = ""
+    let isError = false, result = [], query_event_name = "", query_event_description = "", query_event_date = "", query_event_duration = "", query_event_category = "", query_event_image = ""
     let query_event_location = "", query_event_city = "", query_event_address = "", query_event_number_participant = "", query_event_interest = "", query_event_coordinate = ""
     
     if(!event_id){
@@ -814,16 +818,16 @@ exports.editEvent = asyncHandler(async function editEvent(req, res, event_id, ev
         query_event_coordinate= `,LATITUDE = '${latitude}', LONGITUDE ='${longitude}'`
     }
 
-    // if(event_image){
-    //     query_event_image = `, `
-    // }
+    if(event_image){
+        query_event_image = `, ID_PROFILE = '${event_image}'`
+    }
     
-    console.log(`UPDATE EVENTS SET MODIFIED = UPDATE COMMUNITY SET MODIFIED = NOW() AT TIME ZONE 'Asia/Jakarta' ${query_event_category} ${query_event_interest} ${query_event_name} ${query_event_description} ${query_event_date} ${query_event_duration} ${query_event_city}
-                                        ${query_event_location} ${query_event_address} ${query_event_number_participant} ${query_event_category} ${query_event_interest} ${query_event_coordinate} WHERE ID_EVENT ILIKE LOWER('${event_id}')`)
+    console.log(`UPDATE COMMUNITY SET MODIFIED = NOW() ${query_event_category} ${query_event_interest} ${query_event_name} ${query_event_description} ${query_event_date} ${query_event_duration} ${query_event_city}
+                 ${query_event_location} ${query_event_address} ${query_event_number_participant} ${query_event_category} ${query_event_interest} ${query_event_coordinate} ${event_image} WHERE ID_EVENT ILIKE LOWER('${event_id}')`)
 
     try {
-        var query_result = await pool.query(`UPDATE EVENTS SET MODIFIED = NOW() AT TIME ZONE 'Asia/Jakarta' ${query_event_category} ${query_event_interest} ${query_event_name} ${query_event_description} ${query_event_date} ${query_event_duration} ${query_event_city}
-                                        ${query_event_location} ${query_event_address} ${query_event_number_participant} ${query_event_category} ${query_event_interest} ${query_event_coordinate} WHERE ID_EVENT ILIKE LOWER('${event_id}')`)
+        var query_result = await pool.query(`UPDATE EVENTS SET MODIFIED = NOW() ${query_event_category} ${query_event_interest} ${query_event_name} ${query_event_description} ${query_event_date} ${query_event_duration} ${query_event_city}
+                                        ${query_event_location} ${query_event_address} ${query_event_number_participant} ${query_event_category} ${query_event_interest} ${query_event_coordinate} ${event_image} WHERE ID_EVENT ILIKE LOWER('${event_id}')`)
     } catch (error) {
         isError = true
         log.error(`ERROR | /general/editEvent - Error found while connect to DB - ${error}`)
@@ -844,10 +848,8 @@ exports.editEvent = asyncHandler(async function editEvent(req, res, event_id, ev
 
 exports.isCreator = asyncHandler(async function isCreator(res, res, id_creator, id_temp) {
     let isError = false, query = ""
-    console.log("masuk sndsj")
 
     if(id_temp.startsWith("E")){
-        console.log("jddued")
         if(id_creator.startsWith('U0')){
             query = (`SELECT * FROM EVENTS WHERE ID_CREATOR ILIKE LOWER('${id_creator}') AND ID_EVENT ILIKE LOWER('${id_temp}')`)
         } else {
@@ -860,8 +862,6 @@ exports.isCreator = asyncHandler(async function isCreator(res, res, id_creator, 
             query = (`SELECT * FROM IS_ADMIN WHERE ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${id_creator}')) AND ID_COMMUNITY ILIKE LOWER('${id_temp}')`)
         }
     }
-
-    console.log(query)
 
     try {
         var query_result = await pool.query(query)
@@ -914,6 +914,7 @@ exports.getEventDetail = asyncHandler(async function getEventDetail(req, res, ev
         E.NAME AS PROVINCE_BASED,
         A.LOCATION,
         A.ADDRESS,
+        A.ID_PROFILE,
         A.NUMBER_PARTICIPANT,
         CASE 
             WHEN A.ID_CREATOR LIKE 'C%' THEN (SELECT NAME FROM COMMUNITY WHERE ID_COMMUNITY = A.ID_CREATOR)
@@ -929,7 +930,7 @@ exports.getEventDetail = asyncHandler(async function getEventDetail(req, res, ev
             WHEN (SELECT IS_APPROVED FROM EVENTS_LINK WHERE ID_EVENT ILIKE LOWER('${event_id}') AND ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}'))) = 'false' THEN 'Pending'
             ELSE 'Nothing'
         END AS CONDITION,
-        A.latitude, A.longitude,
+        A.latitude, A.longitude
         FROM EVENTS A JOIN CATEGORY B ON A.ID_CATEGORY = B.ID
         JOIN CITY C ON A.CITY_BASED = C.ID
         JOIN PROVINCE E ON C.ID_PROVINCE = E.ID
@@ -949,6 +950,7 @@ exports.getEventDetail = asyncHandler(async function getEventDetail(req, res, ev
                                             C.NAME AS CITY_BASED,
                                             E.NAME AS PROVINCE_BASED,
                                             A.LOCATION,
+                                            A.ID_PROFILE,
                                             A.ADDRESS,
                                             A.NUMBER_PARTICIPANT,
                                             CASE 
@@ -969,7 +971,7 @@ exports.getEventDetail = asyncHandler(async function getEventDetail(req, res, ev
                                                 WHEN (SELECT IS_APPROVED FROM EVENTS_LINK WHERE ID_EVENT ILIKE LOWER('${event_id}') AND ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}'))) = 'false' THEN 'Pending'
                                                 ELSE 'Nothing'
                                             END AS CONDITION,
-                                            A.latitude, A.longitude,
+                                            A.latitude, A.longitude
                                             FROM EVENTS A JOIN CATEGORY B ON A.ID_CATEGORY = B.ID
                                             JOIN INTEREST F ON B.ID = F.ID_CATEGORY
                                             JOIN CITY C ON A.CITY_BASED = C.ID
@@ -1005,11 +1007,12 @@ exports.getEventDetail = asyncHandler(async function getEventDetail(req, res, ev
                         "event_id" : query_result.rows[i].id_event,
                         "event_name" : query_result.rows[i].event_name,
                         "event_description" : query_result.rows[i].event_description,
+                        "event_id_profile" : query_result.rows[i].id_profile,
                         "event_category" : query_result.rows[i].category,
                         "event_interest" : query_result.rows[i].interest,
                         "event_start_date" : fullDisplayDate,
                         "event_end_date" : displayEndDateTime,
-                        "event_start_date_timestamp" : query_result.rows[i].event_date,
+                        "event_start_date_timestamp" : dayjs.utc(query_result.rows[i].event_date).tz('Asia/Jakarta').format('YYYY-MM-DDTHH:mm:ss'),
                         "event_end_date_timestamp" : timestampEndDate,
                         "event_duration" : query_result.rows[i].duration,
                         "event_city_based" : query_result.rows[i].city_based,

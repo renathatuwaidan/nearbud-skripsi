@@ -52,14 +52,31 @@ app.post("/addCommunity", user_auth_controller.tokenVerif, function(req, res){
     let province_name = req.body.province_name
     let city_name = req.body.city_name
     let interest_id = req.body.interest_id
-    // let image_id = req.body.image_id
+    let community_id_profile = req.body.id_profile
     let users_username_token = res.getHeader('users_username')
 
-    community_controller.addCommunity(req, res, community_name, community_description, province_name, city_name, interest_id, users_username_token)
+    community_controller.addCommunity(req, res, community_name, community_description, province_name, city_name, interest_id, users_username_token, community_id_profile)
 })
 
 // meng-disable event exisitng (NEED TO DISCUSS)
 app.patch("/deleteEvent", function(req, res){})
+
+app.post("/addAdmin", user_auth_controller.tokenVerif, function(req, res){
+    let id_user = req.body.id_user
+    let id_community = req.body.id_community
+    let users_username_token = res.getHeader('users_username')
+
+    community_controller.addAdmin(req, res, id_user, id_community, users_username_token)
+})
+
+app.delete("/deleteAdmin", user_auth_controller.tokenVerif, function(req, res){
+    let id_user = req.body.id_user
+    let id_community = req.body.id_community
+    let users_username_token = res.getHeader('users_username')
+
+    community_controller.deleteAdmin(req, res, id_user, id_community, users_username_token)
+})
+
 
 // mengupdate event existing
 app.patch("/editCommunity", user_auth_controller.tokenVerif, function(req, res){
@@ -70,8 +87,9 @@ app.patch("/editCommunity", user_auth_controller.tokenVerif, function(req, res){
     let city_name = req.body.city_name
     let interest_id = req.body.interest_id
     let community_id = req.body.community_id
+    let id_profile = req.body.id_profile
 
-    community_controller.editCommunity(req, res, community_name, community_description, province_name, city_name, interest_id, users_username_token, community_id)
+    community_controller.editCommunity(req, res, community_name, community_description, province_name, city_name, interest_id, users_username_token, community_id, id_profile)
 })
 
 // get bulletin

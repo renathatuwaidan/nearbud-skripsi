@@ -40,7 +40,7 @@ exports.reqForgetPassword = asyncHandler(async function reqForgetPassword(req, r
                 await exports.transporterEmail(otp, users_email, "forget_password")
 
                 try {
-                    var query_result = await pool.query(`UPDATE users SET MODIFIED = NOW() AT TIME ZONE 'Asia/Jakarta',  OTP = '${otp}', OTP_CREATED = NOW() AT TIME ZONE 'Asia/Jakarta' where email ILIKE LOWER('${users_email}')`)
+                    var query_result = await pool.query(`UPDATE users SET MODIFIED = NOW(),  OTP = '${otp}', OTP_CREATED = NOW() AT TIME ZONE 'Asia/Jakarta' where email ILIKE LOWER('${users_email}')`)
                 } catch (error) {
                     isError = true
                     log.error(`ERROR | /auth/reqForgetPassword [email : "${users_email}"] - Error found while connect to DB - ${error}`)
@@ -70,7 +70,7 @@ exports.resetPassword = asyncHandler(async function resetPassword(req, res, user
     let isError1 = false
 
     try {
-        var query_result = await pool.query(`UPDATE users SET MODIFIED = NOW() AT TIME ZONE 'Asia/Jakarta', PASSWORD = '${newPassword}' where email ILIKE LOWER('${users_email}') AND otp_created > NOW() AT TIME ZONE 'Asia/Jakarta' - INTERVAL '10 minutes'`)
+        var query_result = await pool.query(`UPDATE users SET MODIFIED = NOW(), PASSWORD = '${newPassword}' where email ILIKE LOWER('${users_email}') AND otp_created > NOW() AT TIME ZONE 'Asia/Jakarta' - INTERVAL '10 minutes'`)
     } catch (error) {
         isError1 = true
         log.error(`ERROR | /auth/resetPassword [username : "${users_username}"] - Error found while connect to DB - ${error}`)
@@ -92,6 +92,13 @@ exports.verifyOtpEmail = asyncHandler(async function verifyOtpEmail(req, res, us
             }
         })
     }
+
+    console.log(`select 
+        CASE WHEN  otp_created < NOW() AT TIME ZONE 'Asia/Jakarta' - INTERVAL '10 minutes' THEN 'Expired' 
+        ELSE 'Not Expired' END AS isExpired,
+        username, 
+        password
+    from users where email ILIKE LOWER('${users_email}') and otp = '${otp}'`)
     
     try {
         var query_result = await pool.query(`select 
@@ -105,8 +112,9 @@ exports.verifyOtpEmail = asyncHandler(async function verifyOtpEmail(req, res, us
         log.error(`ERROR | /auth/registerUser [username : "${users_username}"] - Error found while connect to DB - ${error}`)
     } finally {
         if(!isError){
+            console.log(query_result.rows)
             if(query_result.rowCount > 0){
-                if(query_result.rows[0].isExpired == 'Expired'){
+                if(query_result.rows[0].isexpired == 'Expired'){
                     return res.status(401).json({
                         "error_schema" : {
                             "error_code" : "nearbud-001-001",
@@ -121,7 +129,7 @@ exports.verifyOtpEmail = asyncHandler(async function verifyOtpEmail(req, res, us
                         token = jwt.sign({users_username, users_password}, config.auth.secretKey, {expiresIn : config.auth.tokenExpired})
     
                         try {
-                            var query_result = await pool.query(`UPDATE users SET MODIFIED = NOW() AT TIME ZONE 'Asia/Jakarta', IS_VERIFIED = true where email ILIKE LOWER('${users_email}') and otp = '${otp}'`)
+                            var query_result = await pool.query(`UPDATE users SET MODIFIED = NOW(), IS_VERIFIED = true where email ILIKE LOWER('${users_email}') and otp = '${otp}'`)
                         } catch (error) {
                             isError1 = true
                             log.error(`ERROR | /auth/registerUser - register [username : "${users_username}"] - Error found while connect to DB - ${error}`)
@@ -205,7 +213,7 @@ exports.registerUser = asyncHandler(async function registerUser(req, res, users_
             query = `UPDATE USERS SET OTP = ${otp}, OTP_CREATED = NOW() AT TIME ZONE 'Asia/Jakarta'`
         } else if(validUser == true) {
             query = `INSERT INTO USERS (NAME, USERNAME, EMAIL, PASSWORD, DATE_OF_BIRTH, IS_VERIFIED, OTP, CREATED, OTP_CREATED) 
-                    VALUES ('${utility.toTitleCase(users_name)}','${users_username.toLowerCase()}','${users_email.toLowerCase()}','${users_password}', '${users_dob}', 'false', ${otp}, NOW() AT TIME ZONE 'Asia/Jakarta', NOW() AT TIME ZONE 'Asia/Jakarta')`
+                    VALUES ('${utility.toTitleCase(users_name)}','${users_username.toLowerCase()}','${users_email.toLowerCase()}','${users_password}', '${users_dob}', 'false', ${otp}, NOW(), NOW() AT TIME ZONE 'Asia/Jakarta')`
         }
     }
 
@@ -266,7 +274,7 @@ exports.registerUser_optional = asyncHandler(async function registerUser_optiona
         var query_users_username = `WHERE USERNAME ILIKE LOWER('${users_username}')`
 
         try {
-            var query_result = await pool.query(`UPDATE USERS SET MODIFIED = NOW() AT TIME ZONE 'Asia/Jakarta' ${query_users_gender} ${query_users_description} 
+            var query_result = await pool.query(`UPDATE USERS SET MODIFIED = NOW() ${query_users_gender} ${query_users_description} 
                                 ${query_province_name} ${query_city_name} ${query_users_username}`)
         } catch (error) {
             isError = true
@@ -294,12 +302,13 @@ exports.registerUser_optional = asyncHandler(async function registerUser_optiona
             let isError1 = false
             try {
                 var query_result = await pool.query(`
-                    INSERT INTO COMMUNITY_LINK(ID, ID_COMMUNITY, ID_USER, CREATED) VALUES 
+                    INSERT INTO COMMUNITY_LINK(ID, ID_COMMUNITY, ID_USER, CREATED, IS_APPROVED) VALUES 
                     (
                         (SELECT MAX(id) + 1 FROM COMMUNITY_LINK), 
                         (SELECT ID_COMMUNITY FROM COMMUNITY WHERE NAME ILIKE LOWER('${item.community_name}')), 
                         (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username}')),
-                        NOW() AT TIME ZONE 'Asia/Jakarta'
+                        NOW(),
+                        'false'
                     )
                 `);
             } catch (error) {
