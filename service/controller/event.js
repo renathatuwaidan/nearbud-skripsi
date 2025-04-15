@@ -662,8 +662,8 @@ exports.getCreator = asyncHandler(async function getCreator(req, res, id_creator
     }
 })
 
-exports.addEvent = asyncHandler(async function addEvent(req, res, event_name, event_description, event_date, event_duration,
-    event_location, event_city, event_address, event_number_participant, event_image, event_category, event_interest, event_creator, event_coordinate, users_username_token) {
+exports.addEvent = asyncHandler(async function addEvent(req, res, event_name, event_description, event_date, event_duration, event_location, event_city, 
+    event_address, event_number_participant, event_id_profile, event_category, event_interest, event_creator, event_coordinate, users_username_token) {
     let isError = false, result = [], query_event_creator = "", query_event_coordinate_1 = "", query_event_coordinate_2 ="", query_img_1 = "", query_img_2= ""
 
     if(event_creator){
@@ -691,9 +691,9 @@ exports.addEvent = asyncHandler(async function addEvent(req, res, event_name, ev
         } 
     } 
 
-    if(event_image){
+    if(event_id_profile){
         query_img_1 = `,ID_PROFILE`
-        query_img_2 = `,'${event_image}'`
+        query_img_2 = `,'${event_id_profile}'`
     }
 
     if(event_coordinate){
@@ -706,13 +706,13 @@ exports.addEvent = asyncHandler(async function addEvent(req, res, event_name, ev
     }
 
     console.log(`INSERT INTO EVENTS (CREATED, ID_CATEGORY, ID_INTEREST, ID_CREATOR, NAME, DESCRIPTION, DATE, DURATION, 
-                                        CITY_BASED, LOCATION, ADDRESS, ID_PROFILE, NUMBER_PARTICIPANT ${query_img_1} ${query_event_coordinate_1}) VALUES 
+                                        CITY_BASED, LOCATION, ADDRESS, NUMBER_PARTICIPANT ${query_img_1} ${query_event_coordinate_1}) VALUES 
                                         (NOW(), '${event_category}','${event_interest}',${query_event_creator},'${event_name}','${event_description}','${event_date}','${event_duration}', ${query_city},
                                         '${event_location}','${event_address}','${event_number_participant}' ${query_img_2} ${query_event_coordinate_2})`)
 
     try {
         var query_result = await pool.query(`INSERT INTO EVENTS (CREATED, ID_CATEGORY, ID_INTEREST, ID_CREATOR, NAME, DESCRIPTION, DATE, DURATION, 
-                                CITY_BASED, LOCATION, ADDRESS, ID_PROFILE, NUMBER_PARTICIPANT ${query_img_1} ${query_event_coordinate_1}) VALUES 
+                                CITY_BASED, LOCATION, ADDRESS, NUMBER_PARTICIPANT ${query_img_1} ${query_event_coordinate_1}) VALUES 
                                 (NOW(), '${event_category}','${event_interest}',${query_event_creator},'${event_name}','${event_description}','${event_date}','${event_duration}', ${query_city},
                                 '${event_location}','${event_address}','${event_number_participant}' ${query_img_2} ${query_event_coordinate_2})`)
     } catch (error) {
@@ -823,11 +823,11 @@ exports.editEvent = asyncHandler(async function editEvent(req, res, event_id, ev
     }
     
     console.log(`UPDATE COMMUNITY SET MODIFIED = NOW() ${query_event_category} ${query_event_interest} ${query_event_name} ${query_event_description} ${query_event_date} ${query_event_duration} ${query_event_city}
-                 ${query_event_location} ${query_event_address} ${query_event_number_participant} ${query_event_category} ${query_event_interest} ${query_event_coordinate} ${event_image} WHERE ID_EVENT ILIKE LOWER('${event_id}')`)
+                 ${query_event_location} ${query_event_address} ${query_event_number_participant} ${query_event_category} ${query_event_interest} ${query_event_coordinate} ${query_event_image} WHERE ID_EVENT ILIKE LOWER('${event_id}')`)
 
     try {
         var query_result = await pool.query(`UPDATE EVENTS SET MODIFIED = NOW() ${query_event_category} ${query_event_interest} ${query_event_name} ${query_event_description} ${query_event_date} ${query_event_duration} ${query_event_city}
-                                        ${query_event_location} ${query_event_address} ${query_event_number_participant} ${query_event_category} ${query_event_interest} ${query_event_coordinate} ${event_image} WHERE ID_EVENT ILIKE LOWER('${event_id}')`)
+                                        ${query_event_location} ${query_event_address} ${query_event_number_participant} ${query_event_category} ${query_event_interest} ${query_event_coordinate} ${query_event_image} WHERE ID_EVENT ILIKE LOWER('${event_id}')`)
     } catch (error) {
         isError = true
         log.error(`ERROR | /general/editEvent - Error found while connect to DB - ${error}`)
@@ -856,12 +856,14 @@ exports.isCreator = asyncHandler(async function isCreator(res, res, id_creator, 
             query = (`SELECT * FROM EVENTS WHERE ID_CREATOR = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${id_creator}')) AND ID_EVENT ILIKE LOWER('${id_temp}')`)
         }
     } else if (id_temp.startsWith("C")){
-        if(id_creator.startsWith('U00')||id_creator.startsWith('u00')){
+        if(id_creator.startsWith('U0')||id_creator.startsWith('u0')){
             query = (`SELECT * FROM IS_ADMIN WHERE ID_USER ILIKE LOWER('${id_creator}') AND ID_COMMUNITY ILIKE LOWER('${id_temp}')`)
         } else {
             query = (`SELECT * FROM IS_ADMIN WHERE ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${id_creator}')) AND ID_COMMUNITY ILIKE LOWER('${id_temp}')`)
         }
     }
+
+    console.log(query)
 
     try {
         var query_result = await pool.query(query)

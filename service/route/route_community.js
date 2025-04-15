@@ -52,7 +52,7 @@ app.post("/addCommunity", user_auth_controller.tokenVerif, function(req, res){
     let province_name = req.body.province_name
     let city_name = req.body.city_name
     let interest_id = req.body.interest_id
-    let community_id_profile = req.body.id_profile
+    let community_id_profile = req.body.community_id_profile
     let users_username_token = res.getHeader('users_username')
 
     community_controller.addCommunity(req, res, community_name, community_description, province_name, city_name, interest_id, users_username_token, community_id_profile)
@@ -87,9 +87,9 @@ app.patch("/editCommunity", user_auth_controller.tokenVerif, function(req, res){
     let city_name = req.body.city_name
     let interest_id = req.body.interest_id
     let community_id = req.body.community_id
-    let id_profile = req.body.id_profile
+    let community_id_profile = req.body.community_id_profile
 
-    community_controller.editCommunity(req, res, community_name, community_description, province_name, city_name, interest_id, users_username_token, community_id, id_profile)
+    community_controller.editCommunity(req, res, community_name, community_description, province_name, city_name, interest_id, users_username_token, community_id, community_id_profile)
 })
 
 // get bulletin
@@ -103,11 +103,25 @@ app.get("/getBulletin", user_auth_controller.tokenVerif, function(req, res){
 app.post("/addBulletin", user_auth_controller.tokenVerif, function(req, res){
     let users_username_token = res.getHeader('users_username')
     let bulletin_title = req.body.bulletin_title
-    let bulletin_body = req.body.bulletin_bodyl
-    let 
+    let bulletin_body = req.body.bulletin_body
+    let bulletin_id_picture = req.body.bulletin_id_picture
+    let community_id = req.body.community_id
+
+    community_controller.addBulletin(req, res, community_id, bulletin_title, bulletin_body, bulletin_id_picture, users_username_token)
 })
 
 // edit bulletin
+app.patch("/editBulletin", user_auth_controller.tokenVerif, function (req, res) {
+    let users_username_token = res.getHeader('users_username')
+    let bulletin_title = req.body.bulletin_title
+    let bulletin_body = req.body.bulletin_body
+    let bulletin_id_picture = req.body.bulletin_id_picture
+    let community_id = req.body.community_id
+    let bulletin_id = req.body.bulletin_id
+    
+    community_controller.editBulletin(req, res, community_id, bulletin_title, bulletin_body, bulletin_id_picture, bulletin_id, users_username_token)
+})
+
 
 // delete bulletin
 

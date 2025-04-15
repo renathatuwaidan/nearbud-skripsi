@@ -55,7 +55,7 @@ app.post("/addEvent", user_auth_controller.tokenVerif, function(req, res){
     let event_city = req.body.event_city
     let event_address = req.body.event_address
     let event_number_participant = req.body.event_number_participant
-    let event_image = req.body.event_image // onpending
+    let event_id_profile = req.body.event_id_profile // onpending
     let event_category = req.body.event_category
     let event_interest = req.body.event_interest
     let event_creator = req.body.event_creator
@@ -63,7 +63,7 @@ app.post("/addEvent", user_auth_controller.tokenVerif, function(req, res){
     let users_username_token = res.getHeader('users_username')
 
     event_controller.addEvent(req, res, event_name, event_description, event_date, event_duration, event_location, event_city, 
-        event_address, event_number_participant, event_image, event_category, event_interest, event_creator, event_coordinate, users_username_token, event_profile)
+        event_address, event_number_participant, event_id_profile, event_category, event_interest, event_creator, event_coordinate, users_username_token)
 })
 
 app.patch("/editEvent", user_auth_controller.tokenVerif, function(req, res){
@@ -76,14 +76,14 @@ app.patch("/editEvent", user_auth_controller.tokenVerif, function(req, res){
     let event_city = req.body.event_city
     let event_address = req.body.event_address
     let event_number_participant = req.body.event_number_participant
-    let event_image = req.body.event_image // onpending
+    let event_id_profile = req.body.event_id_profile 
     let event_category = req.body.event_category
     let event_interest = req.body.event_interest
     let event_coordinate = req.body.event_coordinate
     let users_username_token = res.getHeader('users_username')
 
     event_controller.editEvent(req, res, event_id, event_name, event_description, event_date, event_duration, event_location, event_city, 
-        event_address, event_number_participant, event_image, event_category, event_interest, event_coordinate, users_username_token)
+        event_address, event_number_participant, event_id_profile, event_category, event_interest, event_coordinate, users_username_token)
 })
 
 app.get("/getEvents/detail", user_auth_controller.tokenVerif, function(req, res){
