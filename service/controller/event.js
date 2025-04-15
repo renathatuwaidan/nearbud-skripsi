@@ -708,18 +708,24 @@ exports.addEvent = asyncHandler(async function addEvent(req, res, event_name, ev
     console.log(`INSERT INTO EVENTS (CREATED, ID_CATEGORY, ID_INTEREST, ID_CREATOR, NAME, DESCRIPTION, DATE, DURATION, 
                                         CITY_BASED, LOCATION, ADDRESS, NUMBER_PARTICIPANT ${query_img_1} ${query_event_coordinate_1}) VALUES 
                                         (NOW(), '${event_category}','${event_interest}',${query_event_creator},'${event_name}','${event_description}','${event_date}','${event_duration}', ${query_city},
-                                        '${event_location}','${event_address}','${event_number_participant}' ${query_img_2} ${query_event_coordinate_2})`)
+                                        '${event_location}','${event_address}','${event_number_participant}' ${query_img_2} ${query_event_coordinate_2})
+                                        RETURNING ID_EVENT`)
 
     try {
         var query_result = await pool.query(`INSERT INTO EVENTS (CREATED, ID_CATEGORY, ID_INTEREST, ID_CREATOR, NAME, DESCRIPTION, DATE, DURATION, 
                                 CITY_BASED, LOCATION, ADDRESS, NUMBER_PARTICIPANT ${query_img_1} ${query_event_coordinate_1}) VALUES 
                                 (NOW(), '${event_category}','${event_interest}',${query_event_creator},'${event_name}','${event_description}','${event_date}','${event_duration}', ${query_city},
-                                '${event_location}','${event_address}','${event_number_participant}' ${query_img_2} ${query_event_coordinate_2})`)
+                                '${event_location}','${event_address}','${event_number_participant}' ${query_img_2} ${query_event_coordinate_2})
+                                RETURNING ID_EVENT`)
     } catch (error) {
         isError = true
         log.error(`ERROR | /general/addEvent - Error found while connect to DB - ${error}`)
     } finally {
         if(!isError){
+            result = {
+                "id_event" : query_result.rows[0].id_event
+            }
+
             respond.successResp(req, res, "nearbud-000-000", "Data berhasil ditambahkan", 0, 0, 0, result, 0)
             log.info(`SUCCESS | /general/addEvent - Success added the data`)
         } else {
