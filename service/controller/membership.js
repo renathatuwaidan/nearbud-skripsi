@@ -514,7 +514,7 @@ exports.getCommunity_preview = asyncHandler(async function getCommunity_preview(
                         D.NAME AS CITY_NAME,
                         C.NAME AS PROVINCE_NAME,
                         A.ID_PROFILE,
-                        (SELECT COUNT(ID_USER) FROM COMMUNITY_LINK WHERE ID_COMMUNITY = A.ID_COMMUNITY AND IS_APPROVED = TRUE) AS MEMBER
+                        (SELECT COUNT(ID_USER) FROM COMMUNITY_LINK WHERE ID_COMMUNITY = A.ID_COMMUNITY AND IS_APPROVED = TRUE) + (SELECT COUNT(ID_USER) FROM IS_ADMIN  WHERE ID_COMMUNITY = A.ID_COMMUNITY) AS MEMBER
                     FROM COMMUNITY A JOIN INTEREST B ON A.ID_INTEREST = B.ID
                     JOIN PROVINCE C ON A.ID_PROVINCE = C.ID 
                     JOIN CITY D ON A.ID_CITY = D.ID
@@ -533,7 +533,7 @@ exports.getCommunity_preview = asyncHandler(async function getCommunity_preview(
                                                     D.NAME AS CITY_NAME,
                                                     C.NAME AS PROVINCE_NAME,
                                                     A.ID_PROFILE,
-                                                    (SELECT COUNT(ID_USER) FROM COMMUNITY_LINK WHERE ID_COMMUNITY = A.ID_COMMUNITY AND IS_APPROVED = TRUE) AS MEMBER
+                                                    (SELECT COUNT(ID_USER) FROM COMMUNITY_LINK WHERE ID_COMMUNITY = A.ID_COMMUNITY AND IS_APPROVED = TRUE) + (SELECT COUNT(ID_USER) FROM IS_ADMIN  WHERE ID_COMMUNITY = A.ID_COMMUNITY) AS MEMBER
                                                 FROM COMMUNITY A JOIN INTEREST B ON A.ID_INTEREST = B.ID
                                                 JOIN PROVINCE C ON A.ID_PROVINCE = C.ID 
                                                 JOIN CITY D ON A.ID_CITY = D.ID

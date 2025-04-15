@@ -658,7 +658,8 @@ exports.addCommunity = asyncHandler(async function addEvent(req, res, community_
     try {
         var query_result = await pool.query(`INSERT INTO COMMUNITY (CREATED, NAME, ID_PROVINCE, ID_CITY, ID_INTEREST, DESCRIPTION, ID_PROFILE) 
                                             VALUES (NOW(), '${community_name}', (SELECT ID FROM PROVINCE WHERE NAME ILIKE LOWER('${province_name}')),
-                                            (SELECT ID FROM CITY WHERE NAME ILIKE LOWER('${city_name}')), ${interest_id},'${community_description}', '${community_id_profile}')`)
+                                            (SELECT ID FROM CITY WHERE NAME ILIKE LOWER('${city_name}')), ${interest_id},'${community_description}', '${community_id_profile}')
+                                            RETURNING ID_COMMUNITY`)
     } catch (error) {
         isError = true
         log.error(`ERROR | /community/addCommunity [username : "${users_username_token}"] - Error found while connect to DB - ${error}`)
@@ -666,6 +667,7 @@ exports.addCommunity = asyncHandler(async function addEvent(req, res, community_
         if(!isError){
             if(query_result.rowCount > 0 ){
                 let isError1 = false
+                let id_community = query_result.rows[0].id_community
 
                 try {
                     query_result_1 = await pool.query(`INSERT INTO IS_ADMIN (ID, CREATED, ID_USER, ID_COMMUNITY) 
@@ -676,6 +678,9 @@ exports.addCommunity = asyncHandler(async function addEvent(req, res, community_
                     log.error(`ERROR | /community/addCommunity - add isAdmin [username : "${users_username_token}"] - Error found while connect to DB - ${error}`)
                 } finally {
                     if(!isError1){
+                        result = {
+                            "id_community" : `${id_community}`
+                        }
                         respond.successResp(req, res, "nearbud-000-000", "Data berhasil ditambahkan", 1, 1, 1, result)
                         log.info(`SUCCESS | /community/addCommunity - Success return the result`)
                     } else {
@@ -785,7 +790,9 @@ exports.getBulletin = asyncHandler(async function getBulletin(req, res, communit
     }
 
     console.log(`WITH COMMUNITY_BULLETIN AS (
-                    SELECT a.created AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Jakarta' as CREATED_CONVERTED, a.*,a.created AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Jakarta' as CREATED_CONVERTED, a.*, (SELECT NAME FROM USERS WHERE ID_USER = A.ID_CREATOR) AS CREATOR_NAME, A.ID_PICTURE FROM COMMUNITY_BULLETIN A 
+                    SELECT a.created AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Jakarta' as CREATED_CONVERTED, a.*,a.created AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Jakarta' as CREATED_CONVERTED, a.*,
+                         (SELECT NAME FROM USERS WHERE ID_USER = A.ID_CREATOR) AS CREATOR_NAME, A.ID_PICTURE, (SELECT ID_PROFILE FROM USERS WHERE ID_USER = A.ID_CREATOR) AS ID_PROFILE_CREATOR
+                    FROM COMMUNITY_BULLETIN A 
                     WHERE A.ID_COMMUNITY ILIKE LOWER('${community_id}') ORDER BY A.CREATED DESC
                 )
                 SELECT *, COUNT(*) OVER ()
@@ -793,7 +800,9 @@ exports.getBulletin = asyncHandler(async function getBulletin(req, res, communit
 
     try {
         var query_result = await pool.query(`WITH COMMUNITY_BULLETIN AS (
-                                                SELECT a.created AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Jakarta' as CREATED_CONVERTED, a.*, (SELECT NAME FROM USERS WHERE ID_USER = A.ID_CREATOR) AS CREATOR_NAME, A.ID_PICTURE FROM COMMUNITY_BULLETIN A 
+                                                SELECT a.created AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Jakarta' as CREATED_CONVERTED, a.*,a.created AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Jakarta' as CREATED_CONVERTED, a.*,
+                                                    (SELECT NAME FROM USERS WHERE ID_USER = A.ID_CREATOR) AS CREATOR_NAME, A.ID_PICTURE, (SELECT ID_PROFILE FROM USERS WHERE ID_USER = A.ID_CREATOR) AS ID_PROFILE_CREATOR
+                                                FROM COMMUNITY_BULLETIN A 
                                                 WHERE A.ID_COMMUNITY ILIKE LOWER('${community_id}') ORDER BY A.CREATED DESC
                                             )
                                             SELECT *, COUNT(*) OVER ()
@@ -814,6 +823,7 @@ exports.getBulletin = asyncHandler(async function getBulletin(req, res, communit
                         "bulletin_message" : query_result.rows[i].body,
                         "bulletin_creator_id" : query_result.rows[i].id_creator,
                         "bulletin_creator_name" : query_result.rows[i].creator_name,
+                        "bulletin_creator_id_profile" : query_result.rows[i].id_profile_creator,
                         "bulletin_time_created" : fullDisplayDateTime,
                         "id_picture" : query_result.rows[i].id_picture
                     }

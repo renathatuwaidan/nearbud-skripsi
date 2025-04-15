@@ -790,7 +790,12 @@ exports.getReview = asyncHandler(async function getReview(req, res, reviewee_id,
     let isError = false, result = [], query_where = ""
 
     if(reviewee_id){
-        query_where = `WHERE A.ID_REVIEWEE IN (SELECT ID_EVENT FROM EVENTS WHERE ID_CREATOR ILIKE LOWER('${reviewee_id}'))`
+        if(reviewee_id.startsWith("U")){
+            query_where = `WHERE A.ID_REVIEWEE IN (SELECT ID_EVENT FROM EVENTS WHERE ID_CREATOR ILIKE LOWER('${reviewee_id}'))
+             OR ID_REVIEWEE  IN (SELECT ID_USER FROM IS_ADMIN WHERE ID_COMMUNITY = A.ID_REVIEWEE)`
+        } else if(reviewee_id.startsWith("C")){
+            query_where = `WHERE A.ID_REVIEWEE IN (SELECT ID_EVENT FROM EVENTS WHERE ID_CREATOR ILIKE LOWER('${reviewee_id}'))`
+        }
     } else {
         query_where = `WHERE A.ID_REVIEWEE IN (SELECT ID_EVENT FROM EVENTS WHERE ID_CREATOR = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')))`
     }
