@@ -122,7 +122,14 @@ app.patch("/editBulletin", user_auth_controller.tokenVerif, function (req, res) 
     community_controller.editBulletin(req, res, community_id, bulletin_title, bulletin_body, bulletin_id_picture, bulletin_id, users_username_token)
 })
 
-
 // delete bulletin
+app.delete("/deleteBulletin", user_auth_controller.tokenVerif, function(req, res){
+    let bulletin_id = req.body.bulletin_id
+    let users_username_token = res.getHeader('users_username')
+    let community_id = req.body.community_id
+
+    community_controller.deleteBulletin(req, res, community_id, bulletin_id, users_username_token)
+
+})
 
 module.exports = app
