@@ -559,6 +559,7 @@ exports.getCommunityDetail = asyncHandler(async function getCommunityDetail(req,
                 B.NAME AS INTEREST_NAME,
                 D.NAME AS CITY_NAME,
                 C.NAME AS PROVINCE_NAME,
+                A.ID_GALLERY,
                 CASE 
                     WHEN ((SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')) = (SELECT ID_USER FROM IS_ADMIN WHERE ID_COMMUNITY = A.ID_COMMUNITY AND ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')))) THEN 'isCreator'
                     WHEN ((SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')) IN (SELECT ID_USER FROM COMMUNITY_LINK WHERE ID_COMMUNITY = A.ID_COMMUNITY AND IS_APPROVED = TRUE)) THEN 'Accepted'
@@ -585,6 +586,7 @@ exports.getCommunityDetail = asyncHandler(async function getCommunityDetail(req,
                                                     D.NAME AS CITY_NAME,
                                                     C.NAME AS PROVINCE_NAME,
                                                     A.ID_PROFILE,
+                                                    A.ID_GALLERY,
                                                     CASE 
                                                         WHEN ((SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')) = (SELECT ID_USER FROM IS_ADMIN WHERE ID_COMMUNITY = A.ID_COMMUNITY AND ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')))) THEN 'isCreator'
                                                         WHEN ((SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')) IN (SELECT ID_USER FROM COMMUNITY_LINK WHERE ID_COMMUNITY = A.ID_COMMUNITY AND IS_APPROVED = TRUE)) THEN 'Accepted'
@@ -610,6 +612,7 @@ exports.getCommunityDetail = asyncHandler(async function getCommunityDetail(req,
                         "community_name" : query_result.rows[i].community_name,
                         "community_description" : query_result.rows[i].description,
                         "community_id_profile" : query_result.rows[i].id_profile,
+                        "community_id_folder" : query_result.rows[i].id_gallery,
                         "interest_name" : query_result.rows[i].interest_name,
                         "city_based" : query_result.rows[i].city_name,
                         "province_based" : query_result.rows[i].province_name,
@@ -640,7 +643,7 @@ exports.getCommunityDetail = asyncHandler(async function getCommunityDetail(req,
 exports.addCommunity = asyncHandler(async function addEvent(req, res, community_name, community_description, province_name, city_name, interest_id, users_username_token, community_id_profile){
     let isError = false, result = []
 
-    if(!community_name || !community_description || !province_name || !city_name || !interest_id){
+    if(!community_name || !community_description || !province_name || !city_name || !interest_id ){
         return res.status(500).json({
             "error_schema" : {
                 "error_code" : "nearbud-002-002",
@@ -672,7 +675,7 @@ exports.addCommunity = asyncHandler(async function addEvent(req, res, community_
                 try {
                     query_result_1 = await pool.query(`INSERT INTO IS_ADMIN (ID, CREATED, ID_USER, ID_COMMUNITY) 
                                                         VALUES ((SELECT MAX(ID)+1 FROM IS_ADMIN), NOW(), (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')), 
-                                                        (SELECT ID_COMMUNITY FROM COMMUNITY WHERE NAME ILIKE LOWER('${community_name}')))`)
+                                                        (SELECT ID_COMMUNITY FROM COMMUNITY WHERE ID_COMMUNITY ILIKE LOWER('${id_community}')))`)
                 } catch (error) {
                     isError1 = true
                     log.error(`ERROR | /community/addCommunity - add isAdmin [username : "${users_username_token}"] - Error found while connect to DB - ${error}`)
@@ -1007,6 +1010,51 @@ exports.deleteBulletin = asyncHandler(async function deleteBulletin(req, res, co
             if(query_result.rowCount > 0 ){
                 respond.successResp(req, res, "nearbud-000-000", "Data berhasil dihapus", 1, 1, 1, result)
                 log.info(`SUCCESS | /community/deleteBulletin - Success return the result`)
+            } 
+        } else {
+            return res.status(500).json({
+                "error_schema" : {
+                    "error_code" : "nearbud-003-001",
+                    "error_message" : `Error while connecting to DB`
+                }
+            })
+        }
+    }
+})
+
+exports.addIdFolder = asyncHandler(async function addIdFolder(req, res, community_id, community_id_folder, users_username_token) {
+    let isError = false, result = []
+
+    if(!community_id_folder || !community_id){
+        return res.status(500).json({
+            "error_schema" : {
+                "error_code" : "nearbud-002-002",
+                "error_message" : `Data pada BODY tidak lengkap`
+            }
+        })
+    }
+
+    let isCreator = await event.isCreator(req, res, users_username_token, community_id)
+    console.log(isCreator)
+    if(isCreator == "notCreator"){
+        return res.status(500).json({
+            "error_schema" : {
+                "error_code" : "nearbud-002-001",
+                "error_message" : `Unauthorized, anda bukan Creator Community tersebut`
+            }
+        })
+    }
+
+    try {
+        var query_result = await pool.query(`UPDATE COMMUNITY SET ID_GALLERY = '${community_id_folder}' WHERE ID_COMMUNITY ILIKE LOWER('${community_id}')`)
+    } catch (error) {
+        isError = true
+        log.error(`ERROR | /community/addIdFolder - Error found while connect to DB - ${error}`)
+    } finally {
+        if(!isError){
+            if(query_result.rowCount > 0 ){
+                respond.successResp(req, res, "nearbud-000-000", "Data berhasil ditambahkan", 1, 1, 1, result)
+                log.info(`SUCCESS | /community/addIdFolder - Success return the result`)
             } 
         } else {
             return res.status(500).json({
