@@ -881,7 +881,8 @@ exports.addBulletin = asyncHandler(async function getBulletin(req, res, communit
         (SELECT MAX(ID) + 1 FROM COMMUNITY_BULLETIN), 
         (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')),
         (SELECT ID_COMMUNITY FROM COMMUNITY WHERE ID_COMMUNITY ILIKE LOWER('${community_id}')),
-        '${utility.toTitleCase(bulletin_title)}','${bulletin_body}',${bulletin_id_picture})`)
+        '${utility.toTitleCase(bulletin_title)}','${bulletin_body}',${bulletin_id_picture})
+        RETURNING ID`)
 
     try {
         var query_result = await pool.query(`INSERT INTO COMMUNITY_BULLETIN (id, id_creator, id_community,title,body,id_picture)
@@ -889,13 +890,17 @@ exports.addBulletin = asyncHandler(async function getBulletin(req, res, communit
                                             (SELECT MAX(ID) + 1 FROM COMMUNITY_BULLETIN), 
                                             (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')),
                                             (SELECT ID_COMMUNITY FROM COMMUNITY WHERE ID_COMMUNITY ILIKE LOWER('${community_id}')),
-                                            '${utility.toTitleCase(bulletin_title)}','${bulletin_body}', ${bulletin_id_picture})`)
+                                            '${utility.toTitleCase(bulletin_title)}','${bulletin_body}', ${bulletin_id_picture})
+                                            RETURNING ID`)
     } catch (error) {
         isError = true
         log.error(`ERROR | /community/addBulletin [username : "${users_username_token}"] - Error found while connect to DB - ${error}`)
     } finally {
         if(!isError){
             if(query_result.rowCount > 0 ){
+                result = {
+                    "id_bulletin" : query_result.rows[0].id
+                }
                 respond.successResp(req, res, "nearbud-000-000", "Data berhasil ditambahkan", 1, 1, 1, result)
                 log.info(`SUCCESS | /community/addBulletin - Success return the result`)
             } 
@@ -956,6 +961,51 @@ exports.editBulletin = asyncHandler(async function editBulletin(req, res, commun
         if(!isError){
             if(query_result.rowCount > 0 ){
                 respond.successResp(req, res, "nearbud-000-000", "Data berhasil diperbaharui", 1, 1, 1, result)
+                log.info(`SUCCESS | /community/deleteBulletin - Success return the result`)
+            } 
+        } else {
+            return res.status(500).json({
+                "error_schema" : {
+                    "error_code" : "nearbud-003-001",
+                    "error_message" : `Error while connecting to DB`
+                }
+            })
+        }
+    }
+})
+
+exports.deleteBulletin = asyncHandler(async function deleteBulletin(req, res, community_id, bulletin_id, users_username_token) {
+    let isError = false, result = []
+
+    if(!community_id || !bulletin_id){
+        return res.status(500).json({
+            "error_schema" : {
+                "error_code" : "nearbud-001-000",
+                "error_message" : `Community ID dan atau Bulletin tidak boleh kosong`
+            }
+        })
+    }
+
+    let isCreator = await event.isCreator(req, res, users_username_token, community_id)
+    console.log(isCreator)
+    if(isCreator == "notCreator"){
+        return res.status(500).json({
+            "error_schema" : {
+                "error_code" : "nearbud-002-001",
+                "error_message" : `Unauthorized, anda bukan Creator Community tersebut`
+            }
+        })
+    }
+
+    try {
+        var query_result = await pool.query(`DELETE FROM COMMUNITY_BULLETIN WHERE ID = ${bulletin_id} AND ID_COMMUNITY ILIKE LOWER('${community_id}')`)
+    } catch (error) {
+        isError = true
+        log.error(`ERROR | /community/deleteBulletin - Error found while connect to DB - ${error}`)
+    } finally {
+        if(!isError){
+            if(query_result.rowCount > 0 ){
+                respond.successResp(req, res, "nearbud-000-000", "Data berhasil dihapus", 1, 1, 1, result)
                 log.info(`SUCCESS | /community/deleteBulletin - Success return the result`)
             } 
         } else {

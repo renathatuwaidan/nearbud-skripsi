@@ -38,8 +38,8 @@ exports.getEventsPreview = asyncHandler(async function getEventsPreview(req, res
 
         if(event_date){
             if(event_date == "today"){
-                query_event_date = `AND A.DATE >= (NOW() AT TIME ZONE 'Asia/Jakarta')
-                                    AND A.DATE <= (NOW() AT TIME ZONE 'Asia/Jakarta') + INTERVAL '1 day'`
+                query_event_date = `AND A.DATE::DATE >= (NOW() AT TIME ZONE 'Asia/Jakarta')::DATE
+                                    AND A.DATE::DATE <= ((NOW() AT TIME ZONE 'Asia/Jakarta') + INTERVAL '1 day')::DATE`
             }
 
             if(event_date == "now"){
@@ -104,8 +104,8 @@ exports.getEventsPreview = asyncHandler(async function getEventsPreview(req, res
         
             if(event_date){
                 if(event_date == "today"){
-                    query_event_date = `AND A.DATE >= (NOW() AT TIME ZONE 'Asia/Jakarta')
-                                        AND A.DATE <= (NOW() AT TIME ZONE 'Asia/Jakarta') + INTERVAL '1 day'`
+                    query_event_date = `AND A.DATE::DATE >= (NOW() AT TIME ZONE 'Asia/Jakarta')::DATE
+                                        AND A.DATE::DATE <= ((NOW() AT TIME ZONE 'Asia/Jakarta') + INTERVAL '1 day')::DATE`
                 }
     
                 if(event_date == "now"){
@@ -172,8 +172,8 @@ exports.getEventsPreview = asyncHandler(async function getEventsPreview(req, res
 
                 if(event_date){
                     if(event_date == "today"){
-                        query_event_date = `AND A.DATE >= (NOW() AT TIME ZONE 'Asia/Jakarta')
-                                            AND A.DATE <= (NOW() AT TIME ZONE 'Asia/Jakarta') + INTERVAL '1 day'`
+                        query_event_date = `AND A.DATE::DATE >= (NOW() AT TIME ZONE 'Asia/Jakarta')::DATE
+                                            AND A.DATE::DATE <= ((NOW() AT TIME ZONE 'Asia/Jakarta') + INTERVAL '1 day')::DATE`
                     }
 
                     if(event_date == "now"){
@@ -220,8 +220,8 @@ exports.getEventsPreview = asyncHandler(async function getEventsPreview(req, res
 
                     if(event_date){
                         if(event_date == "today"){
-                            query_event_date = `AND A.DATE >= (NOW() AT TIME ZONE 'Asia/Jakarta')
-                                                AND A.DATE <= (NOW() AT TIME ZONE 'Asia/Jakarta') + INTERVAL '1 day'`
+                            query_event_date = `AND A.DATE::DATE >= (NOW() AT TIME ZONE 'Asia/Jakarta')::DATE
+                                                AND A.DATE::DATE <= ((NOW() AT TIME ZONE 'Asia/Jakarta') + INTERVAL '1 day')::DATE`
                         }
             
                         if(event_date == "now"){
@@ -290,8 +290,8 @@ exports.getEventsPreview = asyncHandler(async function getEventsPreview(req, res
                             
                             if(event_date){
                                 if(event_date == "today"){
-                                    query_event_date = `AND A.DATE >= (NOW() AT TIME ZONE 'Asia/Jakarta')
-                                                        AND A.DATE <= (NOW() AT TIME ZONE 'Asia/Jakarta') + INTERVAL '1 day'`
+                                    query_event_date = `AND A.DATE::DATE >= (NOW() AT TIME ZONE 'Asia/Jakarta')::DATE
+                                                        AND A.DATE::DATE <= ((NOW() AT TIME ZONE 'Asia/Jakarta') + INTERVAL '1 day')::DATE`
                                 }
                     
                                 if(event_date == "now"){
@@ -324,8 +324,8 @@ exports.getEventsPreview = asyncHandler(async function getEventsPreview(req, res
                         } else {
                             if(event_date){
                                 if(event_date == "today"){
-                                    query_event_date = `A.DATE >= (NOW() AT TIME ZONE 'Asia/Jakarta')
-                                                        AND A.DATE <= (NOW() AT TIME ZONE 'Asia/Jakarta') + INTERVAL '1 day'`
+                                    query_event_date = `A.DATE::DATE >= (NOW() AT TIME ZONE 'Asia/Jakarta')::DATE
+                                                        AND A.DATE::DATE <= ((NOW() AT TIME ZONE 'Asia/Jakarta') + INTERVAL '1 day')::DATE`
                                 }
 
                                 if(event_date == "now"){
@@ -462,12 +462,13 @@ exports.getEventsPreview = asyncHandler(async function getEventsPreview(req, res
 
 exports.getEventsPreviewList = asyncHandler(async function getEventsPreviewList(req, res, event_date, query_interest, query_category, query_city_based, query_event_date,
     query_province_based, query_event_location, query_event_number_participant, query_creator, query_community, query_status, query_from, query_events) {
-    let result = [], isError = false, query_and = ""
+    let result = [], isError = false, query_and = "", q_date = ""
 
-    if(query_interest || query_category || query_city_based || query_event_location || query_event_number_participant || query_community || query_creator || query_events) query_and = `AND`
+    if(query_interest || query_category || query_city_based || query_event_location || query_event_number_participant 
+        || query_community || query_creator || query_events || query_event_date) query_and = `AND`
 
     if(event_date){
-        query_event_date = `A.DATE::date = '${event_date}'`
+        q_date = `A.DATE::date = '${event_date}'`
     }
 
     if(query_status){
@@ -503,7 +504,7 @@ exports.getEventsPreviewList = asyncHandler(async function getEventsPreviewList(
                     JOIN PROVINCE E ON C.ID_PROVINCE = E.ID
                     JOIN CATEGORY D ON A.ID_CATEGORY = D.ID 
                     JOIN INTEREST F ON F.ID_CATEGORY = D.ID
-                    WHERE ${query_event_date} ${query_and} ${query_interest} ${query_category} ${query_city_based}
+                    WHERE ${q_date} ${query_and} ${query_event_date} ${query_interest} ${query_category} ${query_city_based}
                     ${query_province_based} ${query_event_location} ${query_event_number_participant} ${query_creator} ${query_community} ${query_status} ${query_events}`)
 
     try {
@@ -530,7 +531,7 @@ exports.getEventsPreviewList = asyncHandler(async function getEventsPreviewList(
                                             JOIN PROVINCE E ON C.ID_PROVINCE = E.ID
                                             JOIN CATEGORY D ON A.ID_CATEGORY = D.ID 
                                             JOIN INTEREST F ON F.ID_CATEGORY = D.ID
-                                            WHERE ${query_event_date} ${query_and} ${query_interest} ${query_category} ${query_city_based}
+                                            WHERE ${q_date} ${query_and} ${query_event_date} ${query_interest} ${query_category} ${query_city_based}
                                             ${query_province_based} ${query_event_location} ${query_event_number_participant} ${query_creator} ${query_community} ${query_status} ${query_events}`)
     } catch (error) {
         isError = true
@@ -1006,7 +1007,7 @@ exports.getEventDetail = asyncHandler(async function getEventDetail(req, res, ev
                     }
 
                     var creator = [{
-                        "event_creator_type" : query_result.rows[i].creator_type,
+                            "event_creator_type" : query_result.rows[i].creator_type,
                             "event_creator_id" : query_result.rows[i].creator_id,
                             "event_creator_name" : query_result.rows[i].creator_name,
                     }]
