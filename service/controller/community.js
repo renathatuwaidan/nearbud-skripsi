@@ -653,7 +653,7 @@ exports.addCommunity = asyncHandler(async function addEvent(req, res, community_
     }
 
     if(!community_id_profile){
-        id_profile = ""
+        community_id_profile = ""
     }
 
     community_name = utility.toTitleCase(community_name)
@@ -669,23 +669,39 @@ exports.addCommunity = asyncHandler(async function addEvent(req, res, community_
     } finally {
         if(!isError){
             if(query_result.rowCount > 0 ){
-                let isError1 = false
+                let isError1 = false, isError2 = false
                 let id_community = query_result.rows[0].id_community
 
                 try {
-                    query_result_1 = await pool.query(`INSERT INTO IS_ADMIN (ID, CREATED, ID_USER, ID_COMMUNITY) 
-                                                        VALUES ((SELECT MAX(ID)+1 FROM IS_ADMIN), NOW(), (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')), 
-                                                        (SELECT ID_COMMUNITY FROM COMMUNITY WHERE ID_COMMUNITY ILIKE LOWER('${id_community}')))`)
+                    query_result_2 = await pool.query(`UPDATE COMMUNITY SET ID_GALLERY = 'gallery_image/${id_community}' WHERE ID_COMMUNITY ILIKE LOWER('${id_community}')`)
                 } catch (error) {
-                    isError1 = true
+                    isError2 = true
                     log.error(`ERROR | /community/addCommunity - add isAdmin [username : "${users_username_token}"] - Error found while connect to DB - ${error}`)
                 } finally {
-                    if(!isError1){
-                        result = {
-                            "id_community" : `${id_community}`
+                    if(!isError2){
+                        try {
+                            query_result_1 = await pool.query(`INSERT INTO IS_ADMIN (ID, CREATED, ID_USER, ID_COMMUNITY) 
+                                                                VALUES ((SELECT MAX(ID)+1 FROM IS_ADMIN), NOW(), (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')), 
+                                                                (SELECT ID_COMMUNITY FROM COMMUNITY WHERE ID_COMMUNITY ILIKE LOWER('${id_community}')))`)
+                        } catch (error) {
+                            isError1 = true
+                            log.error(`ERROR | /community/addCommunity - add isAdmin [username : "${users_username_token}"] - Error found while connect to DB - ${error}`)
+                        } finally {
+                            if(!isError1){
+                                result = {
+                                    "id_community" : `${id_community}`
+                                }
+                                respond.successResp(req, res, "nearbud-000-000", "Data berhasil ditambahkan", 1, 1, 1, result)
+                                log.info(`SUCCESS | /community/addCommunity - Success return the result`)
+                            } else {
+                                return res.status(500).json({
+                                    "error_schema" : {
+                                        "error_code" : "nearbud-003-001",
+                                        "error_message" : `Error while connecting to DB`
+                                    }
+                                })
+                            }
                         }
-                        respond.successResp(req, res, "nearbud-000-000", "Data berhasil ditambahkan", 1, 1, 1, result)
-                        log.info(`SUCCESS | /community/addCommunity - Success return the result`)
                     } else {
                         return res.status(500).json({
                             "error_schema" : {

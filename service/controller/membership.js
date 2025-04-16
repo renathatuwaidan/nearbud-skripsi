@@ -23,10 +23,10 @@ exports.getEventLink_preview = asyncHandler(async function getEventLink_preview(
     if(community_id && !users_id){
         let query_order = ""
         if(status.toLowerCase() == "history"){
-            query_status = `B.DATE < (CURRENT_DATE AT TIME ZONE 'Asia/Jakarta')::DATE`
+            query_status = `B.DATE::DATE < (NOW() AT TIME ZONE 'Asia/Jakarta')::DATE`
             query_order = `ORDER BY EVENT_DATE DESC`
         } else if(status.toLowerCase() == "active"){
-            query_status = `B.DATE >= (CURRENT_DATE AT TIME ZONE 'Asia/Jakarta')::DATE`
+            query_status = `B.DATE::DATE >= (NOW() AT TIME ZONE 'Asia/Jakarta')::DATE`
             query_order = `ORDER BY EVENT_DATE ASC`
         } else {
             return res.status(500).json({
@@ -62,16 +62,16 @@ exports.getEventLink_preview = asyncHandler(async function getEventLink_preview(
             query_conditional_1 = `WITH EVENT_DATE_LIST AS (
                                     SELECT TO_CHAR(DATE, 'YYYY-MM-DD') AS event_date
                                     FROM EVENTS
-                                    WHERE ID_EVENT IN (SELECT A.ID_EVENT FROM EVENTS A WHERE A.DATE::DATE = (CURRENT_DATE AT TIME ZONE 'Asia/Jakarta')::DATE) AND 
+                                    WHERE ID_EVENT IN (SELECT A.ID_EVENT FROM EVENTS A WHERE A.DATE::DATE = (NOW() AT TIME ZONE 'Asia/Jakarta')::DATE) AND 
                                     ID_EVENT NOT IN (SELECT ID_EVENT FROM EVENTS_LINK WHERE ID_USER = ${getUser} AND IS_APPROVED = true)
                                     UNION
                                     SELECT TO_CHAR(DATE, 'YYYY-MM-DD') AS event_date
                                     FROM EVENTS C WHERE ID_CREATOR = ${getUser} 
-                                    AND ID_EVENT IN (SELECT A.ID_EVENT FROM EVENTS A WHERE A.DATE::DATE = (CURRENT_DATE AT TIME ZONE 'Asia/Jakarta')::DATE)
+                                    AND ID_EVENT IN (SELECT A.ID_EVENT FROM EVENTS A WHERE A.DATE::DATE = (NOW() AT TIME ZONE 'Asia/Jakarta')::DATE)
                                     UNION 
                                     SELECT TO_CHAR(DATE, 'YYYY-MM-DD') AS event_date
                                     FROM EVENTS D WHERE ID_CREATOR IN (SELECT ID_COMMUNITY FROM IS_ADMIN WHERE ID_USER = ${getUser})
-                                    AND ID_EVENT IN (SELECT A.ID_EVENT FROM EVENTS A WHERE A.DATE::DATE = (CURRENT_DATE AT TIME ZONE 'Asia/Jakarta')::DATE)
+                                    AND ID_EVENT IN (SELECT A.ID_EVENT FROM EVENTS A WHERE A.DATE::DATE = (NOW() AT TIME ZONE 'Asia/Jakarta')::DATE)
                                 )
                                 SELECT *, COUNT (*)OVER ()
                                 FROM EVENT_DATE_LIST
@@ -80,16 +80,16 @@ exports.getEventLink_preview = asyncHandler(async function getEventLink_preview(
 
             query_conditional_2 = `(SELECT ID_EVENT
                                     FROM EVENTS
-                                    WHERE ID_EVENT IN (SELECT A.ID_EVENT FROM EVENTS A WHERE A.DATE::DATE = (CURRENT_DATE AT TIME ZONE 'Asia/Jakarta')::DATE) AND 
+                                    WHERE ID_EVENT IN (SELECT A.ID_EVENT FROM EVENTS A WHERE A.DATE::DATE = (NOW() AT TIME ZONE 'Asia/Jakarta')::DATE) AND 
                                     ID_EVENT NOT IN (SELECT ID_EVENT FROM EVENTS_LINK WHERE ID_USER = ${getUser} AND IS_APPROVED = true)
                                     UNION
                                     SELECT ID_EVENT
                                     FROM EVENTS C WHERE ID_CREATOR = ${getUser} 
-                                    AND ID_EVENT IN (SELECT A.ID_EVENT FROM EVENTS A WHERE A.DATE::DATE = (CURRENT_DATE AT TIME ZONE 'Asia/Jakarta')::DATE)
+                                    AND ID_EVENT IN (SELECT A.ID_EVENT FROM EVENTS A WHERE A.DATE::DATE = (NOW() AT TIME ZONE 'Asia/Jakarta')::DATE)
                                     UNION 
                                     SELECT ID_EVENT
                                     FROM EVENTS D WHERE ID_CREATOR IN (SELECT ID_COMMUNITY FROM IS_ADMIN WHERE ID_USER = ${getUser})
-                                    AND ID_EVENT IN (SELECT A.ID_EVENT FROM EVENTS A WHERE A.DATE::DATE = (CURRENT_DATE AT TIME ZONE 'Asia/Jakarta')::DATE))`
+                                    AND ID_EVENT IN (SELECT A.ID_EVENT FROM EVENTS A WHERE A.DATE::DATE = (NOW() AT TIME ZONE 'Asia/Jakarta')::DATE))`
         } else {
             if (status.toLowerCase() == "active"){
                 query_status = `A.DATE >= (CURRENT_DATE AT TIME ZONE 'Asia/Jakarta')`
