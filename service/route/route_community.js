@@ -129,7 +129,14 @@ app.delete("/deleteBulletin", user_auth_controller.tokenVerif, function(req, res
     let community_id = req.body.community_id
 
     community_controller.deleteBulletin(req, res, community_id, bulletin_id, users_username_token)
+})
 
+app.post("/addIdFolder", user_auth_controller.tokenVerif, function(req, res){
+    let community_id = req.body.community_id
+    let community_id_folder = req.body.community_id_folder
+    let users_username_token = res.getHeader('users_username')
+
+    community_controller.addIdFolder(req, res, community_id, community_id_folder, users_username_token)
 })
 
 module.exports = app
