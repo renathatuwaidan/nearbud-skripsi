@@ -88,8 +88,6 @@ exports.getEventsPreview = asyncHandler(async function getEventsPreview(req, res
             query_status = `${query_status_1} ${query_status_2}`
         }
 
-        console.log("============= " + query_status)
-
         if(event_creator){
             query_event_creator = `AND ID_CREATOR ILIKE LOWER('${event_creator}')`
         }
@@ -435,7 +433,7 @@ exports.getEventsPreview = asyncHandler(async function getEventsPreview(req, res
             if(query_result.rowCount > 0 ){
                 for( let i = 0; i < query_result.rowCount; i++){
                     var result_list = await exports.getEventsPreviewList(req, res, query_result.rows[i].event_date, query_interest, query_category, query_city, query_event_date,
-                        query_province_based, query_event_location, query_event_number_participant, query_event_creator, "", query_status, "")
+                        query_province_based, query_event_location, query_event_number_participant, query_event_creator, "", query_status, "", "")
                     var fullDisplayDate = utility.fullDisplayDate(query_result.rows[i].event_date)
 
                     var object = {
@@ -476,9 +474,12 @@ exports.getEventsPreviewList = asyncHandler(async function getEventsPreviewList(
         q_date = `A.DATE::date = '${event_date}'`
     }
 
-    if(!query_status.startsWith("AND")){
-        query_status = `AND ${query_status}`
-    }
+    if(query_status){
+        if(!query_status.startsWith("AND")){
+            query_status = `AND ${query_status}`
+        }
+    } else { query_status = "" }
+
 
     if(query_events){
         if(!query_events.startsWith("AND")){

@@ -145,4 +145,6 @@ app.get("/getNotification", user_auth_controller.tokenVerif, function(req, res){
     general_controller.getNotif(req, res, users_username_token)
 })
 
+// app.get("/updateNotification", )
+
 module.exports = app
