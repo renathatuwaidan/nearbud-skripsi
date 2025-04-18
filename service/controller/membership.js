@@ -138,7 +138,11 @@ exports.getEventLink_preview = asyncHandler(async function getEventLink_preview(
         }
     }
 
+    console.log("-=-============")
+
     console.log(query_conditional_1)
+
+    console.log("=================")
 
     try {
         var query_result = await pool.query(query_conditional_1)
@@ -325,7 +329,7 @@ exports.addCommunityLink = asyncHandler(async function addCommunityLink(req, res
                             log.error(`ERROR | /membership/addEventLink - Add Notif [username : "${users_username}"] - Error found while connecting to DB - ${error}`);
                         } finally {
                             if(!isError3){
-                                respond.successResp(req, res, "nearbud-000-000", "Berhasil menambahkan data", 0, 0, 0, result)
+                                respond.successResp(req, res, "nearbud-000-000", "Berhasil menambahkan data", 0, 0, 0, [])
                             }
                         }
                     }
