@@ -431,7 +431,6 @@ exports.isTokenValid = asyncHandler(async function isTokenValid(req, res, users_
         isError = true
         log.error(`ERROR | /auth/verifyToken [username : "${users_username_token}"] - Error found - ${error}`)
     } finally {
-        console.log(token)
         if(isError){
             return res.status(401).json({
                 "error_schema" : {
