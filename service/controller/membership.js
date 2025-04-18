@@ -298,12 +298,12 @@ exports.addCommunityLink = asyncHandler(async function addCommunityLink(req, res
                             (SELECT MAX(id) + 1 FROM COMMUNITY_LINK), 
                             (SELECT ID_COMMUNITY FROM COMMUNITY WHERE ID_COMMUNITY = '${community_id}'), 
                             (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username}')), 
-                            NOW()'
+                            NOW()
                         )
                     `)
                 } catch (error) {
-                    isError1 = true;
-                    log.error(`ERROR | /membership/addCommunityLink - Error found while connecting to DB - ${error}`);
+                    isError1 = true
+                    log.error(`ERROR | /membership/addCommunityLink - Error found while connecting to DB - ${error}`)
                 } finally {
                     if (isError1) {
                         return res.status(500).json({
@@ -313,7 +313,21 @@ exports.addCommunityLink = asyncHandler(async function addCommunityLink(req, res
                             }
                         })
                     } else {
-                        respond.successResp(req, res, "nearbud-000-000", "Berhasil menambahkan data", 0, 0, 0, result)
+                        let isError3 = false
+
+                        try {
+                            var query_result_2 = await pool.query(`INSERT INTO NOTIFICATION (ACTION, ID_SENDER, ID_RECEIVER, STRING1)
+                                                                VALUES ('requestCommunity', (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username}')), 
+                                                                (SELECT ID_COMMUNITY FROM COMMUNITY WHERE ID_COMMUNITY ILIKE LOWER('${community_id}')), 
+                                                                (SELECT ID_COMMUNITY FROM COMMUNITY WHERE ID_COMMUNITY ILIKE LOWER('${community_id}')))`)
+                        } catch (error) {
+                            isError3 = true
+                            log.error(`ERROR | /membership/addEventLink - Add Notif [username : "${users_username}"] - Error found while connecting to DB - ${error}`);
+                        } finally {
+                            if(!isError3){
+                                respond.successResp(req, res, "nearbud-000-000", "Berhasil menambahkan data", 0, 0, 0, result)
+                            }
+                        }
                     }
                 }
             }
@@ -336,6 +350,16 @@ exports.addEventLink = asyncHandler(async function addEventLink(req, res, users_
             "error_schema": {
                 "error_code": "nearbud-001-000",
                 "error_message": `Event ID tidak boleh kosong`
+            }
+        })
+    }
+
+    let isCreator = await events.isCreator(req, res, users_username_token, event_id)
+    if(isCreator.includes("isCreator")){
+        return res.status(500).json({
+            "error_schema" : {
+                "error_code" : "nearbud-002-001",
+                "error_message" : `Anda creator pada event ini`
             }
         })
     }
@@ -380,11 +404,25 @@ exports.addEventLink = asyncHandler(async function addEventLink(req, res, users_
                         return res.status(500).json({
                             "error_schema": {
                                 "error_code": "nearbud-003-001",
-                                "error_message": `Error while connecting to DB - Failed to Update Event Link`
+                                "error_message": `Error while connecting to DB`
                             }
-                        });
+                        })
                     } else {
-                        respond.successResp(req, res, "nearbud-000-000", "Berhasil menambahkan data", 0, 0, 0, result)
+                        let isError3 = false
+
+                        try {
+                            var query_result_2 = await pool.query(`INSERT INTO NOTIFICATION (ACTION, ID_SENDER, ID_RECEIVER, STRING1)
+                                                                VALUES ('requestEvent', (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')), 
+                                                                (SELECT ID_CREATOR FROM EVENTS WHERE ID_EVENT ILIKE LOWER('${event_id}')), 
+                                                                (SELECT ID_EVENT FROM EVENTS WHERE ID_EVENT ILIKE LOWER('${event_id}')))`)
+                        } catch (error) {
+                            isError3 = true
+                            log.error(`ERROR | /membership/addEventLink - Add Notif [username : "${users_username_token}"] - Error found while connecting to DB - ${error}`);
+                        } finally {
+                            if(!isError3){
+                                respond.successResp(req, res, "nearbud-000-000", "Berhasil menambahkan data", 0, 0, 0, result)
+                            }
+                        }
                     }
                 }
             }
