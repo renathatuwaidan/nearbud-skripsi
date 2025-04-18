@@ -470,7 +470,7 @@ exports.getEventsPreviewList = asyncHandler(async function getEventsPreviewList(
     let result = [], isError = false, query_and = "", q_date = ""
 
     if(query_interest || query_category || query_city_based || query_event_location || query_event_number_participant 
-        || query_community || query_creator || query_events || query_event_date) query_and = `AND`
+        || query_community || query_creator || query_event_date) query_and = `AND`
 
     if(event_date){
         q_date = `A.DATE::date = '${event_date}'`
@@ -480,11 +480,18 @@ exports.getEventsPreviewList = asyncHandler(async function getEventsPreviewList(
         query_status = `AND ${query_status}`
     }
 
-    if(!query_from) query_from = ""
-
     if(query_events){
-        query_events = `ID_EVENT IN ${query_events}`
-    } else { query_events = ""}
+        if(!query_events.startsWith("AND")){
+            query_events = `ID_EVENT IN ${query_events}`
+        } else {
+            query_events = `AND ID_EVENT IN ${query_events}`
+        }
+    } else {
+        query_events = ""
+    }
+
+
+    if(!query_from) query_from = ""
 
     console.log(`SELECT DISTINCT ON (ID_EVENT)
                     A.ID_EVENT,
