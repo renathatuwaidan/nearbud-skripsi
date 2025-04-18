@@ -732,6 +732,28 @@ exports.addEvent = asyncHandler(async function addEvent(req, res, event_name, ev
                 "id_event" : query_result.rows[0].id_event
             }
 
+            let isError2 = false
+
+            // processing add Notif -- New Event
+            if(event_creator.startsWith("C")){
+                try {
+                    var query_result = await pool.query(`INSERT INTO NOTIFICATION (ACTION, ID_SENDER, ID_RECEIVER)
+                           VALUES ('newEvent', '${query_result.rows[0].id_event}', (SELECT ID_COMMUNITY FROM COMMUNITY WHERE ID_COMMUNITY ILIKE LOWER('${event_creator}')))`)
+                } catch (error) {
+                    isError2 = true
+                } finally {
+                    if(isError2){
+                        return res.status(500).json({
+                            "error_schema" : {
+                                "error_code" : "nearbud-003-001",
+                                "error_message" : `Error while connecting to DB`
+                            }
+                        })
+                    } 
+                }
+            
+            } 
+            
             respond.successResp(req, res, "nearbud-000-000", "Data berhasil ditambahkan", 0, 0, 0, result, 0)
             log.info(`SUCCESS | /general/addEvent - Success added the data`)
         } else {
@@ -884,6 +906,7 @@ exports.isCreator = asyncHandler(async function isCreator(res, res, id_creator, 
         log.error(`ERROR | /general/isCretor - Error found while connect to DB - ${error}`)
     } finally {
         if(!isError){
+            console.log(query_result)
             if(query_result.rowCount > 0){
                 return "isCreator"
             } else {

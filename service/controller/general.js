@@ -995,3 +995,40 @@ exports.getRoomIdList = asyncHandler(async function getRoomIdList(req, res, user
     }
 
 })
+
+exports.getNotif = asyncHandler(async function addNotif(req, res, users_username_token) {
+    let isError = false, result = []
+    var query_pagination = respond.query_pagination(req,res, page, size)
+
+    try {
+        var query_result = await pool.query(``)
+    } catch (error) {
+        isError = true
+        log.error(`ERROR | /general/getRoomIdList - Error found while connect to DB - ${error}`)
+    } finally {
+        if(!isError){
+            if(query_result.rowCount > 0 ){
+                for( let i = 0; i < query_result.rowCount; i++){
+                    var object = {
+                        "room_id" : query_result.rows[i].id_chat,
+                        "id_user_1" : query_result.rows[i].id_user_1,
+                        "id_user_2" : query_result.rows[i].id_user_2
+                    } 
+                    result.push(object)
+                }
+                respond.successResp(req, res, "nearbud-000-000", "Berhasil mendapatkan hasil", query_result.rowCount, query_result.rowCount, 1, result)
+            } else {
+                respond.successResp(req, res, "nearbud-001-001", "Data tidak ditemukan", 0, 0, 0, result)
+            }
+            log.info(`SUCCESS | /general/getRoomIdList - Success return the result`)
+
+        } else {
+            return res.status(500).json({
+                "error_schema" : {
+                    "error_code" : "nearbud-003-001",
+                    "error_message" : `Error while connecting to DB`
+                }
+            })
+        }
+    }
+})

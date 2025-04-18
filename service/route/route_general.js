@@ -140,4 +140,9 @@ app.post("/addRoomIdList", user_auth_controller.tokenVerif, function(req, res){
     general_controller.getRoomIdList(req, res, room_id, id_user_1, id_user_2, users_username_token)
 })
 
+app.get("/getNotification", user_auth_controller.tokenVerif, function(req, res){
+    let users_username_token = res.getHeader('users_username')
+    general_controller.getNotif(req, res, users_username_token)
+})
+
 module.exports = app
