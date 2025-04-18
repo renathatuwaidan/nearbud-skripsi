@@ -585,12 +585,7 @@ exports.getEventsPreviewList = asyncHandler(async function getEventsPreviewList(
             }
             return result
         } else {
-            return res.status(500).json({
-                "error_schema" : {
-                    "error_code" : "nearbud-003-001",
-                    "error_message" : `Error while connecting to DB`
-                }
-            })
+            throw new Error("error found on getEventsPreviewList");
         }
     }
 })
