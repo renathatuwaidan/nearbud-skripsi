@@ -63,7 +63,7 @@ exports.getEventLink_preview = asyncHandler(async function getEventLink_preview(
                                     SELECT TO_CHAR(DATE, 'YYYY-MM-DD') AS event_date
                                     FROM EVENTS
                                     WHERE ID_EVENT IN (SELECT A.ID_EVENT FROM EVENTS A WHERE A.DATE::DATE = (NOW() AT TIME ZONE 'Asia/Jakarta')::DATE) AND 
-                                    ID_EVENT NOT IN (SELECT ID_EVENT FROM EVENTS_LINK WHERE ID_USER = ${getUser} AND IS_APPROVED = true)
+                                    ID_EVENT IN (SELECT ID_EVENT FROM EVENTS_LINK WHERE ID_USER = ${getUser} AND IS_APPROVED = true)
                                     UNION
                                     SELECT TO_CHAR(DATE, 'YYYY-MM-DD') AS event_date
                                     FROM EVENTS C WHERE ID_CREATOR = ${getUser} 
@@ -81,7 +81,7 @@ exports.getEventLink_preview = asyncHandler(async function getEventLink_preview(
             query_conditional_2 = `(SELECT ID_EVENT
                                     FROM EVENTS
                                     WHERE ID_EVENT IN (SELECT A.ID_EVENT FROM EVENTS A WHERE A.DATE::DATE = (NOW() AT TIME ZONE 'Asia/Jakarta')::DATE) AND 
-                                    ID_EVENT NOT IN (SELECT ID_EVENT FROM EVENTS_LINK WHERE ID_USER = ${getUser} AND IS_APPROVED = true)
+                                    ID_EVENT IN (SELECT ID_EVENT FROM EVENTS_LINK WHERE ID_USER = ${getUser} AND IS_APPROVED = true)
                                     UNION
                                     SELECT ID_EVENT
                                     FROM EVENTS C WHERE ID_CREATOR = ${getUser} 
@@ -121,7 +121,7 @@ exports.getEventLink_preview = asyncHandler(async function getEventLink_preview(
                         )
                         SELECT *, COUNT (*)OVER ()
                         FROM EVENT_DATE_LIST
-                        ORDER BY EVENT_DATE DESC
+                        ORDER BY EVENT_DATE ASC
                         ${query_pagination}`
 
             query_conditional_2 = `(SELECT B.ID_EVENT
@@ -137,12 +137,6 @@ exports.getEventLink_preview = asyncHandler(async function getEventLink_preview(
                                 AND ID_EVENT IN (SELECT A.ID_EVENT FROM EVENTS A WHERE ${query_status}))`
         }
     }
-
-    console.log("-=-============")
-
-    console.log(query_conditional_1)
-
-    console.log("=================")
 
     try {
         var query_result = await pool.query(query_conditional_1)

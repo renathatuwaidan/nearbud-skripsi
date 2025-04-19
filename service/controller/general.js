@@ -182,16 +182,18 @@ exports.getUser = asyncHandler(async function (req, res, suspended, users_id, us
         if(city_id4) {city_id4 = `,'${city_id4}'`} else {city_id4 = ''}
         if(city_id5) {city_id5 = `,'${city_id5}'`} else {city_id5 = ''}
 
-        query_city = ` AND F.ID IN (${city_id1} ${city_id2} ${city_id3} ${city_id4} ${city_id5})`
+        query_city = ` AND ID_CITY IN (${city_id1} ${city_id2} ${city_id3} ${city_id4} ${city_id5})`
     }
 
     if(province){
-        query_province = ` AND A.ID_PROVINCE = (SELECT ID FROM PROVINCE ILIKE LOWER('%${province}%'))`
+        query_province = ` AND A.ID_PROVINCE IN (SELECT ID FROM PROVINCE ILIKE LOWER('%${province}%'))`
     }
 
     // KALO ADA CATERGORY ATAU INTEREST
     if(category || interest_id1 || interest_id2 || interest_id3 || interest_id4 || interest_id5){
-        query_join_intrest_link = `JOIN INTEREST_LINK B ON A.ID_USER = B.ID_USER`
+        query_join_intrest_link = `JOIN INTEREST_LINK B ON A.ID_USER = B.ID_USER
+                                    JOIN INTEREST C ON B.ID_INTEREST = C.ID
+                                        JOIN CATEGORY D ON C.id_category = D.ID`
 
         if(category){
             query_category = ` AND D.NAME ILIKE LOWER('${category}')`
@@ -213,19 +215,18 @@ exports.getUser = asyncHandler(async function (req, res, suspended, users_id, us
     console.log(`
         WITH USER_QUERY AS (
             SELECT DISTINCT (A.ID_USER), A.NAME, A.USERNAME, A.ID_PROFILE,
-                E.NAME AS PROVINCE_NAME, F.NAME AS CITY_NAME,
+                CASE WHEN (SELECT NAME FROM PROVINCE WHERE ID = A.ID_PROVINCE) IS NOT NULL THEN (SELECT NAME FROM PROVINCE WHERE ID = A.ID_PROVINCE)
+                ELSE null END AS PROVINCE_NAME,
+                CASE WHEN (SELECT NAME FROM CITY WHERE ID = A.ID_CITY) IS NOT NULL THEN (SELECT NAME FROM CITY WHERE ID = A.ID_CITY)
+                ELSE null END AS CITY_NAME,
                 CASE 
                     WHEN A.id_user NOT IN (SELECT ID_REPORTEE FROM SUSPENDED) THEN 'No'
                     ELSE 'Yes' 
                 END AS SUSPENDED
             FROM USERS A 
-            JOIN PROVINCE E ON A.id_province = E.id
-            JOIN CITY F ON A.id_city = F.id
             ${query_join_intrest_link}   
-            JOIN INTEREST C ON B.ID_INTEREST = C.ID
-            JOIN CATEGORY D ON C.id_category = D.ID
             WHERE ${query_suspended} ${query_users_id} ${query_users_name} ${query_users_username} ${query_users_gender} 
-            ${query_category} ${query_interest} ${query_province} ${query_city}
+            ${query_category} ${query_interest} ${query_province} ${query_city} AND IS_VERIFIED = 'TRUE'
         )
         SELECT *, 
             COUNT(*) OVER() AS TOTAL_DATA
@@ -237,19 +238,18 @@ exports.getUser = asyncHandler(async function (req, res, suspended, users_id, us
         var query_result = await pool.query(`
             WITH USER_QUERY AS (
                 SELECT DISTINCT (A.ID_USER), A.NAME, A.USERNAME, A.ID_PROFILE,
-                    E.NAME AS PROVINCE_NAME, F.NAME AS CITY_NAME,
+                    CASE WHEN (SELECT NAME FROM PROVINCE WHERE ID = A.ID_PROVINCE) IS NOT NULL THEN (SELECT NAME FROM PROVINCE WHERE ID = A.ID_PROVINCE)
+                    ELSE null END AS PROVINCE_NAME,
+                    CASE WHEN (SELECT NAME FROM CITY WHERE ID = A.ID_CITY) IS NOT NULL THEN (SELECT NAME FROM CITY WHERE ID = A.ID_CITY)
+                    ELSE null END AS CITY_NAME,
                     CASE 
                         WHEN A.id_user NOT IN (SELECT ID_REPORTEE FROM SUSPENDED) THEN 'No'
                         ELSE 'Yes' 
                     END AS SUSPENDED
                 FROM USERS A 
-                JOIN PROVINCE E ON A.id_province = E.id
-                JOIN CITY F ON A.id_city = F.id
-                ${query_join_intrest_link}   
-                JOIN INTEREST C ON B.ID_INTEREST = C.ID
-                JOIN CATEGORY D ON C.id_category = D.ID
+                ${query_join_intrest_link} 
                 WHERE ${query_suspended} ${query_users_id} ${query_users_name} ${query_users_username} ${query_users_gender} 
-                ${query_category} ${query_interest} ${query_province} ${query_city}
+                ${query_category} ${query_interest} ${query_province} ${query_city} AND a.IS_VERIFIED = 'TRUE'
             )
             SELECT *, 
                 COUNT(*) OVER() AS TOTAL_DATA
@@ -1022,6 +1022,111 @@ exports.getNotif = asyncHandler(async function addNotif(req, res, users_username
             }
             log.info(`SUCCESS | /general/getRoomIdList - Success return the result`)
 
+        } else {
+            return res.status(500).json({
+                "error_schema" : {
+                    "error_code" : "nearbud-003-001",
+                    "error_message" : `Error while connecting to DB`
+                }
+            })
+        }
+    }
+})
+
+exports.updateNotif = asyncHandler(async function updateNotif(req, res, users_username_token, notification_id, decision) {
+    let isError = false, isError1 = false, result = [], query_action = ""
+
+    if(!decision || !notification_id){
+        return res.status(500).json({
+            "error_schema" : {
+                "error_code" : "nearbud-002-002",
+                "error_message" : `Data pada BODY tidak lengkap`
+            }
+        })
+    } 
+
+    try {
+        var query_result = await pool.query(`SELECT ID_SENDER, ID_RECEIVER, STRING1 FROM NOTIFICATION WHERE ID = ${notification_id}`)
+    } catch (error) {
+        isError = true
+        log.error(`ERROR | /general/updateNotif - Error found while connect to DB - ${error}`)
+    } finally {
+        if(!isError){
+            if(query_result.rowCount > 0){
+                let id_sender = query_result.rows[0].id_sender
+                let id_receiver = query_result.rows[0].id_receiver
+                let identity = query_result.rows[0].string1
+
+                if(identity){
+                    if(identity.startsWith("C")){
+                        if(decision.includes("accepted")){
+                            query_action = `'acceptedCommunity'`
+                        } else if(decision.includes("rejected")){    
+                            query_action = `'rejectedCommunity'`
+                        }
+                    } else if(identity.startsWith("E")){
+                        if(decision.includes("accepted")){
+                            query_action = `'acceptedEvent'`
+                        } else if(decision.includes("rejected")){    
+                            query_action = `'rejectedEvent'`
+                        }
+                    } 
+                }
+
+                console.log(`INSERT INTO NOTIFICATION (ACTION, ID_SENDER, ID_RECEIVER, STRING1)
+                    VALUES (${query_action}, '${id_receiver}', '${id_sender}', '${identity}')`)
+
+                try {
+                    var query_result = await pool.query(`INSERT INTO NOTIFICATION (ACTION, ID_SENDER, ID_RECEIVER, STRING1)
+                        VALUES (${query_action}, '${id_receiver}', '${id_sender}', '${identity}')`)
+                } catch (error) {
+                    isError1 = true
+                    log.error(`ERROR | /general/updateNotif - Error found while connect to DB - ${error}`)
+                } finally {
+                    console.log(query_result)
+                    if(!isError1){
+                        try {
+                            var query_result = await pool.query(`DELETE FROM NOTIFICATION WHERE ID = ${notification_id}`)
+                            console.log(query_result)
+                        } catch (error) {
+                            isError1 = true
+                            log.error(`ERROR | /general/updateNotif - Error found while connect to DB - ${error}`)
+                        } finally {
+                            let query = "", isError4 = ""
+                            if(decision.includes("accepted")){
+                                if(identity.startsWith("E")){
+                                    query = `UPDATE EVENTS_LINK SET IS_APPROVED = TRUE WHERE ID_EVENT ILIKE LOWER('${identity}') AND ID_USER ILIKE LOWER('${id_sender}')`
+                                } else if (identity.startsWith("C")){
+                                    query = `UPDATE COMMUNITY_LINK SET IS_APPROVED = TRUE WHERE ID_COMMUNITY ILIKE LOWER('${identity}') AND ID_USER ILIKE LOWER('${id_sender}')`
+                                }
+                            } else {
+                                if(identity.startsWith("E")){
+                                    query = `DELETE FROM EVENTS_LINK WHERE ID_EVENT ILIKE LOWER('${identity}') AND ID_USER ILIKE LOWER('${id_sender}')`
+                                } else if (identity.startsWith("C")){
+                                    query = `DELETE FROM COMMUNITY_LINK WHERE ID_COMMUNITY ILIKE LOWER('${identity}') AND ID_USER ILIKE LOWER('${id_sender}')`
+                                }
+                            }
+                            try {
+                                var query_result = await pool.query(query)
+                            } catch (error) {
+                                isError4 = true
+                                log.error(`ERROR | /general/updateNotif - Error found while connect to DB - ${error}`)
+                            } finally {
+                                if(!isError4){
+                                    respond.successResp(req, res, "nearbud-000-000", "Berhasil memproses data", 1, 1, 1, result)                    
+                                }
+                            }
+                        }
+                    }
+                }
+            } else {
+                return res.status(500).json({
+                    "error_schema" : {
+                        "error_code" : "nearbud-001-001",
+                        "error_message" : `Notification ID tidak ditemukan`
+                    }
+                })
+            }
         } else {
             return res.status(500).json({
                 "error_schema" : {

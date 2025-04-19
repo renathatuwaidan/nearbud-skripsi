@@ -208,14 +208,13 @@ exports.registerUser = asyncHandler(async function registerUser(req, res, users_
                     "error_message" : `Username atau email sudah digunakan`
                 }
             })
-        }
-        if(validUser == "update_user"){
-            query = `UPDATE USERS SET OTP = ${otp}, OTP_CREATED = NOW() AT TIME ZONE 'Asia/Jakarta'`
-        } else if(validUser == true) {
+        } else {
             query = `INSERT INTO USERS (NAME, USERNAME, EMAIL, PASSWORD, DATE_OF_BIRTH, IS_VERIFIED, OTP, CREATED, OTP_CREATED) 
-                    VALUES ('${utility.toTitleCase(users_name)}','${users_username.toLowerCase()}','${users_email.toLowerCase()}','${users_password}', '${users_dob}', 'false', ${otp}, NOW(), NOW() AT TIME ZONE 'Asia/Jakarta')`
-        }
+            VALUES ('${utility.toTitleCase(users_name)}','${users_username.toLowerCase()}','${users_email.toLowerCase()}','${users_password}', '${users_dob}', 'false', ${otp}, NOW(), NOW() AT TIME ZONE 'Asia/Jakarta')`
+        }          
     }
+    
+    console.log(query)
 
     try {
         var query_result = await pool.query(query)
@@ -456,21 +455,18 @@ exports.checkExistedUser = asyncHandler(async function checkExistedUser(username
     }
 
     try { 
-        var query_result = await pool.query(`SELECT is_verified, COUNT (*) OVER () FROM USERS WHERE (USERNAME = '${username}' OR EMAIL = '${email}')`)
+        var query_result = await pool.query(`SELECT * FROM USERS WHERE (EMAIL ILIKE LOWER('${email}') AND IS_VERIFIED = 'TRUE') 
+                                        OR (USERNAME ILIKE LOWER('${username}') AND IS_VERIFIED = 'TRUE')
+`) 
     } catch (error) {
         isError = true
         log.error(`ERROR | /auth/registerUser - checkExistUser [username : "${username}"] - Error found while connect to DB - ${error}`)
     } finally {
         if(!isError){
-            console.log(query_result.rows)
-            if(query_result.rowCount == 0){
-                return true
+            if(query_result.rowCount > 1){
+                return false
             } else {
-                if(query_result.rows[0].is_verified == true){
-                    return false
-                } else {
-                    return "update_user"
-                }
+                return true
             }
         } else {
             return false
