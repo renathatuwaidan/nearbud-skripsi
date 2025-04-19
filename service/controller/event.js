@@ -77,11 +77,11 @@ exports.getEventsPreview = asyncHandler(async function getEventsPreview(req, res
                 query_status_1 = `AND (SELECT COUNT(*) FROM EVENTS_LINK WHERE ID_EVENT = A.ID_EVENT) < A.NUMBER_PARTICIPANT`
                 
                 if (status.includes("not-joined")){
-                    query_status_2 = `AND A.ID_EVENT NOT IN (SELECT ID_EVENT FROM EVENTS_LINK WHERE ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')))`
+                    query_status_2 = `AND A.ID_EVENT NOT IN (SELECT ID_EVENT FROM EVENTS_LINK WHERE ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}') AND IS_APPROVED = TRUE))`
                 }
             } else {
                 if (status.includes("not-joined")){
-                    query_status_2 = `AND A.ID_EVENT NOT IN (SELECT ID_EVENT FROM EVENTS_LINK WHERE ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')))`
+                    query_status_2 = `AND A.ID_EVENT NOT IN (SELECT ID_EVENT FROM EVENTS_LINK WHERE ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}') AND IS_APPROVED = TRUE))`
                 }
             }
 
@@ -142,11 +142,11 @@ exports.getEventsPreview = asyncHandler(async function getEventsPreview(req, res
                     query_status_1 = `AND (SELECT COUNT(*) FROM EVENTS_LINK WHERE ID_EVENT = A.ID_EVENT) < A.NUMBER_PARTICIPANT`
                     
                     if (status.includes("not-joined")){
-                        query_status_2 = `AND A.ID_EVENT NOT IN (SELECT ID_EVENT FROM EVENTS_LINK WHERE ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')))`
+                        query_status_2 = `AND A.ID_EVENT NOT IN (SELECT ID_EVENT FROM EVENTS_LINK WHERE ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}') AND IS_APPROVED = TRUE))`
                     }
                 } else {
                     if (status.includes("not-joined")){
-                        query_status_2 = `AND A.ID_EVENT NOT IN (SELECT ID_EVENT FROM EVENTS_LINK WHERE ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')))`
+                        query_status_2 = `AND A.ID_EVENT NOT IN (SELECT ID_EVENT FROM EVENTS_LINK WHERE ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}') AND IS_APPROVED = TRUE))`
                     }
                 }
     
@@ -196,11 +196,11 @@ exports.getEventsPreview = asyncHandler(async function getEventsPreview(req, res
                         query_status_1 = `(SELECT COUNT(*) FROM EVENTS_LINK WHERE ID_EVENT = A.ID_EVENT) < A.NUMBER_PARTICIPANT`
                         
                         if (status.includes("not-joined")){
-                            query_status_2 = `AND A.ID_EVENT NOT IN (SELECT ID_EVENT FROM EVENTS_LINK WHERE ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')))`
+                            query_status_2 = `AND A.ID_EVENT NOT IN (SELECT ID_EVENT FROM EVENTS_LINK WHERE ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}') AND IS_APPROVED = TRUE))`
                         }
                     } else {
                         if (status.includes("not-joined")){
-                            query_status_2 = `AND A.ID_EVENT NOT IN (SELECT ID_EVENT FROM EVENTS_LINK WHERE ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')))`
+                            query_status_2 = `AND A.ID_EVENT NOT IN (SELECT ID_EVENT FROM EVENTS_LINK WHERE ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}') AND IS_APPROVED = TRUE))`
                         }
                     }
         
@@ -241,11 +241,11 @@ exports.getEventsPreview = asyncHandler(async function getEventsPreview(req, res
                             query_status_1 = `AND (SELECT COUNT(*) FROM EVENTS_LINK WHERE ID_EVENT = A.ID_EVENT) < A.NUMBER_PARTICIPANT`
                             
                             if (status.includes("not-joined")){
-                                query_status_2 = `AND A.ID_EVENT NOT IN (SELECT ID_EVENT FROM EVENTS_LINK WHERE ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')))`
+                                query_status_2 = `AND A.ID_EVENT NOT IN (SELECT ID_EVENT FROM EVENTS_LINK WHERE ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}') AND IS_APPROVED = TRUE))`
                             }
                         } else {
                             if (status.includes("not-joined")){
-                                query_status_2 = `AND A.ID_EVENT NOT IN (SELECT ID_EVENT FROM EVENTS_LINK WHERE ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')))`
+                                query_status_2 = `AND A.ID_EVENT NOT IN (SELECT ID_EVENT FROM EVENTS_LINK WHERE ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}') AND IS_APPROVED = TRUE))`
                             }
                         }
             
@@ -270,11 +270,11 @@ exports.getEventsPreview = asyncHandler(async function getEventsPreview(req, res
                                 query_status_1 = `AND (SELECT COUNT(*) FROM EVENTS_LINK WHERE ID_EVENT = A.ID_EVENT) < A.NUMBER_PARTICIPANT`
                                 
                                 if (status.includes("not-joined")){
-                                    query_status_2 = `AND A.ID_EVENT NOT IN (SELECT ID_EVENT FROM EVENTS_LINK WHERE ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')))`
+                                    query_status_2 = `AND A.ID_EVENT NOT IN (SELECT ID_EVENT FROM EVENTS_LINK WHERE ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}') AND IS_APPROVED = TRUE))`
                                 }
                             } else {
                                 if (status.includes("not-joined")){
-                                    query_status_2 = `AND A.ID_EVENT NOT IN (SELECT ID_EVENT FROM EVENTS_LINK WHERE ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')))`
+                                    query_status_2 = `AND A.ID_EVENT NOT IN (SELECT ID_EVENT FROM EVENTS_LINK WHERE ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}') AND IS_APPROVED = TRUE))`
                                 }
                             }
                 
@@ -307,11 +307,11 @@ exports.getEventsPreview = asyncHandler(async function getEventsPreview(req, res
                                     query_status_1 = `AND (SELECT COUNT(*) FROM EVENTS_LINK WHERE ID_EVENT = A.ID_EVENT) < A.NUMBER_PARTICIPANT`
                                     
                                     if (status.includes("not-joined")){
-                                        query_status_2 = `AND A.ID_EVENT NOT IN (SELECT ID_EVENT FROM EVENTS_LINK WHERE ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')))`
+                                        query_status_2 = `AND A.ID_EVENT NOT IN (SELECT ID_EVENT FROM EVENTS_LINK WHERE ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}') AND IS_APPROVED = TRUE))`
                                     }
                                 } else {
                                     if (status.includes("not-joined")){
-                                        query_status_2 = `AND A.ID_EVENT NOT IN (SELECT ID_EVENT FROM EVENTS_LINK WHERE ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')))`
+                                        query_status_2 = `AND A.ID_EVENT NOT IN (SELECT ID_EVENT FROM EVENTS_LINK WHERE ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}') AND IS_APPROVED = TRUE))`
                                     }
                                 }
                     
@@ -340,11 +340,11 @@ exports.getEventsPreview = asyncHandler(async function getEventsPreview(req, res
                                         query_status_1 = `AND (SELECT COUNT(*) FROM EVENTS_LINK WHERE ID_EVENT = A.ID_EVENT) < A.NUMBER_PARTICIPANT`
                                         
                                         if (status.includes("not-joined")){
-                                            query_status_2 = `AND A.ID_EVENT NOT IN (SELECT ID_EVENT FROM EVENTS_LINK WHERE ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')))`
+                                            query_status_2 = `AND A.ID_EVENT NOT IN (SELECT ID_EVENT FROM EVENTS_LINK WHERE ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}') AND IS_APPROVED = TRUE))`
                                         }
                                     } else {
                                         if (status.includes("not-joined")){
-                                            query_status_2 = `AND A.ID_EVENT NOT IN (SELECT ID_EVENT FROM EVENTS_LINK WHERE ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')))`
+                                            query_status_2 = `AND A.ID_EVENT NOT IN (SELECT ID_EVENT FROM EVENTS_LINK WHERE ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}') AND IS_APPROVED = TRUE))`
                                         }
                                     }
                         
@@ -362,11 +362,11 @@ exports.getEventsPreview = asyncHandler(async function getEventsPreview(req, res
                                         query_status_1 = `(SELECT COUNT(*) FROM EVENTS_LINK WHERE ID_EVENT = A.ID_EVENT) < A.NUMBER_PARTICIPANT`
                                         
                                         if (status.includes("not-joined")){
-                                            query_status_2 = `AND A.ID_EVENT NOT IN (SELECT ID_EVENT FROM EVENTS_LINK WHERE ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')))`
+                                            query_status_2 = `AND A.ID_EVENT NOT IN (SELECT ID_EVENT FROM EVENTS_LINK WHERE ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}') AND IS_APPROVED = TRUE))`
                                         }
                                     } else {
                                         if (status.includes("not-joined")){
-                                            query_status_2 = `A.ID_EVENT NOT IN (SELECT ID_EVENT FROM EVENTS_LINK WHERE ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')))`
+                                            query_status_2 = `A.ID_EVENT NOT IN (SELECT ID_EVENT FROM EVENTS_LINK WHERE ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}') AND IS_APPROVED = TRUE))`
                                         }
                                     }
                         
@@ -466,23 +466,32 @@ exports.getEventsPreview = asyncHandler(async function getEventsPreview(req, res
 exports.getEventsPreviewList = asyncHandler(async function getEventsPreviewList(req, res, event_date, query_interest, query_category, query_city_based, query_event_date,
     query_province_based, query_event_location, query_event_number_participant, query_creator, query_community, query_status, query_from, query_events) {
     let result = [], isError = false, query_and = "", q_date = ""
-
-    if(query_interest || query_category || query_city_based || query_event_location || query_event_number_participant 
-        || query_community || query_creator || query_event_date) query_and = `AND`
+    
+    if(!query_interest.startsWith("AND") || !query_category.startsWith("AND") || !query_city_based.startsWith("AND") || !query_event_location.startsWith("AND")
+        || !query_event_number_participant.startsWith("AND") ||!query_community.startsWith("AND") || !query_creator.startsWith("AND")) {
+            query_and = ``
+        }
 
     if(event_date){
         q_date = `A.DATE::date = '${event_date}'`
     }
 
-    if(query_status){
-        if(!query_status.startsWith("AND")){
-            query_status = `AND ${query_status}`
+    if(query_event_date){
+        if(!query_event_date.trim().startsWith("AND")){
+            query_event_date = `AND ${query_event_date}`
+        } else {
+            query_event_date = `${query_event_date}`
         }
-    } else { query_status = "" }
+    }
 
+    if(query_status){
+        if(!query_status.trim().startsWith("AND")){
+            query_status = `AND ${query_status}`
+        } 
+    } else { query_status = `` }
 
     if(query_events){
-        if(!query_events.startsWith("AND")){
+        if(!query_events.trim().startsWith("AND")){
             query_events = `AND ID_EVENT IN ${query_events}`
         } else {
             query_events = `ID_EVENT IN ${query_events}`
@@ -491,6 +500,7 @@ exports.getEventsPreviewList = asyncHandler(async function getEventsPreviewList(
         query_events = ""
     }
 
+    console.log(event_date + '%%' + query_status + "==" + query_events)
 
     if(!query_from) query_from = ""
 
@@ -672,12 +682,7 @@ exports.getCreator = asyncHandler(async function getCreator(req, res, id_creator
 })
 
 exports.addEvent = asyncHandler(async function addEvent(req, res, event_name, event_description, event_date, event_duration, event_location, event_city, event_address, event_number_participant, event_id_profile, event_category, event_interest, event_creator, event_coordinate, users_username_token) {
-    
-    console.log("127")
-
     let isError = false, result = [], query_event_creator = "", query_event_coordinate_1 = "", query_event_coordinate_2 ="", query_img_1 = "", query_img_2= ""
-
-    console.log('1')
 
     if(event_creator){
         if(event_creator.startsWith("C")){
@@ -689,13 +694,9 @@ exports.addEvent = asyncHandler(async function addEvent(req, res, event_name, ev
         query_event_creator = `(SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}'))`
     }
 
-    console.log('2')
-
     if(event_city){
         query_city = `(SELECT ID FROM CITY WHERE NAME ILIKE LOWER('${event_city}'))`
     }
-
-    console.log('3')
 
     if(event_date){
         if(!utility.timestampValidation(event_date)){
@@ -707,7 +708,6 @@ exports.addEvent = asyncHandler(async function addEvent(req, res, event_name, ev
             })
         } 
     } 
-    console.log('4')
 
     if(event_id_profile){
         query_img_1 = `,ID_PROFILE`
