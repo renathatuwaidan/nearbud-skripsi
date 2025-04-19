@@ -763,7 +763,7 @@ exports.editCommunity = asyncHandler(async function editCommunity(req, res, comm
     } else { city_name = '' }
 
     if(interest_id){
-        interest_id = `,ID_INTEREST = '${interest_id.toUpperCase()}'`
+        interest_id = `,ID_INTEREST = '${interest_id}'`
     } else { interest_id = '' }
 
     if(community_id_profile){

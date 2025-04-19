@@ -671,9 +671,13 @@ exports.getCreator = asyncHandler(async function getCreator(req, res, id_creator
     }
 })
 
-exports.addEvent = asyncHandler(async function addEvent(req, res, event_name, event_description, event_date, event_duration, event_location, event_city, 
-    event_address, event_number_participant, event_id_profile, event_category, event_interest, event_creator, event_coordinate, users_username_token) {
+exports.addEvent = asyncHandler(async function addEvent(req, res, event_name, event_description, event_date, event_duration, event_location, event_city, event_address, event_number_participant, event_id_profile, event_category, event_interest, event_creator, event_coordinate, users_username_token) {
+    
+    console.log("127")
+
     let isError = false, result = [], query_event_creator = "", query_event_coordinate_1 = "", query_event_coordinate_2 ="", query_img_1 = "", query_img_2= ""
+
+    console.log('1')
 
     if(event_creator){
         if(event_creator.startsWith("C")){
@@ -685,9 +689,13 @@ exports.addEvent = asyncHandler(async function addEvent(req, res, event_name, ev
         query_event_creator = `(SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}'))`
     }
 
+    console.log('2')
+
     if(event_city){
         query_city = `(SELECT ID FROM CITY WHERE NAME ILIKE LOWER('${event_city}'))`
     }
+
+    console.log('3')
 
     if(event_date){
         if(!utility.timestampValidation(event_date)){
@@ -699,6 +707,7 @@ exports.addEvent = asyncHandler(async function addEvent(req, res, event_name, ev
             })
         } 
     } 
+    console.log('4')
 
     if(event_id_profile){
         query_img_1 = `,ID_PROFILE`
@@ -738,24 +747,25 @@ exports.addEvent = asyncHandler(async function addEvent(req, res, event_name, ev
             let isError2 = false
 
             // processing add Notif -- New Event
-            if(event_creator.startsWith("C")){
-                try {
-                    var query_result = await pool.query(`INSERT INTO NOTIFICATION (ACTION, ID_SENDER, ID_RECEIVER)
-                           VALUES ('newEvent', '${query_result.rows[0].id_event}', (SELECT ID_COMMUNITY FROM COMMUNITY WHERE ID_COMMUNITY ILIKE LOWER('${event_creator}')))`)
-                } catch (error) {
-                    isError2 = true
-                } finally {
-                    if(isError2){
-                        return res.status(500).json({
-                            "error_schema" : {
-                                "error_code" : "nearbud-003-001",
-                                "error_message" : `Error while connecting to DB`
-                            }
-                        })
-                    } 
-                }
-            
-            } 
+            if(event_creator){
+                if(event_creator.startsWith("C")){
+                    try {
+                        var query_result = await pool.query(`INSERT INTO NOTIFICATION (ACTION, ID_SENDER, ID_RECEIVER)
+                               VALUES ('newEvent', '${query_result.rows[0].id_event}', (SELECT ID_COMMUNITY FROM COMMUNITY WHERE ID_COMMUNITY ILIKE LOWER('${event_creator}')))`)
+                    } catch (error) {
+                        isError2 = true
+                    } finally {
+                        if(isError2){
+                            return res.status(500).json({
+                                "error_schema" : {
+                                    "error_code" : "nearbud-003-001",
+                                    "error_message" : `Error while connecting to DB`
+                                }
+                            })
+                        } 
+                    }
+                } 
+            }
             
             respond.successResp(req, res, "nearbud-000-000", "Data berhasil ditambahkan", 0, 0, 0, result, 0)
             log.info(`SUCCESS | /general/addEvent - Success added the data`)
@@ -768,6 +778,8 @@ exports.addEvent = asyncHandler(async function addEvent(req, res, event_name, ev
             })
         }
     }
+
+
 })
 
 exports.editEvent = asyncHandler(async function editEvent(req, res, event_id, event_name, event_description, event_date, event_duration, event_location, event_city, 
