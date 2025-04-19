@@ -102,7 +102,7 @@ app.post("/addReport", user_auth_controller.tokenVerif, function(req, res){
     let report_detail = req.body.report_detail
     let users_username_token = res.getHeader('users_username')
 
-    general_controller.addReportUser(req, res, reportee, report_type, report_detail, users_username_token)
+    general_controller.addReport(req, res, reportee, report_type, report_detail, users_username_token)
 })
 
 app.get("/getReview", user_auth_controller.tokenVerif, function(req, res){
@@ -141,8 +141,10 @@ app.post("/addRoomIdList", user_auth_controller.tokenVerif, function(req, res){
 })
 
 app.get("/getNotification", user_auth_controller.tokenVerif, function(req, res){
+    let page = req.query.page
+    let size = req.query.size
     let users_username_token = res.getHeader('users_username')
-    general_controller.getNotif(req, res, users_username_token)
+    general_controller.getNotif(req, res, users_username_token, page, size)
 })
 
 app.post("/updateNotification", user_auth_controller.tokenVerif, function(req, res){

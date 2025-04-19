@@ -996,12 +996,153 @@ exports.getRoomIdList = asyncHandler(async function getRoomIdList(req, res, user
 
 })
 
-exports.getNotif = asyncHandler(async function addNotif(req, res, users_username_token) {
-    let isError = false, result = []
+exports.getNotif = asyncHandler(async function getNotif(req, res, users_username_token, page, size) {
+    let isError = false, result = [], notif_approval = [], notif = []
+
     var query_pagination = respond.query_pagination(req,res, page, size)
 
+    console.log(`
+        WITH NOTIFICATION AS (
+                    SELECT '1' AS CLASSIFICATION,
+                        A.ID,
+                        A.STRING1,
+                        CASE WHEN STRING1 ILIKE ('E%') THEN (SELECT NAME FROM EVENTS WHERE ID_EVENT = A.STRING1)
+                        WHEN STRING1 ILIKE ('C%') THEN (SELECT NAME FROM COMMUNITY WHERE ID_COMMUNITY = A.STRING1)
+                        ELSE 'not found'
+                        END AS NAME,
+                        CASE WHEN STRING1 ILIKE ('E%') THEN (SELECT LOCATION FROM EVENTS WHERE ID_EVENT = A.STRING1)
+                        WHEN STRING1 ILIKE ('C%') THEN null
+                        ELSE 'not found'
+                        END AS LOCATION,
+                        CASE WHEN STRING1 ILIKE ('E%') THEN (SELECT TO_CHAR(DATE, 'HH12:MI AM') FROM EVENTS WHERE ID_EVENT = A.STRING1)
+                        WHEN STRING1 ILIKE ('C%') THEN null
+                        ELSE 'not found'
+                        END AS TIME,
+                        (SELECT NAME FROM USERS WHERE ID_USER = A.ID_SENDER) AS SENDER_NAME,
+                        A.ID_SENDER,
+                        A.ACTION
+                    FROM NOTIFICATION A
+                    WHERE (A.ID_RECEIVER IN (SELECT ID_COMMUNITY FROM IS_ADMIN WHERE ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')))  -- WHEN RECEIVER = CXXX
+                    OR A.ID_RECEIVER IN (SELECT ID_CREATOR FROM EVENTS WHERE ID_CREATOR = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')))) -- KALO USER == CREATOR EVENT
+                    AND A.ACTION IN ('requestEvent', 'requestCommunity')
+                    UNION
+                    SELECT '3' AS CLASSIFICATION, B.ID, B.STRING1,
+                        CASE WHEN STRING1 ILIKE ('E%') THEN (SELECT NAME FROM EVENTS WHERE ID_EVENT = B.STRING1)
+                        WHEN STRING1 ILIKE ('C%') THEN (SELECT NAME FROM COMMUNITY WHERE ID_COMMUNITY = B.STRING1)
+                        ELSE 'not found'
+                        END AS NAME,
+                        CASE WHEN STRING1 ILIKE ('E%') THEN (SELECT LOCATION FROM EVENTS WHERE ID_EVENT = B.STRING1)
+                        WHEN STRING1 ILIKE ('C%') THEN null
+                        ELSE 'not found'
+                        END AS LOCATION,
+                        CASE WHEN STRING1 ILIKE ('E%') THEN (SELECT TO_CHAR(DATE, 'HH12:MI AM') FROM EVENTS WHERE ID_EVENT = B.STRING1)
+                        WHEN STRING1 ILIKE ('C%') THEN null
+                        ELSE 'not found'
+                        END AS TIME,
+                        (SELECT NAME FROM USERS WHERE ID_USER = B.ID_SENDER) AS SENDER_NAME,
+                        B.ID_SENDER, 
+                        B.ACTION
+                    FROM NOTIFICATION B
+                    WHERE (B.ID_RECEIVER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')))
+                    AND B.ACTION IN ('rejectedEvent', 'rejectedCommunity', 'acceptedEvent', 'acceptedCommunity')
+                    UNION
+                    SELECT '2' AS CLASSIFICATION, A.ID, A.STRING1,
+                        CASE WHEN STRING1 ILIKE ('E%') THEN (SELECT NAME FROM EVENTS WHERE ID_EVENT = A.STRING1)
+                        WHEN STRING1 ILIKE ('C%') THEN (SELECT NAME FROM COMMUNITY WHERE ID_COMMUNITY = A.STRING1)
+                        ELSE 'not found'
+                        END AS NAME,
+                        CASE WHEN STRING1 ILIKE ('E%') THEN (SELECT LOCATION FROM EVENTS WHERE ID_EVENT = A.STRING1)
+                        WHEN STRING1 ILIKE ('C%') THEN null
+                        ELSE 'not found'
+                        END AS LOCATION,
+                        CASE WHEN STRING1 ILIKE ('E%') THEN (SELECT TO_CHAR(DATE, 'HH12:MI AM') FROM EVENTS WHERE ID_EVENT = A.STRING1)
+                        WHEN STRING1 ILIKE ('C%') THEN null
+                        ELSE 'not found'
+                        END AS TIME,
+                        (SELECT NAME FROM USERS WHERE ID_USER = A.ID_SENDER) AS SENDER_NAME,
+                        A.ID_SENDER,
+                        A.ACTION
+                    FROM NOTIFICATION A
+                    WHERE (A.ID_RECEIVER IN (SELECT ID_EVENT FROM EVENTS_LINK WHERE ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')) AND IS_APPROVED = TRUE)
+                    OR A.ID_RECEIVER IN (SELECT ID_COMMUNITY FROM COMMUNITY_LINK WHERE ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}') AND IS_APPROVED = TRUE)))
+                    AND A.ACTION IN ('newEvent')
+                )
+                SELECT *, COUNT(*) OVER ()
+                FROM NOTIFICATION
+                ORDER BY ID ASC
+                ${query_pagination}`)
+
     try {
-        var query_result = await pool.query(``)
+        var query_result = await pool.query(`
+                WITH NOTIFICATION AS (
+                    SELECT '1' AS CLASSIFICATION,
+                        A.ID,
+                        A.STRING1,
+                        CASE WHEN STRING1 ILIKE ('E%') THEN (SELECT NAME FROM EVENTS WHERE ID_EVENT = A.STRING1)
+                        WHEN STRING1 ILIKE ('C%') THEN (SELECT NAME FROM COMMUNITY WHERE ID_COMMUNITY = A.STRING1)
+                        ELSE 'not found'
+                        END AS NAME,
+                        CASE WHEN STRING1 ILIKE ('E%') THEN (SELECT LOCATION FROM EVENTS WHERE ID_EVENT = A.STRING1)
+                        WHEN STRING1 ILIKE ('C%') THEN null
+                        ELSE 'not found'
+                        END AS LOCATION,
+                        CASE WHEN STRING1 ILIKE ('E%') THEN (SELECT TO_CHAR(DATE, 'HH12:MI AM') FROM EVENTS WHERE ID_EVENT = A.STRING1)
+                        WHEN STRING1 ILIKE ('C%') THEN null
+                        ELSE 'not found'
+                        END AS TIME,
+                        (SELECT NAME FROM USERS WHERE ID_USER = A.ID_SENDER) AS SENDER_NAME,
+                        A.ID_SENDER,
+                        A.ACTION
+                    FROM NOTIFICATION A
+                    WHERE (A.ID_RECEIVER IN (SELECT ID_COMMUNITY FROM IS_ADMIN WHERE ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')))  -- WHEN RECEIVER = CXXX
+                    OR A.ID_RECEIVER IN (SELECT ID_CREATOR FROM EVENTS WHERE ID_CREATOR = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')))) -- KALO USER == CREATOR EVENT
+                    AND A.ACTION IN ('requestEvent', 'requestCommunity')
+                    UNION
+                    SELECT '3' AS CLASSIFICATION, B.ID, B.STRING1,
+                        CASE WHEN STRING1 ILIKE ('E%') THEN (SELECT NAME FROM EVENTS WHERE ID_EVENT = B.STRING1)
+                        WHEN STRING1 ILIKE ('C%') THEN (SELECT NAME FROM COMMUNITY WHERE ID_COMMUNITY = B.STRING1)
+                        ELSE 'not found'
+                        END AS NAME,
+                        CASE WHEN STRING1 ILIKE ('E%') THEN (SELECT LOCATION FROM EVENTS WHERE ID_EVENT = B.STRING1)
+                        WHEN STRING1 ILIKE ('C%') THEN null
+                        ELSE 'not found'
+                        END AS LOCATION,
+                        CASE WHEN STRING1 ILIKE ('E%') THEN (SELECT TO_CHAR(DATE, 'HH12:MI AM') FROM EVENTS WHERE ID_EVENT = B.STRING1)
+                        WHEN STRING1 ILIKE ('C%') THEN null
+                        ELSE 'not found'
+                        END AS TIME,
+                        (SELECT NAME FROM USERS WHERE ID_USER = B.ID_SENDER) AS SENDER_NAME,
+                        B.ID_SENDER, 
+                        B.ACTION
+                    FROM NOTIFICATION B
+                    WHERE (B.ID_RECEIVER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')))
+                    AND B.ACTION IN ('rejectedEvent', 'rejectedCommunity', 'acceptedEvent', 'acceptedCommunity')
+                    UNION
+                    SELECT '2' AS CLASSIFICATION, A.ID, A.STRING1,
+                        CASE WHEN STRING1 ILIKE ('E%') THEN (SELECT NAME FROM EVENTS WHERE ID_EVENT = A.STRING1)
+                        WHEN STRING1 ILIKE ('C%') THEN (SELECT NAME FROM COMMUNITY WHERE ID_COMMUNITY = A.STRING1)
+                        ELSE 'not found'
+                        END AS NAME,
+                        CASE WHEN STRING1 ILIKE ('E%') THEN (SELECT LOCATION FROM EVENTS WHERE ID_EVENT = A.STRING1)
+                        WHEN STRING1 ILIKE ('C%') THEN null
+                        ELSE 'not found'
+                        END AS LOCATION,
+                        CASE WHEN STRING1 ILIKE ('E%') THEN (SELECT TO_CHAR(DATE, 'HH12:MI AM') FROM EVENTS WHERE ID_EVENT = A.STRING1)
+                        WHEN STRING1 ILIKE ('C%') THEN null
+                        ELSE 'not found'
+                        END AS TIME,
+                        (SELECT NAME FROM USERS WHERE ID_USER = A.ID_SENDER) AS SENDER_NAME,
+                        A.ID_SENDER,
+                        A.ACTION
+                    FROM NOTIFICATION A
+                    WHERE (A.ID_RECEIVER IN (SELECT ID_EVENT FROM EVENTS_LINK WHERE ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')) AND IS_APPROVED = TRUE)
+                    OR A.ID_RECEIVER IN (SELECT ID_COMMUNITY FROM COMMUNITY_LINK WHERE ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}') AND IS_APPROVED = TRUE)))
+                    AND A.ACTION IN ('newEvent')
+                )
+                SELECT *, COUNT(*) OVER ()
+                FROM NOTIFICATION
+                ${query_pagination}
+            `)
     } catch (error) {
         isError = true
         log.error(`ERROR | /general/getRoomIdList - Error found while connect to DB - ${error}`)
@@ -1009,14 +1150,62 @@ exports.getNotif = asyncHandler(async function addNotif(req, res, users_username
         if(!isError){
             if(query_result.rowCount > 0 ){
                 for( let i = 0; i < query_result.rowCount; i++){
-                    var object = {
-                        "room_id" : query_result.rows[i].id_chat,
-                        "id_user_1" : query_result.rows[i].id_user_1,
-                        "id_user_2" : query_result.rows[i].id_user_2
-                    } 
-                    result.push(object)
+                    if(['1'].includes(query_result.rows[i].classification)){
+                        let target_type
+                        if(query_result.rows[i].string1 == "requestCommunity") {
+                            target_type = `COMMUNITY`
+                        } else {
+                            target_type = `EVENT`
+                        }
+
+                        var object = {
+                            "notification_id" : query_result.rows[i].id,
+                            "notification_action" : query_result.rows[i].action,
+                            "target_type" : target_type,
+                            "target_id" : query_result.rows[i].string1,
+                            "target_name" : query_result.rows[i].name,
+                            "target_location" : query_result.rows[i].location,
+                            "target_time" : query_result.rows[i].time,
+                            "sender_id" : query_result.rows[i].id_sender,
+                            "sender_name" : query_result.rows[i].sender_name
+                        }
+
+                        notif_approval.push(object)
+                    } else if(['2', '3'].includes(query_result.rows[i].classification)) {
+                        let target_type
+                        if(query_result.rows[i].string1 == "requestCommunity") {
+                            target_type = `COMMUNITY`
+                        } else {
+                            target_type = `EVENT`
+                        }
+
+                        var object = {
+                            "notification_id" : query_result.rows[i].id,
+                            "notification_action" : query_result.rows[i].action,
+                            "target_type" : target_type,
+                            "target_id" : query_result.rows[i].string1,
+                            "target_name" : query_result.rows[i].name,
+                            "target_location" : query_result.rows[i].location,
+                            "target_time" : query_result.rows[i].time,
+                            "sender_id" : query_result.rows[i].id_sender,
+                            "sender_name" : query_result.rows[i].sender_name
+                        }
+
+                        notif.push(object)
+                    }
                 }
-                respond.successResp(req, res, "nearbud-000-000", "Berhasil mendapatkan hasil", query_result.rowCount, query_result.rowCount, 1, result)
+
+                var fin_result = {
+                    "notification_approval" : notif_approval,
+                    "notification_info" : notif
+                }
+
+                result.push(fin_result)
+
+                var total_data = query_result.rows[0].count
+                var total_query_data = query_result.rowCount
+
+                respond.successResp(req, res, "nearbud-000-000", "Berhasil mendapatkan hasil", total_data, total_query_data, 1, result)
             } else {
                 respond.successResp(req, res, "nearbud-001-001", "Data tidak ditemukan", 0, 0, 0, result)
             }
