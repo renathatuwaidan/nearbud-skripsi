@@ -107,9 +107,19 @@ app.post("/addReport", user_auth_controller.tokenVerif, function(req, res){
 
 app.get("/getReview", user_auth_controller.tokenVerif, function(req, res){
     let reviewee_id = req.query.reviewee_id
+    let page = req.query.page
+    let size = req.query.size
     let users_username_token = res.getHeader('users_username')
     
-    general_controller.getReview(res, res, reviewee_id, users_username_token)
+    general_controller.getReview(res, res, reviewee_id, users_username_token, page, size)
+})
+
+app.get("/getPendingReview", user_auth_controller.tokenVerif, function(req, res){
+    let users_username_token = res.getHeader('users_username')
+    let page = req.query.page
+    let size = req.query.size
+    
+    general_controller.getPendingReview(res, res, users_username_token, page, size)
 })
 
 app.post("/addReview", user_auth_controller.tokenVerif, function(req, res){
@@ -130,14 +140,19 @@ app.get("/getRoomIdList", user_auth_controller.tokenVerif, function(req, res){
     general_controller.getRoomIdList(req, res, users_username_token, page, size)
 })
 
-// pending add room id list
+app.get("/getRoomId", user_auth_controller.tokenVerif, function (req, res) {
+    let target_id = req.query.target_id
+    let users_username_token = res.getHeader('users_username')
+    general_controller.getRoomId(req, res, target_id, users_username_token)
+})
+
 app.post("/addRoomIdList", user_auth_controller.tokenVerif, function(req, res){
     let users_username_token = res.getHeader('users_username')
     let room_id = req.body.room_id
     let id_user_1  = req.body.id_user_1
     let id_user_2 = req.body.id_user_2
 
-    general_controller.getRoomIdList(req, res, room_id, id_user_1, id_user_2, users_username_token)
+    general_controller.addRoomId(req, res, room_id, id_user_1, id_user_2, users_username_token)
 })
 
 app.get("/getNotification", user_auth_controller.tokenVerif, function(req, res){

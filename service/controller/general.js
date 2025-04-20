@@ -786,8 +786,10 @@ exports.updatePassword = asyncHandler (async function updatePassword(req, res, p
     }
 })
 
-exports.getReview = asyncHandler(async function getReview(req, res, reviewee_id, users_username_token){
+exports.getReview = asyncHandler(async function getReview(req, res, reviewee_id, users_username_token, page, size){
     let isError = false, result = [], query_where = ""
+
+    var query_pagination = respond.query_pagination(req,res, page, size)
 
     if(reviewee_id){
         if(reviewee_id.startsWith("U")){
@@ -800,24 +802,25 @@ exports.getReview = asyncHandler(async function getReview(req, res, reviewee_id,
         query_where = `WHERE A.ID_REVIEWEE IN (SELECT ID_EVENT FROM EVENTS WHERE ID_CREATOR = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')))`
     }
 
-    console.log(`SELECT (SELECT ROUND(AVG(RATING))
+    console.log(`WITH GETREVIEW AS (SELECT (SELECT ROUND(AVG(RATING))
                     FROM review
                     WHERE id_reviewee = A.id_reviewee
                     GROUP BY id_reviewee) AS AVG_RATING,
                     A.ID,
                     A.REVIEW,
                     A.ID_REVIEWEE AS REVIEWEE_ID,
-                    CASE
-                        WHEN A.ID_REVIEWEE ILIKE 'E%' THEN (SELECT NAME FROM EVENTS WHERE ID_EVENT = A.ID_REVIEWEE)
-                        WHEN A.ID_REVIEWEE ILIKE 'U%' THEN (SELECT NAME FROM USERS WHERE ID_USER = A.ID_REVIEWEE)
-                    END AS REVIEWEE,
+                    (SELECT NAME FROM EVENTS WHERE ID_EVENT = A.ID_REVIEWEE) AS REVIEWEE,
                     (SELECT ID_USER FROM USERS WHERE ID_USER ILIKE LOWER(A.ID_REVIEWER)) AS REVIEWER_ID,
                     (SELECT NAME FROM USERS WHERE ID_USER ILIKE LOWER(A.ID_REVIEWER)) AS REVIEWER_NAME
                 FROM REVIEW A
-                ${query_where}`)
+                ${query_where})
+                SELECT *, COUNT(*) OVER ()
+                FROM GETREVIEW
+                ORDER BY ID
+                ${query_pagination}`)
 
     try {
-        var query_result = await pool.query(`SELECT (SELECT ROUND(AVG(RATING))
+        var query_result = await pool.query(`WITH GETREVIEW AS (SELECT (SELECT ROUND(AVG(RATING))
                                                 FROM review
                                                 WHERE id_reviewee = A.id_reviewee
                                                 GROUP BY id_reviewee) AS AVG_RATING,
@@ -828,7 +831,11 @@ exports.getReview = asyncHandler(async function getReview(req, res, reviewee_id,
                                                 (SELECT ID_USER FROM USERS WHERE ID_USER ILIKE LOWER(A.ID_REVIEWER)) AS REVIEWER_ID,
                                                 (SELECT NAME FROM USERS WHERE ID_USER ILIKE LOWER(A.ID_REVIEWER)) AS REVIEWER_NAME
                                             FROM REVIEW A
-                                            ${query_where}`)
+                                            ${query_where})
+                                            SELECT *, COUNT(*) OVER ()
+                                            FROM GETREVIEW
+                                            ORDER BY ID
+                                            ${query_pagination}`)
     } catch (error) {
         isError = true
         log.error(`ERROR | /general/getReview [username : "${users_username_token}"] - Error found while connect to DB - ${error}`)
@@ -859,6 +866,64 @@ exports.getReview = asyncHandler(async function getReview(req, res, reviewee_id,
                 respond.successResp(req, res, "nearbud-001-001", "Data tidak ditemukan", 0, 0, 0, result)
             }
             log.info(`SUCCESS | /general/getReview - Success return the result`)
+
+        } else {
+            return res.status(500).json({
+                "error_schema" : {
+                    "error_code" : "nearbud-003-001",
+                    "error_message" : `Error while connecting to DB`
+                }
+            })
+        }
+    }
+})
+
+exports.getPendingReview = asyncHandler(async function getPendingReview(req, res, users_username_token, page, size) {
+    let isError = false, result = []
+
+    var query_pagination = respond.query_pagination(req,res, page, size)
+
+    try {
+        var query_result = await pool.query(`WITH PENDING_REVIEW AS (
+                SELECT 
+                    A.ID,
+                    A.ID_REVIEWEE AS EVENT_ID,
+                    (SELECT NAME FROM EVENTS WHERE ID_EVENT = A.ID_REVIEWEE) AS EVENT_NAME,
+                    (SELECT ID_CREATOR FROM EVENTS WHERE ID_EVENT = A.ID_REVIEWEE) AS EVENT_CREATOR_ID,
+                    CASE WHEN (SELECT ID_CREATOR FROM EVENTS WHERE ID_EVENT = A.ID_REVIEWEE) ILIKE ('C%') THEN (SELECT NAME FROM COMMUNITY WHERE ID_COMMUNITY = (SELECT ID_CREATOR FROM EVENTS WHERE ID_EVENT = A.ID_REVIEWEE))
+                    WHEN (SELECT ID_CREATOR FROM EVENTS WHERE ID_EVENT = A.ID_REVIEWEE) ILIKE ('U%') THEN (SELECT NAME FROM USERS WHERE ID_USER = (SELECT ID_CREATOR FROM EVENTS WHERE ID_EVENT = A.ID_REVIEWEE))
+                    END AS EVENT_CREATOR_NAME
+                FROM EVENT_RATING_TASKS A
+                WHERE A.ID_REVIEWER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}'))
+            )
+            SELECT *, COUNT(*) OVER () 
+            FROM PENDING_REVIEW
+            ${query_pagination}`)
+    } catch (error) {
+        isError = true
+        log.error(`ERROR | /general/getPendingReview [username : "${users_username_token}"] - Error found while connect to DB - ${error}`)
+    } finally {
+        if(!isError){
+            if(query_result.rowCount > 0 ){
+                for( let i = 0; i < query_result.rowCount; i++){
+                    var object = {
+                        "event_pending_review_id" : query_result.rows[i].id,
+                        "event_id" : query_result.rows[i].event_id,
+                        "event_name" : query_result.rows[i].event_name,
+                        "event_creator_id" : query_result.rows[i].event_creator_id,
+                        "event_creator_name" : query_result.rows[i].event_creator_name
+                    }
+                    result.push(object)
+                }
+
+                var total_data = query_result.rows[0].total_data
+                var total_query_data = query_result.rowCount
+
+                respond.successResp(req, res, "nearbud-000-000", "Berhasil mendapatkan hasil", total_data, total_query_data, page, result, size)
+            } else {
+                respond.successResp(req, res, "nearbud-001-001", "Data tidak ditemukan", 0, 0, 0, result)
+            }
+            log.info(`SUCCESS | /general/getPendingReview - Success return the result`)
 
         } else {
             return res.status(500).json({
@@ -910,8 +975,27 @@ exports.addReview = asyncHandler(async function getReview(req, res, reviewee_id,
         log.error(`ERROR | /general/addReview - Error found while connect to DB - ${error}`)
     } finally {
         if(!isError){
-            respond.successResp(req, res, "nearbud-000-000", "Data berhasil ditambahkan", 0, 0, 0, result)
-            log.info(`SUCCESS | /general/addReview - Success added the data`)
+            let isError1 = false
+            try {
+                console.log(`DELETE FROM EVENT_RATING_TASKS WHERE ID_REVIEWER = ${query_reviewer} AND ID_REVIEWEE = '${reviewee_id.toUpperCase()}'`)
+
+                var query_delete = await pool.query(`DELETE FROM EVENT_RATING_TASKS WHERE ID_REVIEWER = ${query_reviewer} AND ID_REVIEWEE = '${reviewee_id.toUpperCase()}'`)
+            } catch (error) {
+                isError1 = true
+                log.error(`ERROR | /general/addReview - Delete Event Rating Tasks - Error found while connect to DB - ${error}`)
+            } finally {
+                if(!isError1){
+                    respond.successResp(req, res, "nearbud-000-000", "Data berhasil ditambahkan", 0, 0, 0, result)
+                    log.info(`SUCCESS | /general/addReview - Success added the data`)
+                } else {
+                    return res.status(500).json({
+                        "error_schema" : {
+                            "error_code" : "nearbud-003-001",
+                            "error_message" : `Error while connecting to DB`
+                        }
+                    })
+                }
+            }
         } else {
             return res.status(500).json({
                 "error_schema" : {
@@ -995,6 +1079,155 @@ exports.getRoomIdList = asyncHandler(async function getRoomIdList(req, res, user
     }
 
 })
+
+exports.getRoomId = asyncHandler(async function getRoomId(req, res, target_id, users_username_token){
+    let isError = false, result = []
+
+    if(!target_id){
+        return res.status(500).json({
+            "error_schema" : {
+                "error_code" : "nearbud-001-002",
+                "error_message" : `Target ID tidak boleh kosong`
+            }
+        })
+    } 
+
+    var check_status = await exports.check_status(users_username_token, target_id)
+    if(!check_status){
+        return res.status(500).json({
+            "error_schema" : {
+                "error_code" : "nearbud-002-001",
+                "error_message" : `Unauthorized, anda bukan bagian dari Community/Event ini`
+            }
+        })
+    }
+
+    let query = ""
+    if(target_id.trim().startsWith("C")){
+        query = `SELECT ID_COMMUNITY AS ID, NAME, ROOM_CHAT_ID FROM COMMUNITY WHERE ID_COMMUNITY ILIKE LOWER('${target_id.trim()}')`
+    } else if (target_id.trim().startsWith("E")){
+        query = `SELECT ID_EVENT AS ID, NAME, ROOM_CHAT_ID FROM EVENTS WHERE ID_EVENT ILIKE LOWER('${target_id.trim()}')`
+    }
+
+    try {
+        var query_result = await pool.query(query)
+    } catch (error) {
+        isError = true
+        log.error(`ERROR | /general/getRoomIdList - Error found while connect to DB - ${error}`)
+    } finally {
+        if(!isError){
+            if(query_result.rowCount > 0 ){
+                for( let i = 0; i < query_result.rowCount; i++){
+                    var object = {
+                        "room_id" : query_result.rows[i].room_chat_id,
+                        "target_id" : query_result.rows[i].id,
+                        "target_name" : query_result.rows[i].name
+                    } 
+                    result.push(object)
+                }
+                respond.successResp(req, res, "nearbud-000-000", "Data berhasil ditemukan", 1, 1, 1, result)
+            } else {
+                respond.successResp(req, res, "nearbud-001-001", "Data tidak ditemukan", 0, 0, 0, result)
+            }
+            log.info(`SUCCESS | /general/getRoomIdList - Success return the result`)
+
+        } else {
+            return res.status(500).json({
+                "error_schema" : {
+                    "error_code" : "nearbud-003-001",
+                    "error_message" : `Error while connecting to DB`
+                }
+            })
+        }
+    }
+})
+
+exports.check_status = asyncHandler(async function check_status(users_username_token, target_id){
+    let isError = false, query_search = ""
+
+    if(target_id.trim().startsWith("C")){
+        query_search = `SELECT ID_COMMUNITY AS ID FROM COMMUNITY_LINK WHERE ID_COMMUNITY ILIKE LOWER('${target_id.trim()}')
+                AND ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')) 
+                AND IS_APPROVED = TRUE
+                UNION
+                SELECT ID_COMMUNITY AS ID FROM IS_ADMIN WHERE ID_COMMUNITY ILIKE LOWER('${target_id.trim()}')
+                AND ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}'))`
+    } else if (target_id.trim().startsWith("E")){
+        query_search = `SELECT ID_EVENT AS ID FROM EVENTS_LINK WHERE ID_EVENT ILIKE LOWER('${target_id.trim()}')
+                AND ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')) 
+                AND IS_APPROVED = TRUE
+                UNION
+                SELECT ID_EVENT FROM EVENTS WHERE ID_EVENT IN (SELECT ID_EVENT FROM EVENTS WHERE ID_CREATOR 
+                IN (SELECT ID_USER FROM IS_ADMIN WHERE ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}'))))`
+    }
+
+    console.log(query_search)
+
+    try {
+        var query_result = await pool.query(query_search)
+    } catch (error) {
+        isError = true
+        log.error(`ERROR | /general/getRoomId/checkstatus - Error found while connect to DB - ${error}`)
+    } finally {
+        if(!isError){
+            console.log(query_result.rows)
+            if(query_result.rowCount > 0){
+                return true
+            } else {
+                return false
+            }
+        }
+    }
+})
+
+exports.addRoomId = asyncHandler(async function addRoomId(req, res, room_id, id_user_1, id_user_2, users_username_token){
+    let isError = false, result = [], queryAddRoomId = ""
+
+    if(!room_id || !id_user_2){
+        return res.status(500).json({
+            "error_schema" : {
+                "error_code" : "nearbud-002-002",
+                "error_message" : `Data pada BODY tidak lengkap`
+            }
+        })
+    }
+
+    if(id_user_2.trim().startsWith("C")){
+        queryAddRoomId = `UPDATE COMMUNITY SET MODIFIED = NOW(), ROOM_CHAT_ID = '${room_id}' WHERE ID_COMMUNITY ILIKE LOWER('${id_user_2}') `
+    } else if(id_user_2.trim().startsWith("E")) {
+        queryAddRoomId = `UPDATE EVENTS SET MODIFIED = NOW(), ROOM_CHAT_ID = '${room_id}' WHERE ID_EVENT ILIKE LOWER('${id_user_2}') `
+    } else {
+        if(!id_user_1){
+            queryAddRoomId = `INSERT INTO CHAT (ID_CHAT, ID_USER_1, ID_USER_2) VALUES 
+                ('${room_id}', (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')), 
+                (SELECT ID_USER FROM USERS WHERE ID_USER ILIKE LOWER('${id_user_2}')))`
+        } else {
+            queryAddRoomId = `INSERT INTO CHAT (ID_CHAT, ID_USER_1, ID_USER_2) VALUES 
+                ('${room_id}', (SELECT ID_USER FROM USERS WHERE ID_USER ILIKE LOWER('${id_user_1}')), 
+                (SELECT ID_USER FROM USERS WHERE ID_USER ILIKE LOWER('${id_user_2}')))`
+        }
+    }
+
+    try {
+        var query_result = await pool.query(queryAddRoomId)
+    } catch (error) {
+        isError = true
+        log.error(`ERROR | /general/addRoomId - Error found while connect to DB - ${error}`)
+    } finally{
+        if(!isError){
+            respond.successResp(req, res, "nearbud-000-000", "Berhasil memproses data", 1, 1, 1, result)
+        } else {
+            return res.status(500).json({
+                "error_schema" : {
+                    "error_code" : "nearbud-003-001",
+                    "error_message" : `Error while connecting to DB`
+                }
+            })
+        }
+    }
+
+})
+
 
 exports.getNotif = asyncHandler(async function getNotif(req, res, users_username_token, page, size) {
     let isError = false, result = [], notif_approval = [], notif = []
@@ -1284,9 +1517,9 @@ exports.updateNotif = asyncHandler(async function updateNotif(req, res, users_us
                             let query = "", isError4 = ""
                             if(decision.includes("accepted")){
                                 if(identity.startsWith("E")){
-                                    query = `UPDATE EVENTS_LINK SET IS_APPROVED = TRUE WHERE ID_EVENT ILIKE LOWER('${identity}') AND ID_USER ILIKE LOWER('${id_sender}')`
+                                    query = `UPDATE EVENTS_LINK SET MODIFIED = NOW(), IS_APPROVED = TRUE WHERE ID_EVENT ILIKE LOWER('${identity}') AND ID_USER ILIKE LOWER('${id_sender}')`
                                 } else if (identity.startsWith("C")){
-                                    query = `UPDATE COMMUNITY_LINK SET IS_APPROVED = TRUE WHERE ID_COMMUNITY ILIKE LOWER('${identity}') AND ID_USER ILIKE LOWER('${id_sender}')`
+                                    query = `UPDATE COMMUNITY_LINK SET MODIFIED = NOW(), IS_APPROVED = TRUE WHERE ID_COMMUNITY ILIKE LOWER('${identity}') AND ID_USER ILIKE LOWER('${id_sender}')`
                                 }
                             } else {
                                 if(identity.startsWith("E")){
