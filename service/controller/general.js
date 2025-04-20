@@ -794,12 +794,15 @@ exports.getReview = asyncHandler(async function getReview(req, res, reviewee_id,
     if(reviewee_id){
         if(reviewee_id.startsWith("U")){
             query_where = `WHERE A.ID_REVIEWEE IN (SELECT ID_EVENT FROM EVENTS WHERE ID_CREATOR ILIKE LOWER('${reviewee_id}'))
-             OR ID_REVIEWEE  IN (SELECT ID_USER FROM IS_ADMIN WHERE ID_COMMUNITY = A.ID_REVIEWEE)`
+                    OR ID_REVIEWEE IN(SELECT ID_EVENT FROM EVENTS WHERE ID_CREATOR IN (SELECT ID_COMMUNITY FROM IS_ADMIN WHERE ID_USER ILIKE LOWER('${reviewee_id}')))
+                    OR A.ID_REVIEWEE ILIKE LOWER('${reviewee_id}')`
         } else if(reviewee_id.startsWith("C")){
             query_where = `WHERE A.ID_REVIEWEE IN (SELECT ID_EVENT FROM EVENTS WHERE ID_CREATOR ILIKE LOWER('${reviewee_id}'))`
         }
     } else {
-        query_where = `WHERE A.ID_REVIEWEE IN (SELECT ID_EVENT FROM EVENTS WHERE ID_CREATOR = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')))`
+        query_where = `WHERE A.ID_REVIEWEE IN (SELECT ID_EVENT FROM EVENTS WHERE ID_CREATOR = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')))
+        OR ID_REVIEWEE IN (SELECT ID_EVENT FROM EVENTS WHERE ID_CREATOR IN (SELECT ID_COMMUNITY FROM IS_ADMIN WHERE ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}'))))
+        OR A.ID_REVIEWEE = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}'))`
     }
 
     console.log(`WITH GETREVIEW AS (SELECT (SELECT ROUND(AVG(RATING))
@@ -1009,10 +1012,11 @@ exports.addReview = asyncHandler(async function getReview(req, res, reviewee_id,
 
 exports.getRoomIdList = asyncHandler(async function getRoomIdList(req, res, users_username_token, page, size){
     let isError = false, result = []
-
     var query_pagination = respond.query_pagination(req,res, page, size)
 
-    console.log(`WITH CHAT_LIST AS (SELECT id_chat, (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')) as id_user_1, id_user_2 FROM CHAT WHERE ID_USER_1 = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')) -- PRVATE CHAT
+    console.log(`WITH CHAT_LIST AS (SELECT id_chat, id_user_1, id_user_2 
+            FROM CHAT WHERE (ID_USER_1 = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')) OR 
+            (ID_USER_2 = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')))) -- PRVATE CHAT
         UNION
         SELECT (SELECT room_chat_id FROM COMMUNITY WHERE ID_COMMUNITY = A.ID_COMMUNITY) as id_chat, (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')) as id_user_1, A.id_community as id_user_2 FROM COMMUNITY_LINK A 
             WHERE A.ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')) AND A.IS_APPROVED = TRUE -- by community yang diikutin
@@ -1031,7 +1035,9 @@ exports.getRoomIdList = asyncHandler(async function getRoomIdList(req, res, user
         ${query_pagination}`)
 
     try {
-        var query_result = await pool.query(`WITH CHAT_LIST AS (SELECT id_chat, (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')) as id_user_1, id_user_2 FROM CHAT WHERE ID_USER_1 = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')) -- PRVATE CHAT
+        var query_result = await pool.query(`WITH CHAT_LIST AS (SELECT id_chat, id_user_1, id_user_2 
+            FROM CHAT WHERE (ID_USER_1 = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')) OR 
+            (ID_USER_2 = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}'))))-- PRVATE CHAT
             UNION
             SELECT (SELECT room_chat_id FROM COMMUNITY WHERE ID_COMMUNITY = A.ID_COMMUNITY) as id_chat, (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')) as id_user_1, A.id_community as id_user_2 FROM COMMUNITY_LINK A 
                 WHERE A.ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')) AND A.IS_APPROVED = TRUE -- by community yang diikutin
