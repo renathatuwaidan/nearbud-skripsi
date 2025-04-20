@@ -7,15 +7,16 @@ const membership = require("./membership")
 const dayjs = require('dayjs')
 const utc = require('dayjs/plugin/utc');
 const timezone = require('dayjs/plugin/timezone');
+const id = require("dayjs/locale/id")
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
-exports.getEventsPreview = asyncHandler(async function getEventsPreview(req, res, interest_id1, interest_id2, interest_id3, interest_id4, interest_id5,category_id1, category_id2, category_id3, category_id4, category_id5, province_based, event_location,event_date, event_number_participant, status, event_creator, users_username_token, size, page, city_id1, city_id2, city_id3, city_id4, city_id5) {
-    var query_interest = "", query_category = "", query_city = "", query_province_based = "", query_event_location = "", query_event_number_participant = "", query_where = "", query_event_date = "", query_status = "", query_event_creator = "", isError = false, result = []
+exports.getEventsPreview = asyncHandler(async function getEventsPreview(req, res, interest_id1, interest_id2, interest_id3, interest_id4, interest_id5,category_id1, category_id2, category_id3, category_id4, category_id5, province_based, event_location,event_date, event_number_participant, status, event_creator, users_username_token, size, page, city_id1, city_id2, city_id3, city_id4, city_id5, pastEvent) {
+    var query_interest = "", query_category = "", query_city = "", query_province_based = "", query_event_location = "", query_event_number_participant = "", query_where = "", query_event_date = "", query_status = "", query_event_creator = "", isError = false, result = [], query_past_event = ""
     
     if( interest_id1 || interest_id2 || interest_id3 || interest_id4 || interest_id5 || category_id1 || category_id2 || category_id3 || category_id4 || category_id5 ||
          province_based || event_location || event_date || event_number_participant || status|| event_creator ||
-        city_id1 || city_id2 || city_id3 || city_id4 || city_id5) query_where = 'WHERE '
+        city_id1 || city_id2 || city_id3 || city_id4 || city_id5 || pastEvent) query_where = 'WHERE '
 
     if(interest_id1 || interest_id2 || interest_id3 || interest_id4 || interest_id5){
         if(interest_id1){interest_id1 = `'${interest_id1}'`} else interest_id1 = ''
@@ -92,6 +93,14 @@ exports.getEventsPreview = asyncHandler(async function getEventsPreview(req, res
             query_event_creator = `AND ID_CREATOR ILIKE LOWER('${event_creator}')`
         }
 
+        if(pastEvent){
+            if(pastEvent.startsWith("N") || pastEvent.startsWith("n")){
+                query_past_event = `AND A.DATE::DATE >= (NOW() AT TIME ZONE 'Asia/Jakarta')::DATE`
+            }
+        } else {
+            query_past_event = `AND A.DATE::DATE >= (NOW() AT TIME ZONE 'Asia/Jakarta')::DATE`
+        }
+
     } else {
         if(category_id1 || category_id2 || category_id3 || category_id4 || category_id5){
             if(category_id1){category_id1 = `'${category_id1}'`} else category_id1 = ''
@@ -156,6 +165,14 @@ exports.getEventsPreview = asyncHandler(async function getEventsPreview(req, res
             if(event_creator){
                 query_event_creator = `AND ID_CREATOR ILIKE LOWER('${event_creator}')`
             }
+
+            if(pastEvent){
+                if(pastEvent.startsWith("N") || pastEvent.startsWith("n")){
+                    query_past_event = ` AND A.DATE::DATE >= (NOW() AT TIME ZONE 'Asia/Jakarta')::DATE`
+                }
+            } else {
+                query_past_event = ` AND A.DATE::DATE >= (NOW() AT TIME ZONE 'Asia/Jakarta')::DATE`
+            }
         } else {
             if(city_id1 || city_id2 || city_id3 || city_id4 || city_id5){
                 if(city_id1){city_id1 = `'${city_id1}'`} else city_id1 = ''
@@ -210,6 +227,14 @@ exports.getEventsPreview = asyncHandler(async function getEventsPreview(req, res
                 if(event_creator){
                     query_event_creator = `AND ID_CREATOR ILIKE LOWER('${event_creator}')`
                 }
+
+                if(pastEvent){
+                    if(pastEvent.startsWith("N") || pastEvent.startsWith("n")){
+                        query_past_event = ` AND A.DATE::DATE >= (NOW() AT TIME ZONE 'Asia/Jakarta')::DATE`
+                    }
+                } else {
+                    query_past_event = ` AND A.DATE::DATE >= (NOW() AT TIME ZONE 'Asia/Jakarta')::DATE`
+                }
             } else {
                 if(province_based){
                     query_province_based = `E.NAME ILIKE LOWER('%${province_based}%')`
@@ -255,6 +280,14 @@ exports.getEventsPreview = asyncHandler(async function getEventsPreview(req, res
                     if(event_creator){
                         query_event_creator = `AND ID_CREATOR ILIKE LOWER('${event_creator}')`
                     }
+
+                    if(pastEvent){
+                        if(pastEvent.startsWith("N") || pastEvent.startsWith("n")){
+                            query_past_event = ` AND A.DATE::DATE >= (NOW() AT TIME ZONE 'Asia/Jakarta')::DATE`
+                        }
+                    } else {
+                        query_past_event = ` AND A.DATE::DATE >= (NOW() AT TIME ZONE 'Asia/Jakarta')::DATE`
+                    }
                 } else {
                     if(event_location){
                         query_event_location = `A.LOCATION ILIKE LOWER('%${event_location}%')`
@@ -283,6 +316,14 @@ exports.getEventsPreview = asyncHandler(async function getEventsPreview(req, res
 
                         if(event_creator){
                             query_event_creator = `AND ID_CREATOR ILIKE LOWER('${event_creator}')`
+                        }
+
+                        if(pastEvent){
+                            if(pastEvent.startsWith("N") || pastEvent.startsWith("n")){
+                                query_past_event = ` AND A.DATE::DATE >= (NOW() AT TIME ZONE 'Asia/Jakarta')::DATE`
+                            }
+                        } else {
+                            query_past_event = ` AND A.DATE::DATE >= (NOW() AT TIME ZONE 'Asia/Jakarta')::DATE`
                         }
                     } else {
                         if(event_number_participant){
@@ -321,6 +362,14 @@ exports.getEventsPreview = asyncHandler(async function getEventsPreview(req, res
                             if(event_creator){
                                 query_event_creator = `AND ID_CREATOR ILIKE LOWER('${event_creator}')`
                             }
+
+                            if(pastEvent){
+                                if(pastEvent.startsWith("N") || pastEvent.startsWith("n")){
+                                    query_past_event = ` AND A.DATE::DATE >= (NOW() AT TIME ZONE 'Asia/Jakarta')::DATE`
+                                }
+                            } else {
+                                query_past_event = ` AND A.DATE::DATE >= (NOW() AT TIME ZONE 'Asia/Jakarta')::DATE`
+                            }
                         } else {
                             if(event_date){
                                 if(event_date == "today"){
@@ -354,6 +403,14 @@ exports.getEventsPreview = asyncHandler(async function getEventsPreview(req, res
                                 if(event_creator){
                                     query_event_creator = `AND ID_CREATOR ILIKE LOWER('${event_creator}')`
                                 }
+
+                                if(pastEvent){
+                                    if(pastEvent.startsWith("N") || pastEvent.startsWith("n")){
+                                        query_past_event = ` AND A.DATE::DATE >= (NOW() AT TIME ZONE 'Asia/Jakarta')::DATE`
+                                    }
+                                } else {
+                                    query_past_event = ` AND A.DATE::DATE >= (NOW() AT TIME ZONE 'Asia/Jakarta')::DATE`
+                                }
                             } else {
                                 if(status){
                                     let query_status_1 = "", query_status_2 = ""
@@ -375,9 +432,33 @@ exports.getEventsPreview = asyncHandler(async function getEventsPreview(req, res
                                     if(event_creator){
                                         query_event_creator = `AND ID_CREATOR ILIKE LOWER('${event_creator}')`
                                     }
+
+                                    if(pastEvent){
+                                        if(pastEvent.startsWith("N") || pastEvent.startsWith("n")){
+                                            query_past_event = ` AND A.DATE::DATE >= (NOW() AT TIME ZONE 'Asia/Jakarta')::DATE`
+                                        }
+                                    } else {
+                                        query_past_event = ` AND A.DATE::DATE >= (NOW() AT TIME ZONE 'Asia/Jakarta')::DATE`
+                                    }
                                 } else {
                                     if(event_creator){
                                         query_event_creator = `ID_CREATOR ILIKE LOWER('${event_creator}')`
+
+                                        if(pastEvent){
+                                            if(pastEvent.startsWith("N") || pastEvent.startsWith("n")){
+                                                query_past_event = ` AND A.DATE::DATE >= (NOW() AT TIME ZONE 'Asia/Jakarta')::DATE`
+                                            }
+                                        } else {
+                                            query_past_event = ` AND A.DATE::DATE >= (NOW() AT TIME ZONE 'Asia/Jakarta')::DATE`
+                                        }
+                                    } else {
+                                        if(pastEvent){
+                                            if(pastEvent.startsWith("N") || pastEvent.startsWith("n")){
+                                                query_past_event = `A.DATE::DATE >= (NOW() AT TIME ZONE 'Asia/Jakarta')::DATE`
+                                            }
+                                        } else {
+                                            query_past_event = `WHERE A.DATE::DATE >= (NOW() AT TIME ZONE 'Asia/Jakarta')::DATE`
+                                        }
                                     }
                                 }
                             }
@@ -387,10 +468,6 @@ exports.getEventsPreview = asyncHandler(async function getEventsPreview(req, res
             }
         }
     }
-
-    console.log(`${query_where} ${query_interest} ${query_category} ${query_city} ${query_event_date}
-        ${query_province_based} ${query_event_location} ${query_event_number_participant} ${query_status}
-        ${query_event_creator}`)
 
     var query_pagination = respond.query_pagination(req,res, page, size)
 
@@ -402,7 +479,7 @@ exports.getEventsPreview = asyncHandler(async function getEventsPreview(req, res
         JOIN CATEGORY D ON A.ID_CATEGORY = D.ID 
         JOIN INTEREST F ON F.ID_CATEGORY = D.ID
         ${query_where} ${query_interest} ${query_category} ${query_city} ${query_event_date}
-        ${query_province_based} ${query_event_location} ${query_event_number_participant} ${query_status} ${query_event_creator}
+        ${query_province_based} ${query_event_location} ${query_event_number_participant} ${query_status} ${query_event_creator} ${query_past_event}
     )
     SELECT *, COUNT (*)OVER ()
     FROM EVENT_DATE_LIST
@@ -418,7 +495,7 @@ exports.getEventsPreview = asyncHandler(async function getEventsPreview(req, res
             JOIN CATEGORY D ON A.ID_CATEGORY = D.ID 
             JOIN INTEREST F ON F.ID_CATEGORY = D.ID
             ${query_where} ${query_interest} ${query_category} ${query_city} ${query_event_date}
-            ${query_province_based} ${query_event_location} ${query_event_number_participant} ${query_status} ${query_event_creator}
+            ${query_province_based} ${query_event_location} ${query_event_number_participant} ${query_status} ${query_event_creator} ${query_past_event}
         )
         SELECT *, COUNT (*)OVER ()
         FROM EVENT_DATE_LIST
@@ -433,7 +510,7 @@ exports.getEventsPreview = asyncHandler(async function getEventsPreview(req, res
             if(query_result.rowCount > 0 ){
                 for( let i = 0; i < query_result.rowCount; i++){
                     var result_list = await exports.getEventsPreviewList(req, res, query_result.rows[i].event_date, query_interest, query_category, query_city, query_event_date,
-                        query_province_based, query_event_location, query_event_number_participant, query_event_creator, "", query_status, "", "")
+                        query_province_based, query_event_location, query_event_number_participant, query_event_creator, "", query_status, "", "", query_past_event)
                     var fullDisplayDate = utility.fullDisplayDate(query_result.rows[i].event_date)
 
                     var object = {
@@ -464,11 +541,11 @@ exports.getEventsPreview = asyncHandler(async function getEventsPreview(req, res
 })
 
 exports.getEventsPreviewList = asyncHandler(async function getEventsPreviewList(req, res, event_date, query_interest, query_category, query_city_based, query_event_date,
-    query_province_based, query_event_location, query_event_number_participant, query_creator, query_community, query_status, query_from, query_events) {
+    query_province_based, query_event_location, query_event_number_participant, query_creator, query_community, query_status, query_from, query_events, query_past_event) {
     let result = [], isError = false, query_and = "", q_date = ""
     
-    if(!query_interest.startsWith("AND") || !query_category.startsWith("AND") || !query_city_based.startsWith("AND") || !query_event_location.startsWith("AND")
-        || !query_event_number_participant.startsWith("AND") ||!query_community.startsWith("AND") || !query_creator.startsWith("AND")) {
+    if(!query_interest.trim().startsWith("AND") || !query_category.trim().startsWith("AND") || !query_city_based.trim().startsWith("AND") || !query_event_location.trim().startsWith("AND")
+        || !query_event_number_participant.trim().startsWith("AND") ||!query_community.trim().startsWith("AND") || !query_creator.trim().startsWith("AND") || !query_past_event.trim().startsWith("AND")) {
             query_and = ``
         }
 

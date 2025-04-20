@@ -28,11 +28,12 @@ app.get("/getEvents/preview", user_auth_controller.tokenVerif, function (req, re
     let status = req.query.status
     let size = req.query.size
     let page = req.query.page
+    let pastEvent = req.query.pastEvent
     let users_username_token = res.getHeader('users_username')
 
     event_controller.getEventsPreview(req, res, interest_id1, interest_id2, interest_id3, interest_id4, interest_id5,category_id1, category_id2,
          category_id3, category_id4, category_id5, province_based, event_location,event_date, event_number_participant, status, event_creator,
-         users_username_token, size, page, city_id1, city_id2, city_id3, city_id4, city_id5)
+         users_username_token, size, page, city_id1, city_id2, city_id3, city_id4, city_id5, pastEvent)
 })
 
 app.get("/getEvents/isCreator", user_auth_controller.tokenVerif, function (req, res){

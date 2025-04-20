@@ -92,11 +92,11 @@ exports.getEventLink_preview = asyncHandler(async function getEventLink_preview(
                                     AND ID_EVENT IN (SELECT A.ID_EVENT FROM EVENTS A WHERE A.DATE::DATE = (NOW() AT TIME ZONE 'Asia/Jakarta')::DATE))`
         } else {
             if (status.toLowerCase() == "active"){
-                query_status = `A.DATE >= (CURRENT_DATE AT TIME ZONE 'Asia/Jakarta')`
+                query_status = `A.DATE::DATE >= (NOW() AT TIME ZONE 'Asia/Jakarta')::DATE`
             } else if(status.toLowerCase() == "rsvp"){
-                query_status = `A.DATE >= (CURRENT_DATE AT TIME ZONE 'Asia/Jakarta')`
+                query_status = `A.DATE::DATE >= (NOW() AT TIME ZONE 'Asia/Jakarta')::DATE`
             } else if(status.toLowerCase() == "attended"){
-                query_status = `A.DATE < (CURRENT_DATE AT TIME ZONE 'Asia/Jakarta')`
+                query_status = `A.DATE::DATE < (NOW() AT TIME ZONE 'Asia/Jakarta')::DATE`
             } else {
                 return res.status(500).json({
                     "error_schema" : {
