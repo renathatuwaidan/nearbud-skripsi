@@ -1067,8 +1067,11 @@ exports.getRoomIdList = asyncHandler(async function getRoomIdList(req, res, user
                         "id_user_2" : query_result.rows[i].id_user_2
                     } 
                     result.push(object)
+
+                    var total_data = query_result.rows[0].count
+                    var total_query_data = query_result.rowCount
                 }
-                respond.successResp(req, res, "nearbud-000-000", "Berhasil mendapatkan hasil", query_result.rowCount, query_result.rowCount, 1, result)
+                respond.successResp(req, res, "nearbud-000-000", "Berhasil mendapatkan hasil", total_data, total_query_data, page, result)
             } else {
                 respond.successResp(req, res, "nearbud-001-001", "Data tidak ditemukan", 0, 0, 0, result)
             }
