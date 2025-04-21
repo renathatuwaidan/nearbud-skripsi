@@ -543,15 +543,75 @@ exports.getEventsPreview = asyncHandler(async function getEventsPreview(req, res
 exports.getEventsPreviewList = asyncHandler(async function getEventsPreviewList(req, res, event_date, query_interest, query_category, query_city_based, query_event_date,
     query_province_based, query_event_location, query_event_number_participant, query_creator, query_community, query_status, query_from, query_events, query_past_event) {
     let result = [], isError = false, query_and = "", q_date = ""
-    
-    if(!query_interest.trim().startsWith("AND") || !query_category.trim().startsWith("AND") || !query_city_based.trim().startsWith("AND") || !query_event_location.trim().startsWith("AND")
-        || !query_event_number_participant.trim().startsWith("AND") ||!query_community.trim().startsWith("AND") || !query_creator.trim().startsWith("AND") || !query_past_event.trim().startsWith("AND")) {
-            query_and = `AND`
-        }
-
+        
     if(event_date){
         q_date = `A.DATE::date = '${event_date}'`
     }
+
+    if(query_interest){
+        if(!query_interest.trim().startsWith("AND")){
+            query_interest = `AND ${query_interest}`
+        } else {
+            query_interest = `${query_interest}`
+        }
+    }
+
+    if(query_event_number_participant){
+        if(!query_event_number_participant.trim().startsWith("AND")){
+            query_event_number_participant = `AND ${query_event_number_participant}`
+        } else {
+            query_event_number_participant = `${query_event_number_participant}`
+        }
+    }
+
+    if(query_past_event){
+        if(!query_past_event.trim().startsWith("AND")){
+            query_past_event = `AND ${query_past_event}`
+        } else {
+            query_past_event = `${query_past_event}`
+        }
+    }
+
+    if(query_community){
+        if(!query_community.trim().startsWith("AND")){
+            query_community = `AND ${query_community}`
+        } else {
+            query_community = `${query_community}`
+        }
+    }
+
+    if(query_city_based){
+        if(!query_city_based.trim().startsWith("AND")){
+            query_city_based = `AND ${query_city_based}`
+        } else {
+            query_city_based = `${query_city_based}`
+        }
+    }
+
+    if(query_category){
+        if(!query_category.trim().startsWith("AND")){
+            query_category = `AND ${query_category}`
+        } else {
+            query_category = `${query_category}`
+        }
+    }
+
+    if(query_creator){
+        if(!query_creator.trim().startsWith("AND")){
+            query_creator = `AND ${query_creator}`
+        } else {
+            query_creator = `${query_creator}`
+        }
+    }
+
+    if(query_event_location){
+        if(!query_event_location.trim().startsWith("AND")){
+            query_event_location = `AND ${query_event_location}`
+        } else {
+            query_event_location = `${query_event_location}`
+        }
+    }
+
 
     if(query_event_date){
         if(!query_event_date.trim().startsWith("AND")){
@@ -976,13 +1036,13 @@ exports.isCreator = asyncHandler(async function isCreator(res, res, id_creator, 
     let isError = false, query = ""
 
     if(id_temp.startsWith("E")){
-        if(id_creator.startsWith('U0')){
+        if(id_creator.startsWith('U')){
             query = (`SELECT * FROM EVENTS WHERE ID_CREATOR ILIKE LOWER('${id_creator}') AND ID_EVENT ILIKE LOWER('${id_temp}')`)
         } else {
             query = (`SELECT * FROM EVENTS WHERE ID_CREATOR = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${id_creator}')) AND ID_EVENT ILIKE LOWER('${id_temp}')`)
         }
     } else if (id_temp.startsWith("C")){
-        if(id_creator.startsWith('U0')||id_creator.startsWith('u0')){
+        if(id_creator.startsWith('U')||id_creator.startsWith('u')){
             query = (`SELECT * FROM IS_ADMIN WHERE ID_USER ILIKE LOWER('${id_creator}') AND ID_COMMUNITY ILIKE LOWER('${id_temp}')`)
         } else {
             query = (`SELECT * FROM IS_ADMIN WHERE ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${id_creator}')) AND ID_COMMUNITY ILIKE LOWER('${id_temp}')`)
