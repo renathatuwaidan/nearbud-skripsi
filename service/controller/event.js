@@ -546,7 +546,7 @@ exports.getEventsPreviewList = asyncHandler(async function getEventsPreviewList(
     
     if(!query_interest.trim().startsWith("AND") || !query_category.trim().startsWith("AND") || !query_city_based.trim().startsWith("AND") || !query_event_location.trim().startsWith("AND")
         || !query_event_number_participant.trim().startsWith("AND") ||!query_community.trim().startsWith("AND") || !query_creator.trim().startsWith("AND") || !query_past_event.trim().startsWith("AND")) {
-            query_and = ``
+            query_and = `AND`
         }
 
     if(event_date){
