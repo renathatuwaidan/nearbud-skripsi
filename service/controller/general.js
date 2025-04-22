@@ -891,6 +891,8 @@ exports.getPendingReview = asyncHandler(async function getPendingReview(req, res
                 SELECT 
                     A.ID,
                     A.ID_REVIEWEE AS EVENT_ID,
+                    (SELECT ID_PROFILE FROM EVENTS WHERE ID_EVENT = A.ID_REVIEWEE) AS EVENT_PROFILE,
+                    (SELECT DATE FROM EVENTS WHERE ID_EVENT = A.ID_REVIEWEE) AS EVENT_DATE,
                     (SELECT NAME FROM EVENTS WHERE ID_EVENT = A.ID_REVIEWEE) AS EVENT_NAME,
                     (SELECT ID_CREATOR FROM EVENTS WHERE ID_EVENT = A.ID_REVIEWEE) AS EVENT_CREATOR_ID,
                     CASE WHEN (SELECT ID_CREATOR FROM EVENTS WHERE ID_EVENT = A.ID_REVIEWEE) ILIKE ('C%') THEN (SELECT NAME FROM COMMUNITY WHERE ID_COMMUNITY = (SELECT ID_CREATOR FROM EVENTS WHERE ID_EVENT = A.ID_REVIEWEE))
@@ -909,12 +911,17 @@ exports.getPendingReview = asyncHandler(async function getPendingReview(req, res
         if(!isError){
             if(query_result.rowCount > 0 ){
                 for( let i = 0; i < query_result.rowCount; i++){
+                    var fullDisplayDate = utility.fullDisplayDateTime(query_result.rows[i].event_date)
+
                     var object = {
                         "event_pending_review_id" : query_result.rows[i].id,
                         "event_id" : query_result.rows[i].event_id,
                         "event_name" : query_result.rows[i].event_name,
                         "event_creator_id" : query_result.rows[i].event_creator_id,
-                        "event_creator_name" : query_result.rows[i].event_creator_name
+                        "event_creator_name" : query_result.rows[i].event_creator_name,
+                        "event_id_profile" : query_result.rows[i].event_profile,
+                        "event_date" : fullDisplayDate
+                        
                     }
                     result.push(object)
                 }
