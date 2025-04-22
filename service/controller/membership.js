@@ -193,11 +193,11 @@ exports.getParticipants = asyncHandler(async function getParticipants(req, res, 
     if(event_id){
         query_join = `FROM EVENTS_LINK A JOIN EVENTS B ON A.ID_EVENT = B.ID_EVENT
                         JOIN USERS C ON A.ID_USER = C.ID_USER
-                        WHERE A.ID_EVENT ILIKE LOWER('${event_id}')`
+                        WHERE A.ID_EVENT ILIKE LOWER('${event_id}') AND A.ID_USER NOT IN (SELECT ID_REPORTEE FROM SUSPENDED) AND A.IS_APPROVED = TRUE`
     } else if (community_id) {
         query_join = `FROM COMMUNITY_LINK A JOIN COMMUNITY B ON A.ID_COMMUNITY = B.ID_COMMUNITY
                         JOIN USERS C ON A.ID_USER = C.ID_USER
-                        WHERE A.ID_COMMUNITY ILIKE LOWER('${community_id}')`
+                        WHERE A.ID_COMMUNITY ILIKE LOWER('${community_id}') AND A.ID_USER NOT IN (SELECT ID_REPORTEE FROM SUSPENDED) AND A.IS_APPROVED = TRUE`
     }
     
     console.log(`WITH LIST_PARTICIPANT AS (
