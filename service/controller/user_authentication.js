@@ -370,10 +370,30 @@ exports.loginUser = asyncHandler(async function loginUser(req, res, users_userna
                     }
                 })
             } else {
-                token = jwt.sign({users_username, users_password}, config.auth.secretKey, {expiresIn : config.auth.tokenExpired})
+                let isError = false, result = []
+
+                try {
+                    var query_result = await pool.query(`SELECT * FROM SUSPENDED WHERE ID_REPORTEE = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username}'))`)
+                } catch (error) {
+                    isError = true
+                    log.error(`ERROR | /auth/loginUser/checkSuspended  - Error found - ${error}`)
+                } finally{
+                    if(!isError){
+                        if(query_result.rowCount > 0){
+                            return res.status(401).json({
+                                "error_schema" : {
+                                    "error_code" : "nearbud-000-001",
+                                    "error_message" : `User suspended`
+                                }
+                            })
+                        } else {
+                            token = jwt.sign({users_username, users_password}, config.auth.secretKey, {expiresIn : config.auth.tokenExpired})
             
-                await exports.successResp(req, res, "nearbud-000-000", "Login berhasil", 0, query_result.rowCount, 0, token)
-                log.info(`SUCCESS [username : "${users_username}"] - Success return the result`)
+                            await exports.successResp(req, res, "nearbud-000-000", "Login berhasil", 0, query_result.rowCount, 0, token)
+                            log.info(`SUCCESS [username : "${users_username}"] - Success return the result`)
+                        }
+                    } 
+                }
             }
 
         } else {
@@ -438,12 +458,39 @@ exports.isTokenValid = asyncHandler(async function isTokenValid(req, res, users_
                 }
             })
         } else {
-            return res.status(200).json({
-                "error_schema" : {
-                    "error_code" : "nearbud-000-000",
-                    "error_message" : `Token valid`
+            let isError = false, result = []
+
+            try {
+                var query_result = await pool.query(`SELECT * FROM SUSPENDED WHERE ID_REPORTEE = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}'))`)
+            } catch (error) {
+                isError = true
+                log.error(`ERROR | /auth/verifyToken/checkSuspended [username : "${users_username_token}"] - Error found - ${error}`)
+            } finally{
+                if(!isError){
+                    if(query_result.rowCount > 0){
+                        return res.status(401).json({
+                            "error_schema" : {
+                                "error_code" : "nearbud-000-001",
+                                "error_message" : `User suspended`
+                            }
+                        })
+                    } else {
+                        return res.status(200).json({
+                            "error_schema" : {
+                                "error_code" : "nearbud-000-000",
+                                "error_message" : `Token valid`
+                            }
+                        })
+                    }
+                } else {
+                    return res.status(401).json({
+                        "error_schema" : {
+                            "error_code" : "nearbud-002-001",
+                            "error_message" : `Unauthorized inserted token`
+                        }
+                    })
                 }
-            })
+            }
         }
     }
 })
