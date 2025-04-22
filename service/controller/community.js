@@ -7,8 +7,8 @@ const utility = require("./utility")
 const event = require("./event")
 
 exports.getCommunityPreview = asyncHandler(async function getCommunityPreview(req, res, community_id, community_name, community_number_participant, category_id, interest_id1, interest_id2, interest_id3, interest_id4, interest_id5, 
-    city_id1, city_id2, city_id3, city_id4, city_id5, province_based, status, page, size, users_username_token) {
-    let isError = false, result = [], query_interest = "", query_community_id = "", query_community_name = "", query_number_participant = "", query_category = "", query_city = "", query_province = "", query_status = ""
+    city_id1, city_id2, city_id3, city_id4, city_id5, province_based, status, page, size, users_username_token, is_suspended) {
+    let isError = false, result = [], query_interest = "", query_community_id = "", query_community_name = "", query_number_participant = "", query_category = "", query_city = "", query_province = "", query_status = "", query_suspended = ""
 
     var query_pagination = respond.query_pagination(req,res, page, size)
 
@@ -56,6 +56,12 @@ exports.getCommunityPreview = asyncHandler(async function getCommunityPreview(re
                 query_status = `AND ID_COMMUNITY NOT IN (SELECT ID_COMMUNITY FROM COMMUNITY_LINK WHERE ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER ('${users_username_token}')) AND IS_APPROVED = 'true')`
             }
         }
+
+        if(!is_suspended){
+            query_suspended = `AND ID_COMMUNITY NOT IN (SELECT ID_REPORTEE FROM SUSPENDED WHERE ID_COMMUNITY = A.ID_COMMUNITY)`
+        } else {
+            query_suspended = `AND ID_COMMUNITY IN (SELECT ID_REPORTEE FROM SUSPENDED WHERE ID_COMMUNITY = A.ID_COMMUNITY)`
+        }
     } else {
         if(community_id){
             query_community_id = `WHERE  A.ID_COMMUNITY ILIKE LOWER('${community_id}')`
@@ -91,6 +97,12 @@ exports.getCommunityPreview = asyncHandler(async function getCommunityPreview(re
                     query_status = `AND ID_COMMUNITY NOT IN (SELECT ID_COMMUNITY FROM COMMUNITY_LINK WHERE ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER ('${users_username_token}')) AND IS_APPROVED = 'true')`
                 }
             }
+
+            if(!is_suspended){
+                query_suspended = `AND ID_COMMUNITY NOT IN (SELECT ID_REPORTEE FROM SUSPENDED WHERE ID_COMMUNITY = A.ID_COMMUNITY)`
+            } else {
+                query_suspended = `AND ID_COMMUNITY IN (SELECT ID_REPORTEE FROM SUSPENDED WHERE ID_COMMUNITY = A.ID_COMMUNITY)`
+            }
         } else {
             if(community_name){
                 query_community_name = `WHERE A.NAME ILIKE LOWER('${community_name}')`
@@ -122,6 +134,12 @@ exports.getCommunityPreview = asyncHandler(async function getCommunityPreview(re
                         query_status = `AND ID_COMMUNITY NOT IN (SELECT ID_COMMUNITY FROM COMMUNITY_LINK WHERE ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER ('${users_username_token}')) AND IS_APPROVED = 'true')`
                     }
                 }
+
+                if(!is_suspended){
+                    query_suspended = `AND ID_COMMUNITY NOT IN (SELECT ID_REPORTEE FROM SUSPENDED WHERE ID_COMMUNITY = A.ID_COMMUNITY)`
+                } else {
+                    query_suspended = `AND ID_COMMUNITY IN (SELECT ID_REPORTEE FROM SUSPENDED WHERE ID_COMMUNITY = A.ID_COMMUNITY)`
+                }
             } else {
                 if(community_number_participant){
                     query_number_participant = `WHERE ((SELECT COUNT(ID_USER) FROM COMMUNITY_LINK WHERE ID_COMMUNITY = A.ID_COMMUNITY AND IS_APPROVED = TRUE) <= ${community_number_participant})`
@@ -149,6 +167,12 @@ exports.getCommunityPreview = asyncHandler(async function getCommunityPreview(re
                             query_status = `AND ID_COMMUNITY NOT IN (SELECT ID_COMMUNITY FROM COMMUNITY_LINK WHERE ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER ('${users_username_token}')) AND IS_APPROVED = 'true')`
                         }
                     }
+
+                    if(!is_suspended){
+                        query_suspended = `AND ID_COMMUNITY NOT IN (SELECT ID_REPORTEE FROM SUSPENDED WHERE ID_COMMUNITY = A.ID_COMMUNITY)`
+                    } else {
+                        query_suspended = `AND ID_COMMUNITY IN (SELECT ID_REPORTEE FROM SUSPENDED WHERE ID_COMMUNITY = A.ID_COMMUNITY)`
+                    }
                 } else {
                     if(category_id){
                         query_category = `WHERE ID_INTEREST IN (SELECT ID FROM INTEREST WHERE ID_CATEGORY = ${category_id})`
@@ -172,6 +196,12 @@ exports.getCommunityPreview = asyncHandler(async function getCommunityPreview(re
                                 query_status = `AND ID_COMMUNITY NOT IN (SELECT ID_COMMUNITY FROM COMMUNITY_LINK WHERE ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER ('${users_username_token}')) AND IS_APPROVED = 'true')`
                             }
                         }
+
+                        if(!is_suspended){
+                            query_suspended = `AND ID_COMMUNITY NOT IN (SELECT ID_REPORTEE FROM SUSPENDED WHERE ID_COMMUNITY = A.ID_COMMUNITY)`
+                        } else {
+                            query_suspended = `AND ID_COMMUNITY IN (SELECT ID_REPORTEE FROM SUSPENDED WHERE ID_COMMUNITY = A.ID_COMMUNITY)`
+                        }
                     } else {
                         if(city_id1 || city_id2 || city_id3 || city_id4 || city_id5){
                             if(city_id1) {city_id1 = `'${city_id1}'`} else {city_id1 = ''}
@@ -191,6 +221,12 @@ exports.getCommunityPreview = asyncHandler(async function getCommunityPreview(re
                                     query_status = `AND ID_COMMUNITY NOT IN (SELECT ID_COMMUNITY FROM COMMUNITY_LINK WHERE ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER ('${users_username_token}')) AND IS_APPROVED = 'true')`
                                 }
                             }
+
+                            if(!is_suspended){
+                                query_suspended = `AND ID_COMMUNITY NOT IN (SELECT ID_REPORTEE FROM SUSPENDED WHERE ID_COMMUNITY = A.ID_COMMUNITY)`
+                            } else {
+                                query_suspended = `AND ID_COMMUNITY IN (SELECT ID_REPORTEE FROM SUSPENDED WHERE ID_COMMUNITY = A.ID_COMMUNITY)`
+                            }
                         } else {
                             if(province_based){
                                 query_province = `WHERE C.NAME ILIKE LOWER('${province_based}')`
@@ -200,10 +236,28 @@ exports.getCommunityPreview = asyncHandler(async function getCommunityPreview(re
                                         query_status = `AND ID_COMMUNITY NOT IN (SELECT ID_COMMUNITY FROM COMMUNITY_LINK WHERE ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER ('${users_username_token}')) AND IS_APPROVED = 'true')`
                                     }
                                 }
+
+                                if(!is_suspended){
+                                    query_suspended = `AND ID_COMMUNITY NOT IN (SELECT ID_REPORTEE FROM SUSPENDED WHERE ID_COMMUNITY = A.ID_COMMUNITY)`
+                                } else {
+                                    query_suspended = `AND ID_COMMUNITY IN (SELECT ID_REPORTEE FROM SUSPENDED WHERE ID_COMMUNITY = A.ID_COMMUNITY)`
+                                }
                             } else {
                                 if(status){
                                     if(status.toLowerCase() == 'available'){
                                         query_status = `WHERE ID_COMMUNITY NOT IN (SELECT ID_COMMUNITY FROM COMMUNITY_LINK WHERE ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER ('${users_username_token}')) AND IS_APPROVED = 'true')`
+                                    }
+
+                                    if(!is_suspended){
+                                        query_suspended = `AND ID_COMMUNITY NOT IN (SELECT ID_REPORTEE FROM SUSPENDED WHERE ID_COMMUNITY = A.ID_COMMUNITY)`
+                                    } else {
+                                        query_suspended = `AND ID_COMMUNITY IN (SELECT ID_REPORTEE FROM SUSPENDED WHERE ID_COMMUNITY = A.ID_COMMUNITY)`
+                                    }
+                                } else {
+                                    if(!is_suspended){
+                                        query_suspended = `WHERE ID_COMMUNITY NOT IN (SELECT ID_REPORTEE FROM SUSPENDED WHERE ID_COMMUNITY = A.ID_COMMUNITY)`
+                                    } else {
+                                        query_suspended = `WHERE ID_COMMUNITY IN (SELECT ID_REPORTEE FROM SUSPENDED WHERE ID_COMMUNITY = A.ID_COMMUNITY)`
                                     }
                                 }
                             }
@@ -226,8 +280,8 @@ exports.getCommunityPreview = asyncHandler(async function getCommunityPreview(re
         FROM COMMUNITY A JOIN INTEREST B ON A.ID_INTEREST = B.ID
         JOIN PROVINCE C ON A.ID_PROVINCE = C.ID 
         JOIN CITY D ON A.ID_CITY = D.ID
-        ${query_interest} ${query_community_id} ${query_community_name} ${query_number_participant} ${query_category} ${query_city} ${query_province} ${query_status}
-    )
+        ${query_interest} ${query_community_id} ${query_community_name} ${query_number_participant} ${query_category} ${query_city} ${query_province} ${query_status} ${query_suspended}
+    )   
     SELECT *, COUNT(*) OVER ()
     FROM COMMUNITY_PREVIEW
     ${query_pagination}`)
@@ -246,7 +300,7 @@ exports.getCommunityPreview = asyncHandler(async function getCommunityPreview(re
                                                 JOIN PROVINCE C ON A.ID_PROVINCE = C.ID 
                                                 JOIN CITY D ON A.ID_CITY = D.ID
                                                 ${query_interest} ${query_community_id} ${query_community_name} ${query_number_participant} 
-                                                ${query_category} ${query_city} ${query_province} ${query_status}
+                                                ${query_category} ${query_city} ${query_province} ${query_status} ${query_suspended}
                                             )
                                             SELECT *, COUNT(*) OVER ()
                                             FROM COMMUNITY_PREVIEW
@@ -1072,6 +1126,94 @@ exports.addIdFolder = asyncHandler(async function addIdFolder(req, res, communit
                 respond.successResp(req, res, "nearbud-000-000", "Data berhasil ditambahkan", 1, 1, 1, result)
                 log.info(`SUCCESS | /community/addIdFolder - Success return the result`)
             } 
+        } else {
+            return res.status(500).json({
+                "error_schema" : {
+                    "error_code" : "nearbud-003-001",
+                    "error_message" : `Error while connecting to DB`
+                }
+            })
+        }
+    }
+})
+
+exports.deleteCommunity = asyncHandler(async function deleteCommunity(req, res, community_id, users_username_token) {
+    let isError = false, result = []
+
+    if(!community_id){
+        return res.status(500).json({
+            "error_schema" : {
+                "error_code" : "nearbud-001-000",
+                "error_message" : `Community ID tidak boleh kosong`
+            }
+        })
+    }
+
+    let isCreator = await event.isCreator(req, res, users_username_token, community_id.toUpperCase())
+    console.log(isCreator)
+    if(isCreator == "notCreator"){
+        return res.status(500).json({
+            "error_schema" : {
+                "error_code" : "nearbud-002-001",
+                "error_message" : `Unauthorized, anda bukan Creator Community tersebut`
+            }
+        })
+    }
+
+    try {
+        var query_result = await pool.query(`
+            WITH DELETE_EVENTS AS (
+            DELETE FROM EVENTS 
+            WHERE ID_CREATOR = (SELECT ID_COMMUNITY FROM COMMUNITY WHERE ID_COMMUNITY ILIKE LOWER('${community_id}')) OR ID_CREATOR ILIKE LOWER('${community_id}')
+            RETURNING ID_CREATOR
+            ), 
+            DELETE_IS_ADMIN AS (
+                DELETE FROM IS_ADMIN 
+                WHERE ID_COMMUNITY IN (SELECT ID_CREATOR FROM DELETE_EVENTS) OR ID_COMMUNITY ILIKE LOWER('${community_id}')
+                RETURNING ID_COMMUNITY
+            ), 
+            DELETE_REVIEW AS (
+                DELETE FROM REVIEW 
+                WHERE ID_REVIEWEE IN (SELECT ID_CREATOR FROM DELETE_EVENTS) OR ID_REVIEWEE ILIKE LOWER('${community_id}')
+                RETURNING ID_REVIEWEE
+            ),
+            DELETE_REPORT_LINK AS (
+                DELETE FROM REPORT_LINK 
+                WHERE ID_REPORTEE IN (SELECT ID_CREATOR FROM DELETE_EVENTS) OR ID_REPORTEE ILIKE LOWER('${community_id}')
+                RETURNING ID_REPORTEE
+            ),
+            DELETE_NOTIFICATION AS (
+                DELETE FROM NOTIFICATION 
+                WHERE (ID_SENDER IN (SELECT ID_CREATOR FROM DELETE_EVENTS) OR ID_SENDER ILIKE LOWER('${community_id}'))
+                OR (ID_RECEIVER IN (SELECT ID_CREATOR FROM DELETE_EVENTS) OR ID_RECEIVER ILIKE LOWER('${community_id}'))
+                RETURNING ID_SENDER, ID_RECEIVER
+            ),
+            DELETE_COMMUNITY_LINK AS (
+                DELETE FROM COMMUNITY_LINK 
+                WHERE ID_COMMUNITY IN (SELECT ID_CREATOR FROM DELETE_EVENTS) OR ID_COMMUNITY ILIKE LOWER('${community_id}')
+                RETURNING ID_COMMUNITY
+            ),
+            DELETE_COMMUNITY_BULLETIN AS (
+                DELETE FROM COMMUNITY_BULLETIN 
+                WHERE ID_COMMUNITY IN (SELECT ID_CREATOR FROM DELETE_EVENTS) OR ID_COMMUNITY ILIKE LOWER('${community_id}')
+                RETURNING ID_COMMUNITY
+            ),
+            DELETE_COMMUNITY AS (
+                DELETE FROM COMMUNITY 
+                WHERE ID_COMMUNITY IN (SELECT ID_CREATOR FROM DELETE_EVENTS) OR ID_COMMUNITY ILIKE LOWER('${community_id}')
+                RETURNING ID_COMMUNITY
+            )
+            SELECT * 
+            FROM DELETE_EVENTS, DELETE_IS_ADMIN, DELETE_REVIEW, DELETE_REPORT_LINK, 
+                DELETE_NOTIFICATION, DELETE_COMMUNITY_LINK, DELETE_COMMUNITY_BULLETIN, DELETE_COMMUNITY
+            
+        `)
+    } catch (error) {
+        isError = true
+        log.error(`ERROR | /community/deleteCommunity - Error found while connect to DB - ${error}`)
+    } finally {
+        if(!isError){
+            respond.successResp(req, res, "nearbud-000-000", "Berhasil menghapus data", 1, 1, 1, result)
         } else {
             return res.status(500).json({
                 "error_schema" : {

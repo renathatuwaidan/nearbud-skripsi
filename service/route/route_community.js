@@ -22,10 +22,11 @@ app.get("/getCommunity/preview", user_auth_controller.tokenVerif, function(req, 
     let status = req.query.status 
     let page = req.query.page
     let size = req.query.size 
+    let is_suspended = req.query.is_suspended
     let users_username_token = res.getHeader('users_username')
 
     community_controller.getCommunityPreview(req, res, community_id, community_name, community_number_participant, category_id, interest_id1, interest_id2, interest_id3, interest_id4, interest_id5, 
-        city_id1, city_id2, city_id3, city_id4, city_id5, province_based, status, page, size, users_username_token)
+        city_id1, city_id2, city_id3, city_id4, city_id5, province_based, status, page, size, users_username_token, is_suspended)
 })
 
 app.get("/getCommunity/detail", user_auth_controller.tokenVerif, function (req, res) {
@@ -58,8 +59,12 @@ app.post("/addCommunity", user_auth_controller.tokenVerif, function(req, res){
     community_controller.addCommunity(req, res, community_name, community_description, province_name, city_name, interest_id, users_username_token, community_id_profile)
 })
 
-// meng-disable event exisitng (NEED TO DISCUSS)
-app.patch("/deleteEvent", function(req, res){})
+app.delete("/deleteCommunity", user_auth_controller.tokenVerif, function(req, res) {
+    let community_id = req.body.community_id
+    let users_username_token = res.getHeader('users_username')
+
+    community_controller.deleteCommunity(req, res, community_id, users_username_token)
+})
 
 app.post("/addAdmin", user_auth_controller.tokenVerif, function(req, res){
     let id_user = req.body.id_user

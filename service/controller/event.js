@@ -1106,6 +1106,10 @@ exports.getEventDetail = asyncHandler(async function getEventDetail(req, res, ev
         A.ID_PROFILE,
         A.NUMBER_PARTICIPANT,
         CASE 
+            WHEN A.ID_CREATOR LIKE 'C%' THEN (SELECT ID_PROFILE FROM COMMUNITY WHERE ID_COMMUNITY = A.ID_CREATOR)
+            WHEN A.ID_CREATOR LIKE 'U%' THEN (SELECT ID_PROFILE FROM USERS WHERE ID_USER = A.ID_CREATOR)
+        END AS CREATOR_ID_PROFILE,
+        CASE 
             WHEN A.ID_CREATOR LIKE 'C%' THEN (SELECT NAME FROM COMMUNITY WHERE ID_COMMUNITY = A.ID_CREATOR)
             WHEN A.ID_CREATOR LIKE 'U%' THEN (SELECT NAME FROM USERS WHERE ID_USER = A.ID_CREATOR)
         END AS CREATOR_NAME,
@@ -1142,6 +1146,10 @@ exports.getEventDetail = asyncHandler(async function getEventDetail(req, res, ev
                                             A.ID_PROFILE,
                                             A.ADDRESS,
                                             A.NUMBER_PARTICIPANT,
+                                            CASE 
+                                                WHEN A.ID_CREATOR LIKE 'C%' THEN (SELECT ID_PROFILE FROM COMMUNITY WHERE ID_COMMUNITY = A.ID_CREATOR)
+                                                WHEN A.ID_CREATOR LIKE 'U%' THEN (SELECT ID_PROFILE FROM USERS WHERE ID_USER = A.ID_CREATOR)
+                                            END AS CREATOR_ID_PROFILE,
                                             CASE 
                                                 WHEN A.ID_CREATOR LIKE 'C%' THEN (SELECT ID_COMMUNITY  FROM COMMUNITY WHERE ID_COMMUNITY = A.ID_CREATOR)
                                                 WHEN A.ID_CREATOR LIKE 'U%' THEN (SELECT ID_USER FROM USERS WHERE ID_USER = A.ID_CREATOR)
@@ -1190,6 +1198,7 @@ exports.getEventDetail = asyncHandler(async function getEventDetail(req, res, ev
                             "event_creator_type" : query_result.rows[i].creator_type,
                             "event_creator_id" : query_result.rows[i].creator_id,
                             "event_creator_name" : query_result.rows[i].creator_name,
+                            "event_creator_id_profile" : query_result.rows[i].creator_id_profile,
                     }]
 
                     var object = {

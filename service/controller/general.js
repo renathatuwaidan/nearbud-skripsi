@@ -1010,9 +1010,8 @@ exports.addReview = asyncHandler(async function getReview(req, res, reviewee_id,
     }
 })
 
-exports.getRoomIdList = asyncHandler(async function getRoomIdList(req, res, users_username_token, page, size){
+exports.getRoomIdList = asyncHandler(async function getRoomIdList(req, res, users_username_token){
     let isError = false, result = []
-    var query_pagination = respond.query_pagination(req,res, page, size)
 
     console.log(`WITH CHAT_LIST AS (SELECT id_chat, id_user_1, id_user_2 
             FROM CHAT WHERE (ID_USER_1 = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')) OR 
@@ -1032,7 +1031,7 @@ exports.getRoomIdList = asyncHandler(async function getRoomIdList(req, res, user
             WHERE D.ID_CREATOR = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}'))) -- by event yang dia create
         SELECT *, COUNT(*) OVER ()
         FROM CHAT_LIST
-        ${query_pagination}`)
+        `)
 
     try {
         var query_result = await pool.query(`WITH CHAT_LIST AS (SELECT id_chat, id_user_1, id_user_2 
@@ -1053,7 +1052,7 @@ exports.getRoomIdList = asyncHandler(async function getRoomIdList(req, res, user
                 WHERE D.ID_CREATOR = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}'))) -- by event yang dia create
             SELECT *, COUNT(*) OVER ()
             FROM CHAT_LIST
-            ${query_pagination}`)
+            `)
     } catch (error) {
         isError = true
         log.error(`ERROR | /general/getRoomIdList - Error found while connect to DB - ${error}`)
@@ -1071,7 +1070,7 @@ exports.getRoomIdList = asyncHandler(async function getRoomIdList(req, res, user
                     var total_data = query_result.rows[0].count
                     var total_query_data = query_result.rowCount
                 }
-                respond.successResp(req, res, "nearbud-000-000", "Berhasil mendapatkan hasil", total_data, total_query_data, page, result)
+                respond.successResp(req, res, "nearbud-000-000", "Berhasil mendapatkan hasil", total_data, total_query_data, 1, result)
             } else {
                 respond.successResp(req, res, "nearbud-001-001", "Data tidak ditemukan", 0, 0, 0, result)
             }
