@@ -867,9 +867,9 @@ exports.addEvent = asyncHandler(async function addEvent(req, res, event_name, ev
                                         RETURNING ID_EVENT`)
 
     try {
-        var query_result = await pool.query(`INSERT INTO EVENTS (CREATED, ID_CATEGORY, ID_INTEREST, ID_CREATOR, NAME, DESCRIPTION, DATE, DURATION, 
+        var query_result = await pool.query(`INSERT INTO EVENTS (ID, CREATED, ID_CATEGORY, ID_INTEREST, ID_CREATOR, NAME, DESCRIPTION, DATE, DURATION, 
                                 CITY_BASED, LOCATION, ADDRESS, NUMBER_PARTICIPANT ${query_img_1} ${query_event_coordinate_1}) VALUES 
-                                (NOW(), '${event_category}','${event_interest}',${query_event_creator},'${event_name}','${event_description}','${event_date}','${event_duration}', ${query_city},
+                                ((SELECT MAX(ID)+1 FROM EVENTS), NOW(), '${event_category}','${event_interest}',${query_event_creator},'${event_name}','${event_description}','${event_date}','${event_duration}', ${query_city},
                                 '${event_location}','${event_address}','${event_number_participant}' ${query_img_2} ${query_event_coordinate_2})
                                 RETURNING ID_EVENT`)
     } catch (error) {
@@ -1106,6 +1106,10 @@ exports.getEventDetail = asyncHandler(async function getEventDetail(req, res, ev
         A.ID_PROFILE,
         A.NUMBER_PARTICIPANT,
         CASE 
+            WHEN A.ID_CREATOR LIKE 'C%' THEN (SELECT ROUND(AVG(RATING)) FROM review WHERE id_reviewee = A.id_creator GROUP BY id_reviewee)
+            WHEN A.ID_CREATOR LIKE 'U%' THEN (SELECT ROUND(AVG(RATING)) FROM review WHERE id_reviewee = A.id_creator GROUP BY id_reviewee)
+        END AS CREATOR_RATING_1,
+        CASE 
             WHEN A.ID_CREATOR LIKE 'C%' THEN (SELECT ID_PROFILE FROM COMMUNITY WHERE ID_COMMUNITY = A.ID_CREATOR)
             WHEN A.ID_CREATOR LIKE 'U%' THEN (SELECT ID_PROFILE FROM USERS WHERE ID_USER = A.ID_CREATOR)
         END AS CREATOR_ID_PROFILE,
@@ -1146,6 +1150,11 @@ exports.getEventDetail = asyncHandler(async function getEventDetail(req, res, ev
                                             A.ID_PROFILE,
                                             A.ADDRESS,
                                             A.NUMBER_PARTICIPANT,
+                                            (SELECT ROUND(AVG(rating)) AS average_rating FROM review
+                                                WHERE id_reviewee IN ( SELECT ID_EVENT FROM EVENTS WHERE ID_CREATOR = A.ID_CREATOR
+                                                    UNION SELECT ID_EVENT FROM EVENTS WHERE ID_CREATOR IN (
+                                                        SELECT ID_COMMUNITY FROM IS_ADMIN WHERE ID_USER = A.ID_CREATOR
+                                                    ))) AS AVG_RATING,
                                             CASE 
                                                 WHEN A.ID_CREATOR LIKE 'C%' THEN (SELECT ID_PROFILE FROM COMMUNITY WHERE ID_COMMUNITY = A.ID_CREATOR)
                                                 WHEN A.ID_CREATOR LIKE 'U%' THEN (SELECT ID_PROFILE FROM USERS WHERE ID_USER = A.ID_CREATOR)
@@ -1199,6 +1208,7 @@ exports.getEventDetail = asyncHandler(async function getEventDetail(req, res, ev
                             "event_creator_id" : query_result.rows[i].creator_id,
                             "event_creator_name" : query_result.rows[i].creator_name,
                             "event_creator_id_profile" : query_result.rows[i].creator_id_profile,
+                            "event_creator_rating" : query_result.rows[i].avg_rating
                     }]
 
                     var object = {
@@ -1234,6 +1244,138 @@ exports.getEventDetail = asyncHandler(async function getEventDetail(req, res, ev
             }
             log.info(`SUCCESS | /general/getEventDetail - Success return the result`)
             
+        } else {
+            return res.status(500).json({
+                "error_schema" : {
+                    "error_code" : "nearbud-003-001",
+                    "error_message" : `Error while connecting to DB`
+                }
+            })
+        }
+    }
+})
+
+exports.deleteEvent = asyncHandler(async function deleteEvent(req, res, event_id, users_username_token) {
+    let isError = false, result = []
+
+    if(!event_id){
+        return res.status(500).json({
+            "error_schema" : {
+                "error_code" : "nearbud-001-000",
+                "error_message" : `Community ID tidak boleh kosong`
+            }
+        })
+    }
+
+    let isCreator = await exports.isCreator(req, res, users_username_token, event_id.toUpperCase())
+    console.log(isCreator)
+    if(isCreator == "notCreator"){
+        return res.status(500).json({
+            "error_schema" : {
+                "error_code" : "nearbud-002-001",
+                "error_message" : `Unauthorized, anda bukan Creator Community tersebut`
+            }
+        })
+    }
+
+    console.log(`
+        WITH DELETE_REVIEW AS (
+            DELETE FROM REVIEW 
+            WHERE ID_REVIEWEE IN (SELECT ID_EVENT FROM EVENTS WHERE ID_EVENT ILIKE LOWER('${event_id}')) OR ID_REVIEWEE ILIKE LOWER('${event_id}')
+            RETURNING ID_REVIEWEE
+        ),
+        DELETE_REPORT_LINK AS (
+            DELETE FROM REPORT_LINK 
+            WHERE ID_REPORTEE ILIKE LOWER('${event_id}')
+            RETURNING ID_REPORTEE
+        ),
+        DELETE_NOTIFICATION AS (
+            DELETE FROM NOTIFICATION 
+            WHERE ID_SENDER ILIKE LOWER('${event_id}') OR ID_RECEIVER ILIKE LOWER('${event_id}')
+            RETURNING ID_SENDER, ID_RECEIVER
+        ),
+        DELETE_EVENT_LINK AS (
+            DELETE FROM EVENTS_LINK 
+            WHERE ID_EVENT ILIKE LOWER('${event_id}')
+            RETURNING ID_EVENT
+        ),
+        DELETE_EVENT_RATING_TASKS AS (
+            DELETE FROM EVENT_RATING_TASKS
+            WHERE ID_REVIEWEE ILIKE LOWER('${event_id}')
+            RETURNING ID_REVIEWEE
+        ),
+        DELETE_SUSPENDED AS (
+            DELETE FROM SUSPENDED
+            WHERE ID_REPORTEE ILIKE LOWER('${event_id}')
+            RETURNING ID_REPORTEE
+        ),
+        DELETE_REPORT_LINK AS (
+            DELETE FROM REPORT_LINK
+            WHERE ID_REPORTEE ILIKE LOWER('${event_id}')
+            RETURNING ID_REPORTEE
+        ),
+        DELETE_EVENTS AS (
+            DELETE FROM EVENTS 
+            WHERE ID_EVENT ILIKE LOWER('${event_id}')
+            RETURNING ID_EVENT
+        )
+        SELECT * 
+        FROM DELETE_REVIEW, DELETE_REPORT_LINK, DELETE_EVENT_RATING_TASKS, DELETE_SUSPENDED
+            DELETE_NOTIFICATION, DELETE_EVENT_LINK, DELETE_EVENTS, DELETE_REPORT_LINK
+    `)
+
+    try {
+        var query_result = await pool.query(`
+            WITH DELETE_REVIEW AS (
+                DELETE FROM REVIEW 
+                WHERE ID_REVIEWEE IN (SELECT ID_EVENT FROM EVENTS WHERE ID_EVENT ILIKE LOWER('${event_id}')) OR ID_REVIEWEE ILIKE LOWER('${event_id}')
+                RETURNING ID_REVIEWEE
+            ),
+            DELETE_REPORT_LINK AS (
+                DELETE FROM REPORT_LINK 
+                WHERE ID_REPORTEE ILIKE LOWER('${event_id}')
+                RETURNING ID_REPORTEE
+            ),
+            DELETE_NOTIFICATION AS (
+                DELETE FROM NOTIFICATION 
+                WHERE ID_SENDER ILIKE LOWER('${event_id}') OR ID_RECEIVER ILIKE LOWER('${event_id}')
+                RETURNING ID_SENDER, ID_RECEIVER
+            ),
+            DELETE_EVENT_LINK AS (
+                DELETE FROM EVENTS_LINK 
+                WHERE ID_EVENT ILIKE LOWER('${event_id}')
+                RETURNING ID_EVENT
+            ),
+            DELETE_EVENT_RATING_TASKS AS (
+                DELETE FROM EVENT_RATING_TASKS
+                WHERE ID_REVIEWEE ILIKE LOWER('${event_id}')
+                RETURNING ID_REVIEWEE
+            ),
+            DELETE_SUSPENDED AS (
+                DELETE FROM SUSPENDED
+                WHERE ID_REPORTEE ILIKE LOWER('${event_id}')
+                RETURNING ID_REPORTEE
+            ),
+            DELETE_REPORT_LINK AS (
+                DELETE FROM REPORT_LINK
+                WHERE ID_REPORTEE ILIKE LOWER('${event_id}')
+                RETURNING ID_REPORTEE
+            ),
+            DELETE_EVENTS AS (
+                DELETE FROM EVENTS 
+                WHERE ID_EVENT ILIKE LOWER('${event_id}')
+                RETURNING ID_EVENT
+            )
+            SELECT * 
+            FROM DELETE_REVIEW, DELETE_REPORT_LINK, DELETE_EVENT_RATING_TASKS, DELETE_SUSPENDED
+                DELETE_NOTIFICATION, DELETE_EVENT_LINK, DELETE_EVENTS, DELETE_REPORT_LINK
+        `)
+    } catch (error) {
+        isError = true
+        log.error(`ERROR | /community/deleteCommunity - Error found while connect to DB - ${error}`)
+    } finally {
+        if(!isError){
+            respond.successResp(req, res, "nearbud-000-000", "Berhasil menghapus data", 1, 1, 1, result)
         } else {
             return res.status(500).json({
                 "error_schema" : {
