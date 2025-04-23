@@ -619,7 +619,10 @@ exports.getCommunityDetail = asyncHandler(async function getCommunityDetail(req,
                     WHEN ((SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')) IN (SELECT ID_USER FROM COMMUNITY_LINK WHERE ID_COMMUNITY = A.ID_COMMUNITY AND IS_APPROVED = TRUE)) THEN 'Accepted'
                     WHEN ((SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')) IN (SELECT ID_USER FROM COMMUNITY_LINK WHERE ID_COMMUNITY = A.ID_COMMUNITY AND IS_APPROVED = FALSE)) THEN 'Pending'
                     ELSE 'Nothing'
-                END AS USER_STATUS
+                END AS USER_STATUS,
+                CASE WHEN EXISTS (SELECT 1 FROM SUSPENDED WHERE ID_REPORTEE = A.ID_COMMUNITY) THEN true
+                    ELSE false
+                END AS IS_SUSPENDED
                 FROM COMMUNITY A JOIN INTEREST B ON A.ID_INTEREST = B.ID
             JOIN PROVINCE C ON A.ID_PROVINCE = C.ID
             JOIN CITY D ON A.ID_CITY = D.ID
@@ -646,7 +649,10 @@ exports.getCommunityDetail = asyncHandler(async function getCommunityDetail(req,
                                                         WHEN ((SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')) IN (SELECT ID_USER FROM COMMUNITY_LINK WHERE ID_COMMUNITY = A.ID_COMMUNITY AND IS_APPROVED = TRUE)) THEN 'Accepted'
                                                         WHEN ((SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')) IN (SELECT ID_USER FROM COMMUNITY_LINK WHERE ID_COMMUNITY = A.ID_COMMUNITY AND IS_APPROVED = FALSE)) THEN 'Pending'
                                                         ELSE 'Nothing'
-                                                    END AS USER_STATUS
+                                                    END AS USER_STATUS,
+                                                    CASE WHEN EXISTS (SELECT 1 FROM SUSPENDED WHERE ID_REPORTEE = A.ID_COMMUNITY) THEN true
+                                                        ELSE false
+                                                    END AS IS_SUSPENDED
                                                     FROM COMMUNITY A JOIN INTEREST B ON A.ID_INTEREST = B.ID
                                                 JOIN PROVINCE C ON A.ID_PROVINCE = C.ID
                                                 JOIN CITY D ON A.ID_CITY = D.ID
@@ -667,6 +673,7 @@ exports.getCommunityDetail = asyncHandler(async function getCommunityDetail(req,
                         "community_description" : query_result.rows[i].description,
                         "community_id_profile" : query_result.rows[i].id_profile,
                         "community_id_folder" : query_result.rows[i].id_gallery,
+                        "community_is_suspended" : query_result.rows[i].is_suspended,
                         "interest_name" : query_result.rows[i].interest_name,
                         "city_based" : query_result.rows[i].city_name,
                         "province_based" : query_result.rows[i].province_name,
@@ -1164,12 +1171,17 @@ exports.deleteCommunity = asyncHandler(async function deleteCommunity(req, res, 
         var query_result = await pool.query(`
             WITH DELETE_EVENTS AS (
             DELETE FROM EVENTS 
-            WHERE ID_CREATOR = (SELECT ID_COMMUNITY FROM COMMUNITY WHERE ID_COMMUNITY ILIKE LOWER('${community_id}')) OR ID_CREATOR ILIKE LOWER('${community_id}')
-            RETURNING ID_CREATOR
+            WHERE ID_CREATOR ILIKE LOWER('${community_id}')
+            RETURNING ID_EVENT
+            ), 
+            DELETE_EVENT_LINK AS (
+                DELETE FROM EVENTS_LINK 
+                WHERE ID_EVENT IN (SELECT ID_EVENT FROM DELETE_EVENTS)
+                RETURNING ID_COMMUNITY
             ), 
             DELETE_IS_ADMIN AS (
                 DELETE FROM IS_ADMIN 
-                WHERE ID_COMMUNITY IN (SELECT ID_CREATOR FROM DELETE_EVENTS) OR ID_COMMUNITY ILIKE LOWER('${community_id}')
+                WHERE ID_COMMUNITY ILIKE LOWER('${community_id}')
                 RETURNING ID_COMMUNITY
             ), 
             DELETE_REVIEW AS (
@@ -1190,12 +1202,12 @@ exports.deleteCommunity = asyncHandler(async function deleteCommunity(req, res, 
             ),
             DELETE_COMMUNITY_LINK AS (
                 DELETE FROM COMMUNITY_LINK 
-                WHERE ID_COMMUNITY IN (SELECT ID_CREATOR FROM DELETE_EVENTS) OR ID_COMMUNITY ILIKE LOWER('${community_id}')
+                WHERE ID_COMMUNITY ILIKE LOWER('${community_id}')
                 RETURNING ID_COMMUNITY
             ),
             DELETE_COMMUNITY_BULLETIN AS (
                 DELETE FROM COMMUNITY_BULLETIN 
-                WHERE ID_COMMUNITY IN (SELECT ID_CREATOR FROM DELETE_EVENTS) OR ID_COMMUNITY ILIKE LOWER('${community_id}')
+                WHERE ID_COMMUNITY ILIKE LOWER('${community_id}')
                 RETURNING ID_COMMUNITY
             ),
             DELETE_COMMUNITY AS (
@@ -1210,7 +1222,7 @@ exports.deleteCommunity = asyncHandler(async function deleteCommunity(req, res, 
         `)
     } catch (error) {
         isError = true
-        log.error(`ERROR | /community/deleteCommunity - Error found while connect to DB - ${error}`)
+        log.error(`ERROR | /community/deleteCommunity - Error found while conn  ect to DB - ${error}`)
     } finally {
         if(!isError){
             respond.successResp(req, res, "nearbud-000-000", "Berhasil menghapus data", 1, 1, 1, result)

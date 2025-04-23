@@ -201,22 +201,23 @@ exports.getParticipants = asyncHandler(async function getParticipants(req, res, 
     }
     
     console.log(`WITH LIST_PARTICIPANT AS (
-                                                SELECT DISTINCT ON (C.ID_USER)
-                                                C.ID_USER AS USERS_ID,
-                                                C.NAME AS USERS_NAME,
-                                                C.ID_PROFILE,
-                                                CASE WHEN (SELECT ROUND(AVG(rating), 1) AS average_rating
-                                                            FROM review
-                                                            WHERE id_reviewee = A.ID_USER
-                                                            GROUP BY id_reviewee) IS NULL THEN '0' 
-                                                    ELSE (SELECT ROUND(AVG(rating), 1) AS average_rating
-                                                            FROM review
-                                                            WHERE id_reviewee = A.ID_USER
-                                                            GROUP BY id_reviewee) END AS AVG_RATING
-                                                ${query_join}
-                                            )
-                                            SELECT *, COUNT (*)OVER ()
-                                            FROM LIST_PARTICIPANT`)
+        SELECT DISTINCT ON (C.ID_USER)
+        C.ID_USER AS USERS_ID,
+        C.NAME AS USERS_NAME,
+        C.ID_PROFILE,
+        (SELECT ROUND(AVG(rating)) AS average_rating
+        FROM review
+        WHERE id_reviewee IN (
+            SELECT ID_EVENT FROM EVENTS WHERE ID_CREATOR = C.ID_USER
+            UNION
+            SELECT ID_EVENT FROM EVENTS WHERE ID_CREATOR IN (
+                SELECT ID_COMMUNITY FROM IS_ADMIN WHERE ID_USER = C.ID_USER
+            )
+        )) AS AVG_RATING
+        ${query_join}
+    )
+    SELECT *, COUNT (*)OVER ()
+    FROM LIST_PARTICIPANT`)
 
     try {
         var query_result = await pool.query(`WITH LIST_PARTICIPANT AS (
@@ -224,14 +225,15 @@ exports.getParticipants = asyncHandler(async function getParticipants(req, res, 
                                                 C.ID_USER AS USERS_ID,
                                                 C.NAME AS USERS_NAME,
                                                 C.ID_PROFILE,
-                                                CASE WHEN (SELECT ROUND(AVG(rating), 1) AS average_rating
-                                                            FROM review
-                                                            WHERE id_reviewee = A.ID_USER
-                                                            GROUP BY id_reviewee) IS NULL THEN '0' 
-                                                    ELSE (SELECT ROUND(AVG(rating), 1) AS average_rating
-                                                            FROM review
-                                                            WHERE id_reviewee = A.ID_USER
-                                                            GROUP BY id_reviewee) END AS AVG_RATING
+                                                (SELECT ROUND(AVG(rating)) AS average_rating
+                                                FROM review
+                                                WHERE id_reviewee IN (
+                                                    SELECT ID_EVENT FROM EVENTS WHERE ID_CREATOR = C.ID_USER
+                                                    UNION
+                                                    SELECT ID_EVENT FROM EVENTS WHERE ID_CREATOR IN (
+                                                        SELECT ID_COMMUNITY FROM IS_ADMIN WHERE ID_USER = C.ID_USER
+                                                    )
+                                                )) AS AVG_RATING
                                                 ${query_join}
                                             )
                                             SELECT *, COUNT (*)OVER ()

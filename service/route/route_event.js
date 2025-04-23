@@ -96,7 +96,10 @@ app.get("/getEvents/detail", user_auth_controller.tokenVerif, function(req, res)
     event_controller.getEventDetail(req, res, event_name, event_id, status, users_username_token)
 })
 
-// meng-disable event exisitng (NEED TO DISCUSS)
-app.patch("/deleteEvent", function(req, res){})
+app.delete("/deleteEvent", user_auth_controller.tokenVerif, function(req, res) {
+    let event_id = req.body.event_id
+    let users_username_token = res.getHeader('users_username')
 
+    event_controller.deleteEvent(req, res, event_id, users_username_token)
+})
 module.exports = app
