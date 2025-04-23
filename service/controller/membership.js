@@ -137,23 +137,20 @@ exports.getEventLink_preview = asyncHandler(async function getEventLink_preview(
                         ORDER BY EVENT_DATE ASC
                         ${query_pagination}`
 
-            query_conditional_2 = `(SELECT B.ID_EVENT
-                                FROM EVENTS_LINK B
-                                WHERE ID_EVENT IN (SELECT A.ID_EVENT FROM EVENTS A WHERE ${query_status}) AND ID_USER = ${getUser} AND IS_APPROVED = true
-                                ${query_rsvp1}
-                                AND ID_EVENT NOT IN (SELECT ID_REPORTEE FROM SUSPENDED)
-                                UNION
-                                SELECT ID_EVENT
-                                FROM EVENTS C WHERE ID_CREATOR = ${getUser} 
-                                AND ID_EVENT IN (SELECT A.ID_EVENT FROM EVENTS A WHERE ${query_status})
-                                ${query_rsvp1}
-                                AND ID_EVENT NOT IN (SELECT ID_REPORTEE FROM SUSPENDED)
-                                UNION 
-                                SELECT ID_EVENT
-                                FROM EVENTS D WHERE ID_CREATOR IN (SELECT ID_COMMUNITY FROM IS_ADMIN WHERE ID_USER = ${getUser})
-                                AND ID_EVENT IN (SELECT A.ID_EVENT FROM EVENTS A WHERE ${query_status})
-                                ${query_rsvp1}
-                                AND ID_EVENT NOT IN (SELECT ID_REPORTEE FROM SUSPENDED))`
+            query_conditional_2 = `SELECT B.ID_EVENT, 'YYYY-MM-DD') AS event_date
+                            FROM EVENTS_LINK B
+                            WHERE ID_EVENT IN (SELECT A.ID_EVENT FROM EVENTS A WHERE ${query_status}) ${query_rsvp1} AND ID_USER = ${getUser} AND IS_APPROVED = true
+                            AND ID_EVENT NOT IN (SELECT ID_REPORTEE FROM SUSPENDED)
+                            UNION
+                            SELECT ID_EVENT
+                            FROM EVENTS C WHERE ID_CREATOR = ${getUser} 
+                            AND ID_EVENT IN (SELECT A.ID_EVENT FROM EVENTS A WHERE ${query_status}) ${query_rsvp1}
+                            AND ID_EVENT NOT IN (SELECT ID_REPORTEE FROM SUSPENDED)
+                            UNION 
+                            SELECT ID_EVENT
+                            FROM EVENTS D WHERE ID_CREATOR IN (SELECT ID_COMMUNITY FROM IS_ADMIN WHERE ID_USER = ${getUser})
+                            AND ID_EVENT IN (SELECT A.ID_EVENT FROM EVENTS A WHERE ${query_status}) ${query_rsvp1}
+                            AND ID_EVENT NOT IN (SELECT ID_REPORTEE FROM SUSPENDED)`
         }
     }
 
@@ -483,7 +480,7 @@ exports.getCommunityMember = asyncHandler(async function getCommunityMember(req,
             UNION 
             SELECT ID_USER, (SELECT NAME FROM USERS WHERE ID_USER = A.ID_USER), 'ADMIN' as role, (SELECT ID_PROFILE FROM USERS WHERE ID_USER = A.ID_USER) AS ID_PROFILE
             FROM IS_ADMIN A WHERE ID_COMMUNITY ILIKE LOWER('${community_id}')
-            WHERE ID_COMMUNITY NOT IN (SELECT ID_REPORTEE FROM SUSPENDED)
+            AND ID_COMMUNITY NOT IN (SELECT ID_REPORTEE FROM SUSPENDED)
         )
         SELECT *, COUNT (*)OVER ()
         FROM LIST_PARTICIPANT`)
@@ -500,7 +497,7 @@ exports.getCommunityMember = asyncHandler(async function getCommunityMember(req,
                                             UNION 
                                             SELECT ID_USER, (SELECT NAME FROM USERS WHERE ID_USER = A.ID_USER), 'ADMIN' as role, (SELECT ID_PROFILE FROM USERS WHERE ID_USER = A.ID_USER) AS ID_PROFILE
                                             FROM IS_ADMIN A WHERE ID_COMMUNITY ILIKE LOWER('${community_id}')
-                                            WHERE ID_COMMUNITY NOT IN (SELECT ID_REPORTEE FROM SUSPENDED)
+                                            AND ID_COMMUNITY NOT IN (SELECT ID_REPORTEE FROM SUSPENDED)
                                         )
                                         SELECT *, COUNT (*)OVER ()
                                         FROM LIST_PARTICIPANT

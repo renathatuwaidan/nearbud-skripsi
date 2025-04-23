@@ -1085,7 +1085,8 @@ exports.getRoomIdList = asyncHandler(async function getRoomIdList(req, res, user
                             OR EXISTS (SELECT 1 FROM SUSPENDED WHERE ID_REPORTEE = D.ID_EVENT)
                             THEN true ELSE false END AS IS_SUSPENDED
                 FROM EVENTS D
-                WHERE D.ID_CREATOR = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}'))
+                WHERE D.ID_CREATOR = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')) 
+                    OR D.ID_CREATOR IN (SELECT ID_COMMUNITY FROM IS_ADMIN WHERE ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')))
             )
             SELECT *, COUNT(*) OVER ()
             FROM CHAT_LIST
