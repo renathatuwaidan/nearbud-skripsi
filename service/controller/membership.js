@@ -460,6 +460,7 @@ exports.getCommunityMember = asyncHandler(async function getCommunityMember(req,
             UNION 
             SELECT ID_USER, (SELECT NAME FROM USERS WHERE ID_USER = A.ID_USER), 'ADMIN' as role, (SELECT ID_PROFILE FROM USERS WHERE ID_USER = A.ID_USER) AS ID_PROFILE
             FROM IS_ADMIN A WHERE ID_COMMUNITY ILIKE LOWER('${community_id}')
+            WHERE ID_COMMUNITY NOT IN (SELECT ID_REPORTEE FROM SUSPENDED)
         )
         SELECT *, COUNT (*)OVER ()
         FROM LIST_PARTICIPANT`)
@@ -476,6 +477,7 @@ exports.getCommunityMember = asyncHandler(async function getCommunityMember(req,
                                             UNION 
                                             SELECT ID_USER, (SELECT NAME FROM USERS WHERE ID_USER = A.ID_USER), 'ADMIN' as role, (SELECT ID_PROFILE FROM USERS WHERE ID_USER = A.ID_USER) AS ID_PROFILE
                                             FROM IS_ADMIN A WHERE ID_COMMUNITY ILIKE LOWER('${community_id}')
+                                            WHERE ID_COMMUNITY NOT IN (SELECT ID_REPORTEE FROM SUSPENDED)
                                         )
                                         SELECT *, COUNT (*)OVER ()
                                         FROM LIST_PARTICIPANT
