@@ -665,7 +665,8 @@ exports.getEventsPreviewList = asyncHandler(async function getEventsPreviewList(
                     JOIN CATEGORY D ON A.ID_CATEGORY = D.ID 
                     JOIN INTEREST F ON F.ID_CATEGORY = D.ID
                     WHERE ${q_date} ${query_and} ${query_event_date} ${query_interest} ${query_category} ${query_city_based}
-                    ${query_province_based} ${query_event_location} ${query_event_number_participant} ${query_creator} ${query_community} ${query_status} ${query_events}`)
+                    ${query_province_based} ${query_event_location} ${query_event_number_participant} ${query_creator} ${query_community} ${query_status} ${query_events}
+                    AND A.ID_EVENT NOT IN (SELECT ID_REPORTEE FROM SUSPENDED)`)
 
     try {
         var query_result = await pool.query(`SELECT DISTINCT ON (ID_EVENT)
@@ -692,7 +693,8 @@ exports.getEventsPreviewList = asyncHandler(async function getEventsPreviewList(
                                             JOIN CATEGORY D ON A.ID_CATEGORY = D.ID 
                                             JOIN INTEREST F ON F.ID_CATEGORY = D.ID
                                             WHERE ${q_date} ${query_and} ${query_event_date} ${query_interest} ${query_category} ${query_city_based}
-                                            ${query_province_based} ${query_event_location} ${query_event_number_participant} ${query_creator} ${query_community} ${query_status} ${query_events}`)
+                                            ${query_province_based} ${query_event_location} ${query_event_number_participant} ${query_creator} ${query_community} ${query_status} ${query_events}
+                                            AND A.ID_EVENT NOT IN (SELECT ID_REPORTEE FROM SUSPENDED)`)
     } catch (error) {
         isError = true
         log.error(`ERROR | /event/getEvents/preview getEventsPreviewList - Error found while connect to DB - ${error}`)
@@ -700,10 +702,6 @@ exports.getEventsPreviewList = asyncHandler(async function getEventsPreviewList(
         if(!isError){
             if(query_result.rowCount > 0 ){
                 for( let i = 0; i < query_result.rowCount; i++){
-
-                    console.log("query_result.rows[i].start_time -- " + query_result.rows[i].start_time)
-                    console.log("query_result.rows[i].event_date -- " + query_result.rows[i].event_date)
-
                     var getEndTime = utility.getEndDate(query_result.rows[i].start_time, query_result.rows[i].duration)
                     var timestampEndDate = utility.timestampEndDate(query_result.rows[i].event_date, query_result.rows[i].duration)
 
