@@ -1370,6 +1370,7 @@ exports.getNotif = asyncHandler(async function getNotif(req, res, users_username
                         END AS TIME,
                         (SELECT NAME FROM USERS WHERE ID_USER = A.ID_SENDER) AS SENDER_NAME,
                         A.ID_SENDER,
+                        A.CREATED AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Jakarta' AS date,
                         A.ACTION
                     FROM NOTIFICATION A
                     WHERE (A.ID_RECEIVER IN (SELECT ID_COMMUNITY FROM IS_ADMIN WHERE ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')))  -- WHEN RECEIVER = CXXX
@@ -1391,6 +1392,7 @@ exports.getNotif = asyncHandler(async function getNotif(req, res, users_username
                         END AS TIME,
                         (SELECT NAME FROM USERS WHERE ID_USER = B.ID_SENDER) AS SENDER_NAME,
                         B.ID_SENDER, 
+                        B.CREATED AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Jakarta' AS date,
                         B.ACTION
                     FROM NOTIFICATION B
                     WHERE (B.ID_RECEIVER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')))
@@ -1411,6 +1413,7 @@ exports.getNotif = asyncHandler(async function getNotif(req, res, users_username
                         END AS TIME,
                         (SELECT NAME FROM USERS WHERE ID_USER = A.ID_SENDER) AS SENDER_NAME,
                         A.ID_SENDER,
+                        A.CREATED AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Jakarta' AS date,
                         A.ACTION
                     FROM NOTIFICATION A
                     WHERE (A.ID_RECEIVER IN (SELECT ID_EVENT FROM EVENTS_LINK WHERE ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')) AND IS_APPROVED = TRUE)
@@ -1419,6 +1422,7 @@ exports.getNotif = asyncHandler(async function getNotif(req, res, users_username
                 )
                 SELECT *, COUNT(*) OVER ()
                 FROM NOTIFICATION
+                ORDER BY DATE DESC
             `)
     } catch (error) {
         isError = true
