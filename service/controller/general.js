@@ -1020,15 +1020,15 @@ exports.getRoomIdList = asyncHandler(async function getRoomIdList(req, res, user
 
     console.log(`WITH CHAT_LIST AS (
                 SELECT id_chat, id_user_1, id_user_2,
-                    CASE WHEN EXISTS (SELECT 1 FROM SUSPENDED WHERE ID_REPORTEE = ID_USER_1) 
-                        OR EXISTS (SELECT 1 FROM SUSPENDED WHERE ID_REPORTEE = ID_USER_2) 
+                    CASE WHEN EXISTS (SELECT 1 FROM SUSPENDED WHERE ID_REPORTEE = ID_USER_1)
+                        OR EXISTS (SELECT 1 FROM SUSPENDED WHERE ID_REPORTEE = ID_USER_2)
                         THEN true ELSE false END AS IS_SUSPENDED
-                FROM CHAT 
-                WHERE (ID_USER_1 = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')) 
+                FROM CHAT
+                WHERE (ID_USER_1 = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}'))
                     OR ID_USER_2 = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')))
-                
+
                 UNION
-                
+
                 SELECT (SELECT room_chat_id FROM COMMUNITY WHERE ID_COMMUNITY = A.ID_COMMUNITY) as id_chat,
                     (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')) as id_user_1,
                     A.id_community as id_user_2,
@@ -1036,11 +1036,21 @@ exports.getRoomIdList = asyncHandler(async function getRoomIdList(req, res, user
                             OR EXISTS (SELECT 1 FROM SUSPENDED WHERE ID_REPORTEE = A.id_community)
                             THEN true ELSE false END AS IS_SUSPENDED
                 FROM COMMUNITY_LINK A
-                WHERE A.ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')) 
-                AND A.IS_APPROVED = TRUE
-                            
+                WHERE A.ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')) AND A.IS_APPROVED = TRUE
+
                 UNION
-                
+
+                SELECT (SELECT room_chat_id FROM COMMUNITY WHERE ID_COMMUNITY = A.ID_COMMUNITY) as id_chat,
+                    (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')) as id_user_1,
+                    A.id_community as id_user_2,
+                    CASE WHEN EXISTS (SELECT 1 FROM SUSPENDED WHERE ID_REPORTEE = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')))
+                            OR EXISTS (SELECT 1 FROM SUSPENDED WHERE ID_REPORTEE = A.id_community)
+                            THEN true ELSE false END AS IS_SUSPENDED
+                FROM COMMUNITY A
+                WHERE A.ID_COMMUNITY IN (SELECT ID_COMMUNITY FROM IS_ADMIN WHERE ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')))
+
+                UNION
+
                 SELECT (SELECT room_chat_id FROM EVENTS WHERE ID_EVENT = D.ID_EVENT) as id_chat,
                     (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')) as id_user_1,
                     D.ID_EVENT as id_user_2,
@@ -1049,48 +1059,80 @@ exports.getRoomIdList = asyncHandler(async function getRoomIdList(req, res, user
                             THEN true ELSE false END AS IS_SUSPENDED
                 FROM EVENTS D
                 WHERE D.ID_CREATOR = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}'))
+                OR ID_CREATOR IN (SELECT ID_COMMUNITY FROM IS_ADMIN WHERE ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')))
+
+                UNION
+
+                SELECT (SELECT room_chat_id FROM EVENTS WHERE ID_EVENT = A.ID_EVENT) as id_chat,
+                    (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')) as id_user_1,
+                    A.ID_EVENT as id_user_2,
+                    CASE WHEN EXISTS (SELECT 1 FROM SUSPENDED WHERE ID_REPORTEE = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')))
+                            OR EXISTS (SELECT 1 FROM SUSPENDED WHERE ID_REPORTEE = A.ID_EVENT)
+                            THEN true ELSE false END AS IS_SUSPENDED
+                FROM EVENTS_LINK A
+                WHERE A.ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')) AND IS_APPROVED = TRUE
             )
             SELECT *, COUNT(*) OVER ()
             FROM CHAT_LIST
         `)
-
     try {
         var query_result = await pool.query(`WITH CHAT_LIST AS (
-                SELECT id_chat, id_user_1, id_user_2,
-                    CASE WHEN EXISTS (SELECT 1 FROM SUSPENDED WHERE ID_REPORTEE = ID_USER_1) 
-                        OR EXISTS (SELECT 1 FROM SUSPENDED WHERE ID_REPORTEE = ID_USER_2) 
-                        THEN true ELSE false END AS IS_SUSPENDED
-                FROM CHAT 
-                WHERE (ID_USER_1 = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')) 
-                    OR ID_USER_2 = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')))
-                
-                UNION
-                
-                SELECT (SELECT room_chat_id FROM COMMUNITY WHERE ID_COMMUNITY = A.ID_COMMUNITY) as id_chat,
-                    (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')) as id_user_1,
-                    A.id_community as id_user_2,
-                    CASE WHEN EXISTS (SELECT 1 FROM SUSPENDED WHERE ID_REPORTEE = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')))
-                            OR EXISTS (SELECT 1 FROM SUSPENDED WHERE ID_REPORTEE = A.id_community)
-                            THEN true ELSE false END AS IS_SUSPENDED
-                FROM COMMUNITY_LINK A
-                WHERE A.ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')) 
-                AND A.IS_APPROVED = TRUE
-                            
-                UNION
-                
-                SELECT (SELECT room_chat_id FROM EVENTS WHERE ID_EVENT = D.ID_EVENT) as id_chat,
-                    (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')) as id_user_1,
-                    D.ID_EVENT as id_user_2,
-                    CASE WHEN EXISTS (SELECT 1 FROM SUSPENDED WHERE ID_REPORTEE = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')))
-                            OR EXISTS (SELECT 1 FROM SUSPENDED WHERE ID_REPORTEE = D.ID_EVENT)
-                            THEN true ELSE false END AS IS_SUSPENDED
-                FROM EVENTS D
-                WHERE D.ID_CREATOR = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')) 
-                    OR D.ID_CREATOR IN (SELECT ID_COMMUNITY FROM IS_ADMIN WHERE ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')))
-            )
-            SELECT *, COUNT(*) OVER ()
-            FROM CHAT_LIST
-        `)
+	                SELECT id_chat, id_user_1, id_user_2,
+	                    CASE WHEN EXISTS (SELECT 1 FROM SUSPENDED WHERE ID_REPORTEE = ID_USER_1)
+	                        OR EXISTS (SELECT 1 FROM SUSPENDED WHERE ID_REPORTEE = ID_USER_2)
+	                        THEN true ELSE false END AS IS_SUSPENDED
+	                FROM CHAT
+	                WHERE (ID_USER_1 = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}'))
+	                    OR ID_USER_2 = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')))
+	
+	                UNION
+	
+	                SELECT (SELECT room_chat_id FROM COMMUNITY WHERE ID_COMMUNITY = A.ID_COMMUNITY) as id_chat,
+	                    (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')) as id_user_1,
+	                    A.id_community as id_user_2,
+	                    CASE WHEN EXISTS (SELECT 1 FROM SUSPENDED WHERE ID_REPORTEE = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')))
+	                            OR EXISTS (SELECT 1 FROM SUSPENDED WHERE ID_REPORTEE = A.id_community)
+	                            THEN true ELSE false END AS IS_SUSPENDED
+	                FROM COMMUNITY_LINK A
+	                WHERE A.ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')) AND A.IS_APPROVED = TRUE
+	
+	                UNION
+	
+					SELECT (SELECT room_chat_id FROM COMMUNITY WHERE ID_COMMUNITY = A.ID_COMMUNITY) as id_chat,
+	                    (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')) as id_user_1,
+	                    A.id_community as id_user_2,
+	                    CASE WHEN EXISTS (SELECT 1 FROM SUSPENDED WHERE ID_REPORTEE = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')))
+	                            OR EXISTS (SELECT 1 FROM SUSPENDED WHERE ID_REPORTEE = A.id_community)
+	                            THEN true ELSE false END AS IS_SUSPENDED
+	                FROM COMMUNITY A
+	                WHERE A.ID_COMMUNITY IN (SELECT ID_COMMUNITY FROM IS_ADMIN WHERE ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')))
+	
+	                UNION
+	
+	                SELECT (SELECT room_chat_id FROM EVENTS WHERE ID_EVENT = D.ID_EVENT) as id_chat,
+	                    (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')) as id_user_1,
+	                    D.ID_EVENT as id_user_2,
+	                    CASE WHEN EXISTS (SELECT 1 FROM SUSPENDED WHERE ID_REPORTEE = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')))
+	                            OR EXISTS (SELECT 1 FROM SUSPENDED WHERE ID_REPORTEE = D.ID_EVENT)
+	                            THEN true ELSE false END AS IS_SUSPENDED
+	                FROM EVENTS D
+	                WHERE D.ID_CREATOR = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}'))
+	                OR ID_CREATOR IN (SELECT ID_COMMUNITY FROM IS_ADMIN WHERE ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')))
+	
+					UNION
+	
+	                SELECT (SELECT room_chat_id FROM EVENTS WHERE ID_EVENT = A.ID_EVENT) as id_chat,
+	                    (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')) as id_user_1,
+	                    A.ID_EVENT as id_user_2,
+	                    CASE WHEN EXISTS (SELECT 1 FROM SUSPENDED WHERE ID_REPORTEE = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')))
+	                            OR EXISTS (SELECT 1 FROM SUSPENDED WHERE ID_REPORTEE = A.ID_EVENT)
+	                            THEN true ELSE false END AS IS_SUSPENDED
+	                FROM EVENTS_LINK A
+	                WHERE A.ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')) AND IS_APPROVED = TRUE
+	            )
+	            SELECT *, COUNT(*) OVER ()
+	            FROM CHAT_LIST
+            `)
     } catch (error) {
         isError = true
         log.error(`ERROR | /general/getRoomIdList - Error found while connect to DB - ${error}`)

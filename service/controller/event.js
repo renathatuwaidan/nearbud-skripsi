@@ -210,7 +210,7 @@ exports.getEventsPreview = asyncHandler(async function getEventsPreview(req, res
                     let query_status_1 = "", query_status_2 = ""
 
                     if(status.includes("available")){
-                        query_status_1 = `(SELECT COUNT(*) FROM EVENTS_LINK WHERE ID_EVENT = A.ID_EVENT) < A.NUMBER_PARTICIPANT`
+                        query_status_1 = `AND (SELECT COUNT(*) FROM EVENTS_LINK WHERE ID_EVENT = A.ID_EVENT) < A.NUMBER_PARTICIPANT`
                         
                         if (status.includes("not-joined")){
                             query_status_2 = `AND A.ID_EVENT NOT IN (SELECT ID_EVENT FROM EVENTS_LINK WHERE ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}') AND IS_APPROVED = TRUE))`
