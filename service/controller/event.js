@@ -627,6 +627,9 @@ exports.getEventsPreviewList = asyncHandler(async function getEventsPreviewList(
         } 
     } else { query_status = `` }
 
+    console.log("query events " + query_events)
+    console.log("==============================")
+
     if(query_events){
         if(!query_events.trim().startsWith("AND")){
             query_events = `AND ID_EVENT IN (${query_events})`
@@ -636,6 +639,8 @@ exports.getEventsPreviewList = asyncHandler(async function getEventsPreviewList(
     } else {
         query_events = ""
     }
+
+    console.log("query_event FINALLLLL  " + query_events)
 
     if(!query_from) query_from = ""
 
@@ -663,8 +668,7 @@ exports.getEventsPreviewList = asyncHandler(async function getEventsPreviewList(
                     JOIN CATEGORY D ON A.ID_CATEGORY = D.ID 
                     JOIN INTEREST F ON F.ID_CATEGORY = D.ID
                     WHERE ${q_date} ${query_and} ${query_event_date} ${query_interest} ${query_category} ${query_city_based}
-                    ${query_province_based} ${query_event_location} ${query_event_number_participant} ${query_creator} ${query_community} ${query_status} ${query_events}
-                    AND A.ID_EVENT NOT IN (SELECT ID_REPORTEE FROM SUSPENDED)`)
+                    ${query_province_based} ${query_event_location} ${query_event_number_participant} ${query_creator} ${query_community} ${query_status} ${query_events}`)
 
     try {
         var query_result = await pool.query(`SELECT DISTINCT ON (ID_EVENT)
@@ -691,8 +695,7 @@ exports.getEventsPreviewList = asyncHandler(async function getEventsPreviewList(
                                             JOIN CATEGORY D ON A.ID_CATEGORY = D.ID 
                                             JOIN INTEREST F ON F.ID_CATEGORY = D.ID
                                             WHERE ${q_date} ${query_and} ${query_event_date} ${query_interest} ${query_category} ${query_city_based}
-                                            ${query_province_based} ${query_event_location} ${query_event_number_participant} ${query_creator} ${query_community} ${query_status} ${query_events}
-                                            AND A.ID_EVENT NOT IN (SELECT ID_REPORTEE FROM SUSPENDED)`)
+                                            ${query_province_based} ${query_event_location} ${query_event_number_participant} ${query_creator} ${query_community} ${query_status} ${query_events}`)
     } catch (error) {
         isError = true
         log.error(`ERROR | /event/getEvents/preview getEventsPreviewList - Error found while connect to DB - ${error}`)
