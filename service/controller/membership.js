@@ -96,8 +96,8 @@ exports.getEventLink_preview = asyncHandler(async function getEventLink_preview(
                                     UNION 
                                     SELECT ID_EVENT
                                     FROM EVENTS D WHERE ID_CREATOR IN (SELECT ID_COMMUNITY FROM IS_ADMIN WHERE ID_USER = ${getUser})
-                                    AND ID_EVENT IN (SELECT A.ID_EVENT FROM EVENTS A WHERE A.DATE::DATE = (NOW() AT TIME ZONE 'Asia/Jakarta')::DATE))
-                                    AND ID_EVENT NOT IN (SELECT ID_REPORTEE FROM SUSPENDED)`
+                                    AND ID_EVENT IN (SELECT A.ID_EVENT FROM EVENTS A WHERE A.DATE::DATE = (NOW() AT TIME ZONE 'Asia/Jakarta')::DATE)
+                                    AND ID_EVENT NOT IN (SELECT ID_REPORTEE FROM SUSPENDED))`
         } else {
             if (status.toLowerCase() == "active"){
                 query_status = `A.DATE::DATE >= (NOW() AT TIME ZONE 'Asia/Jakarta')::DATE`
