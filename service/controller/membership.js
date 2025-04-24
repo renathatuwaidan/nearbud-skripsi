@@ -137,7 +137,7 @@ exports.getEventLink_preview = asyncHandler(async function getEventLink_preview(
                         ORDER BY EVENT_DATE ASC
                         ${query_pagination}`
 
-            query_conditional_2 = `SELECT B.ID_EVENT, 'YYYY-MM-DD') AS event_date
+            query_conditional_2 = `SELECT B.ID_EVENT
                             FROM EVENTS_LINK B
                             WHERE ID_EVENT IN (SELECT A.ID_EVENT FROM EVENTS A WHERE ${query_status}) ${query_rsvp1} AND ID_USER = ${getUser} AND IS_APPROVED = true
                             AND ID_EVENT NOT IN (SELECT ID_REPORTEE FROM SUSPENDED)
@@ -157,6 +157,8 @@ exports.getEventLink_preview = asyncHandler(async function getEventLink_preview(
     console.log("1 ---- " + query_conditional_1)
 
     console.log("2 ------- " + query_conditional_2)
+
+    console.log("==========================")
 
     try {
         var query_result = await pool.query(query_conditional_1)

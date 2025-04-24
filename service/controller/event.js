@@ -629,15 +629,13 @@ exports.getEventsPreviewList = asyncHandler(async function getEventsPreviewList(
 
     if(query_events){
         if(!query_events.trim().startsWith("AND")){
-            query_events = `AND ID_EVENT IN ${query_events}`
+            query_events = `AND ID_EVENT IN (${query_events})`
         } else {
-            query_events = `ID_EVENT IN ${query_events}`
+            query_events = `ID_EVENT IN (${query_events})`
         }
     } else {
         query_events = ""
     }
-
-    console.log(event_date + '%%' + query_status + "==" + query_events)
 
     if(!query_from) query_from = ""
 
