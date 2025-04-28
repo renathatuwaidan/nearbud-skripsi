@@ -34,13 +34,12 @@ exports.getEventsPreview = asyncHandler(async function getEventsPreview(req, res
             if(category_id4){category_id4 = `,'${category_id4}'`} else category_id4 = ''
             if(category_id5){category_id5 = `,'${category_id5}'`} else category_id5 = ''
     
-            query_category = `AND A.ID_CATEGORY IN (${category_id1} ${category_id2} ${category_id3} ${category_id4} ${category_id5})`
+            query_category = `AND A.ID_INTEREST IN (SELECT ID FROM INTEREST WHERE ID_CATEGORY IN (${category_id1} ${category_id2} ${category_id3} ${category_id4} ${category_id5}))`
         }
 
         if(event_date){
             if(event_date == "today"){
-                query_event_date = `AND A.DATE::DATE >= (NOW() AT TIME ZONE 'Asia/Jakarta')::DATE
-                                    AND A.DATE::DATE <= ((NOW() AT TIME ZONE 'Asia/Jakarta') + INTERVAL '1 day')::DATE`
+                query_event_date = `AND A.DATE::DATE = (NOW() AT TIME ZONE 'Asia/Jakarta')::DATE`
             }
 
             if(event_date == "now"){
@@ -56,11 +55,11 @@ exports.getEventsPreview = asyncHandler(async function getEventsPreview(req, res
             if(city_id4){city_id4 = `,'${city_id4}'`} else city_id4 = ''
             if(city_id5){city_id5 = `,'${city_id5}'`} else city_id5 = ''
     
-            query_city = `AND C.ID IN (${city_id1} ${city_id2} ${city_id3} ${city_id4} ${city_id5})`
+            query_city = `AND A.CITY_BASED IN (${city_id1} ${city_id2} ${city_id3} ${city_id4} ${city_id5})`
         }
     
         if(province_based){
-            query_province_based = `AND E.NAME ILIKE LOWER('%${province_based}%')`
+            query_province_based = `AND A.CITY_BASED IN (SELECT ID FROM CITY WHERE ID_PROVINCE = (SELECT ID_PROVINCE FROM PROVINCE WHERE NAME ILIKE LOWER('%${province_based}%')))`
         }
     
         if(event_location){
@@ -109,12 +108,11 @@ exports.getEventsPreview = asyncHandler(async function getEventsPreview(req, res
             if(category_id4){category_id4 = `,'${category_id4}'`} else category_id4 = ''
             if(category_id5){category_id5 = `,'${category_id5}'`} else category_id5 = ''
     
-            query_category = `A.ID_CATEGORY IN (${category_id1} ${category_id2} ${category_id3} ${category_id4} ${category_id5})`
+            query_category = `A.ID_INTEREST IN (SELECT ID FROM INTEREST WHERE ID_CATEGORY IN (${category_id1} ${category_id2} ${category_id3} ${category_id4} ${category_id5}))`
         
             if(event_date){
                 if(event_date == "today"){
-                    query_event_date = `AND A.DATE::DATE >= (NOW() AT TIME ZONE 'Asia/Jakarta')::DATE
-                                        AND A.DATE::DATE <= ((NOW() AT TIME ZONE 'Asia/Jakarta') + INTERVAL '1 day')::DATE`
+                    query_event_date = `AND A.DATE::DATE = (NOW() AT TIME ZONE 'Asia/Jakarta')::DATE`
                 }
     
                 if(event_date == "now"){
@@ -130,11 +128,11 @@ exports.getEventsPreview = asyncHandler(async function getEventsPreview(req, res
                 if(city_id4){city_id4 = `,'${city_id4}'`} else city_id4 = ''
                 if(city_id5){city_id5 = `,'${city_id5}'`} else city_id5 = ''
         
-                query_city = `AND C.ID IN (${city_id1} ${city_id2} ${city_id3} ${city_id4} ${city_id5})`
+                query_city = `AND A.CITY_BASED IN (${city_id1} ${city_id2} ${city_id3} ${city_id4} ${city_id5})`
             }
         
             if(province_based){
-                query_province_based = `AND E.NAME ILIKE LOWER('%${province_based}%')`
+                query_province_based = `AND A.CITY_BASED IN (SELECT ID FROM CITY WHERE ID_PROVINCE = (SELECT ID_PROVINCE FROM PROVINCE WHERE NAME ILIKE LOWER('%${province_based}%')))`
             }
         
             if(event_location){
@@ -181,16 +179,15 @@ exports.getEventsPreview = asyncHandler(async function getEventsPreview(req, res
                 if(city_id4){city_id4 = `,'${city_id4}'`} else city_id4 = ''
                 if(city_id5){city_id5 = `,'${city_id5}'`} else city_id5 = ''
         
-                query_city = `C.ID IN (${city_id1} ${city_id2} ${city_id3} ${city_id4} ${city_id5})`
+                query_city = `AND A.CITY_BASED IN (${city_id1} ${city_id2} ${city_id3} ${city_id4} ${city_id5})`
 
                 if(province_based){
-                    query_province_based = `AND E.NAME ILIKE LOWER('%${province_based}%')`
+                    query_province_based = `AND A.CITY_BASED IN (SELECT ID FROM CITY WHERE ID_PROVINCE = (SELECT ID_PROVINCE FROM PROVINCE WHERE NAME ILIKE LOWER('%${province_based}%')))`
                 }
 
                 if(event_date){
                     if(event_date == "today"){
-                        query_event_date = `AND A.DATE::DATE >= (NOW() AT TIME ZONE 'Asia/Jakarta')::DATE
-                                            AND A.DATE::DATE <= ((NOW() AT TIME ZONE 'Asia/Jakarta') + INTERVAL '1 day')::DATE`
+                        query_event_date = `AND A.DATE::DATE = (NOW() AT TIME ZONE 'Asia/Jakarta')::DATE`
                     }
 
                     if(event_date == "now"){
@@ -237,7 +234,7 @@ exports.getEventsPreview = asyncHandler(async function getEventsPreview(req, res
                 }
             } else {
                 if(province_based){
-                    query_province_based = `E.NAME ILIKE LOWER('%${province_based}%')`
+                    query_province_based = `A.CITY_BASED IN (SELECT ID FROM CITY WHERE ID_PROVINCE = (SELECT ID_PROVINCE FROM PROVINCE WHERE NAME ILIKE LOWER('%${province_based}%')))`
 
                     if(event_location){
                         query_event_location = `AND A.LOCATION ILIKE LOWER('%${event_location}%')`
@@ -245,8 +242,7 @@ exports.getEventsPreview = asyncHandler(async function getEventsPreview(req, res
 
                     if(event_date){
                         if(event_date == "today"){
-                            query_event_date = `AND A.DATE::DATE >= (NOW() AT TIME ZONE 'Asia/Jakarta')::DATE
-                                                AND A.DATE::DATE <= ((NOW() AT TIME ZONE 'Asia/Jakarta') + INTERVAL '1 day')::DATE`
+                            query_event_date = `AND A.DATE::DATE = (NOW() AT TIME ZONE 'Asia/Jakarta')::DATE`
                         }
             
                         if(event_date == "now"){
@@ -331,8 +327,7 @@ exports.getEventsPreview = asyncHandler(async function getEventsPreview(req, res
                             
                             if(event_date){
                                 if(event_date == "today"){
-                                    query_event_date = `AND A.DATE::DATE >= (NOW() AT TIME ZONE 'Asia/Jakarta')::DATE
-                                                        AND A.DATE::DATE <= ((NOW() AT TIME ZONE 'Asia/Jakarta') + INTERVAL '1 day')::DATE`
+                                    query_event_date = `AND A.DATE::DATE = (NOW() AT TIME ZONE 'Asia/Jakarta')::DATE`
                                 }
                     
                                 if(event_date == "now"){
@@ -373,8 +368,7 @@ exports.getEventsPreview = asyncHandler(async function getEventsPreview(req, res
                         } else {
                             if(event_date){
                                 if(event_date == "today"){
-                                    query_event_date = `A.DATE::DATE >= (NOW() AT TIME ZONE 'Asia/Jakarta')::DATE
-                                                        AND A.DATE::DATE <= ((NOW() AT TIME ZONE 'Asia/Jakarta') + INTERVAL '1 day')::DATE`
+                                    query_event_date = `A.DATE::DATE = (NOW() AT TIME ZONE 'Asia/Jakarta')::DATE`
                                 }
 
                                 if(event_date == "now"){
@@ -473,11 +467,7 @@ exports.getEventsPreview = asyncHandler(async function getEventsPreview(req, res
 
     console.log(`WITH EVENT_DATE_LIST AS (
         SELECT DISTINCT TO_CHAR(A.DATE, 'YYYY-MM-DD') AS EVENT_DATE 
-        FROM EVENTS A JOIN CATEGORY B ON A.ID_CATEGORY = B.ID
-        JOIN CITY C ON A.CITY_BASED = C.ID
-        JOIN PROVINCE E ON C.ID_PROVINCE = E.ID
-        JOIN CATEGORY D ON A.ID_CATEGORY = D.ID 
-        JOIN INTEREST F ON F.ID_CATEGORY = D.ID
+        FROM EVENTS A
         ${query_where} ${query_interest} ${query_category} ${query_city} ${query_event_date}
         ${query_province_based} ${query_event_location} ${query_event_number_participant} ${query_status} ${query_event_creator} ${query_past_event}
     )
@@ -489,11 +479,7 @@ exports.getEventsPreview = asyncHandler(async function getEventsPreview(req, res
     try {
         var query_result = await pool.query(`WITH EVENT_DATE_LIST AS (
             SELECT DISTINCT TO_CHAR(A.DATE, 'YYYY-MM-DD') AS EVENT_DATE 
-            FROM EVENTS A JOIN CATEGORY B ON A.ID_CATEGORY = B.ID
-            JOIN CITY C ON A.CITY_BASED = C.ID
-            JOIN PROVINCE E ON C.ID_PROVINCE = E.ID
-            JOIN CATEGORY D ON A.ID_CATEGORY = D.ID 
-            JOIN INTEREST F ON F.ID_CATEGORY = D.ID
+            FROM EVENTS A
             ${query_where} ${query_interest} ${query_category} ${query_city} ${query_event_date}
             ${query_province_based} ${query_event_location} ${query_event_number_participant} ${query_status} ${query_event_creator} ${query_past_event}
         )
@@ -588,6 +574,14 @@ exports.getEventsPreviewList = asyncHandler(async function getEventsPreviewList(
         }
     }
 
+    if(query_province_based){
+        if(!query_province_based.trim().startsWith("AND")){
+            query_province_based = `AND ${query_province_based}`
+        } else {
+            query_province_based = `${query_province_based}`
+        }
+    }
+
     if(query_category){
         if(!query_category.trim().startsWith("AND")){
             query_category = `AND ${query_category}`
@@ -661,12 +655,12 @@ exports.getEventsPreviewList = asyncHandler(async function getEventsPreviewList(
                     A.ID_PROFILE,
                     TO_CHAR(A.DATE, 'HH24:mi') AS START_TIME,
                     (SELECT COUNT(*) FROM EVENTS_LINK WHERE ID_EVENT = A.ID_EVENT AND IS_APPROVED = true) AS CURRENT_PARTICIPANT
-                    FROM EVENTS A JOIN CATEGORY B ON A.ID_CATEGORY = B.ID
+                    FROM EVENTS A
                     ${query_from}
                     JOIN CITY C ON A.CITY_BASED = C.ID
                     JOIN PROVINCE E ON C.ID_PROVINCE = E.ID
-                    JOIN CATEGORY D ON A.ID_CATEGORY = D.ID 
-                    JOIN INTEREST F ON F.ID_CATEGORY = D.ID
+                    JOIN INTEREST F ON F.ID = A.ID_INTEREST
+                    JOIN CATEGORY D ON F.ID_CATEGORY = D.ID 
                     WHERE ${q_date} ${query_and} ${query_event_date} ${query_interest} ${query_category} ${query_city_based}
                     ${query_province_based} ${query_event_location} ${query_event_number_participant} ${query_creator} ${query_community} ${query_status} ${query_events}`)
 
@@ -688,12 +682,12 @@ exports.getEventsPreviewList = asyncHandler(async function getEventsPreviewList(
                                             A.DATE AS EVENT_DATE,
                                             TO_CHAR(A.DATE, 'HH24:mi') AS START_TIME,
                                             (SELECT COUNT(*) FROM EVENTS_LINK WHERE ID_EVENT = A.ID_EVENT AND IS_APPROVED = true) AS CURRENT_PARTICIPANT
-                                            FROM EVENTS A JOIN CATEGORY B ON A.ID_CATEGORY = B.ID
+                                            FROM EVENTS A
                                             ${query_from}
                                             JOIN CITY C ON A.CITY_BASED = C.ID
                                             JOIN PROVINCE E ON C.ID_PROVINCE = E.ID
-                                            JOIN CATEGORY D ON A.ID_CATEGORY = D.ID 
-                                            JOIN INTEREST F ON F.ID_CATEGORY = D.ID
+                                            JOIN INTEREST F ON F.ID = A.ID_INTEREST
+                                            JOIN CATEGORY D ON F.ID_CATEGORY = D.ID 
                                             WHERE ${q_date} ${query_and} ${query_event_date} ${query_interest} ${query_category} ${query_city_based}
                                             ${query_province_based} ${query_event_location} ${query_event_number_participant} ${query_creator} ${query_community} ${query_status} ${query_events}`)
     } catch (error) {
@@ -754,11 +748,11 @@ exports.getCreator = asyncHandler(async function getCreator(req, res, id_creator
 
     console.log(`WITH EVENT_CREATOR AS (
                                             SELECT DISTINCT (TO_CHAR(A.DATE, 'YYYY-MM-DD')) AS EVENT_DATE 
-                                            FROM EVENTS A JOIN CATEGORY B ON A.ID_CATEGORY = B.ID
+                                            FROM EVENTS A 
                                             JOIN CITY C ON A.CITY_BASED = C.ID
                                             JOIN PROVINCE E ON C.ID_PROVINCE = E.ID
-                                            JOIN CATEGORY D ON A.ID_CATEGORY = D.ID 
-                                            JOIN INTEREST F ON F.ID_CATEGORY = D.ID
+                                            JOIN INTEREST F ON A.ID_INTEREST = F.ID
+                                            JOIN CATEGORY D ON F.ID_CATEGORY = D.ID 
                                             WHERE ${query_creator} ${query_community}
                                         )
                                         SELECT *, COUNT (*)OVER ()
@@ -768,11 +762,11 @@ exports.getCreator = asyncHandler(async function getCreator(req, res, id_creator
     try {
         var query_result = await pool.query(`WITH EVENT_CREATOR AS (
                                             SELECT DISTINCT (TO_CHAR(A.DATE, 'YYYY-MM-DD')) AS EVENT_DATE 
-                                            FROM EVENTS A JOIN CATEGORY B ON A.ID_CATEGORY = B.ID
+                                            FROM EVENTS A 
                                             JOIN CITY C ON A.CITY_BASED = C.ID
                                             JOIN PROVINCE E ON C.ID_PROVINCE = E.ID
-                                            JOIN CATEGORY D ON A.ID_CATEGORY = D.ID 
-                                            JOIN INTEREST F ON F.ID_CATEGORY = D.ID
+                                            JOIN INTEREST F ON A.ID_INTEREST = F.ID
+                                            JOIN CATEGORY D ON F.ID_CATEGORY = D.ID 
                                             WHERE ${query_creator} ${query_community}
                                         )
                                         SELECT *, COUNT (*)OVER ()
@@ -859,16 +853,16 @@ exports.addEvent = asyncHandler(async function addEvent(req, res, event_name, ev
         query_event_coordinate_2 = `,'${latitude}','${longitude}'`
     }
 
-    console.log(`INSERT INTO EVENTS (CREATED, ID_CATEGORY, ID_INTEREST, ID_CREATOR, NAME, DESCRIPTION, DATE, DURATION, 
+    console.log(`INSERT INTO EVENTS (CREATED, ID_INTEREST, ID_CREATOR, NAME, DESCRIPTION, DATE, DURATION, 
                                         CITY_BASED, LOCATION, ADDRESS, NUMBER_PARTICIPANT ${query_img_1} ${query_event_coordinate_1}) VALUES 
-                                        (NOW(), '${event_category}','${event_interest}',${query_event_creator},'${event_name}','${event_description}','${event_date}','${event_duration}', ${query_city},
+                                        (NOW(), '${event_interest}',${query_event_creator},'${event_name}','${event_description}','${event_date}','${event_duration}', ${query_city},
                                         '${event_location}','${event_address}','${event_number_participant}' ${query_img_2} ${query_event_coordinate_2})
                                         RETURNING ID_EVENT`)
 
     try {
-        var query_result = await pool.query(`INSERT INTO EVENTS (ID, CREATED, ID_CATEGORY, ID_INTEREST, ID_CREATOR, NAME, DESCRIPTION, DATE, DURATION, 
+        var query_result = await pool.query(`INSERT INTO EVENTS (ID, CREATED, ID_INTEREST, ID_CREATOR, NAME, DESCRIPTION, DATE, DURATION, 
                                 CITY_BASED, LOCATION, ADDRESS, NUMBER_PARTICIPANT ${query_img_1} ${query_event_coordinate_1}) VALUES 
-                                ((SELECT MAX(ID)+1 FROM EVENTS), NOW(), '${event_category}','${event_interest}',${query_event_creator},'${event_name}','${event_description}','${event_date}','${event_duration}', ${query_city},
+                                ((SELECT MAX(ID)+1 FROM EVENTS), NOW(),'${event_interest}',${query_event_creator},'${event_name}','${event_description}','${event_date}','${event_duration}', ${query_city},
                                 '${event_location}','${event_address}','${event_number_participant}' ${query_img_2} ${query_event_coordinate_2})
                                 RETURNING ID_EVENT`)
     } catch (error) {
@@ -988,10 +982,6 @@ exports.editEvent = asyncHandler(async function editEvent(req, res, event_id, ev
         query_event_number_participant = `, NUMBER_PARTICIPANT = '${event_number_participant}'`
     }
 
-    if(event_category){
-        query_event_category = `, ID_CATEGORY = (SELECT ID FROM CATEGORY WHERE ID = '${event_category}')`
-    }
-
     if(event_interest){
         query_event_interest = `, ID_INTEREST = (SELECT ID FROM INTEREST WHERE ID = '${event_interest}')`
     }
@@ -1007,12 +997,12 @@ exports.editEvent = asyncHandler(async function editEvent(req, res, event_id, ev
         query_event_image = `, ID_PROFILE = '${event_image}'`
     }
     
-    console.log(`UPDATE COMMUNITY SET MODIFIED = NOW() ${query_event_category} ${query_event_interest} ${query_event_name} ${query_event_description} ${query_event_date} ${query_event_duration} ${query_event_city}
-                 ${query_event_location} ${query_event_address} ${query_event_number_participant} ${query_event_category} ${query_event_interest} ${query_event_coordinate} ${query_event_image} WHERE ID_EVENT ILIKE LOWER('${event_id}')`)
+    console.log(`UPDATE COMMUNITY SET MODIFIED = NOW() ${query_event_interest} ${query_event_name} ${query_event_description} ${query_event_date} ${query_event_duration} ${query_event_city}
+                 ${query_event_location} ${query_event_address} ${query_event_number_participant} ${query_event_interest} ${query_event_coordinate} ${query_event_image} WHERE ID_EVENT ILIKE LOWER('${event_id}')`)
 
     try {
-        var query_result = await pool.query(`UPDATE EVENTS SET MODIFIED = NOW() ${query_event_category} ${query_event_interest} ${query_event_name} ${query_event_description} ${query_event_date} ${query_event_duration} ${query_event_city}
-                                        ${query_event_location} ${query_event_address} ${query_event_number_participant} ${query_event_category} ${query_event_interest} ${query_event_coordinate} ${query_event_image} WHERE ID_EVENT ILIKE LOWER('${event_id}')`)
+        var query_result = await pool.query(`UPDATE EVENTS SET MODIFIED = NOW() ${query_event_interest} ${query_event_name} ${query_event_description} ${query_event_date} ${query_event_duration} ${query_event_city}
+                                        ${query_event_location} ${query_event_address} ${query_event_number_participant} ${query_event_interest} ${query_event_coordinate} ${query_event_image} WHERE ID_EVENT ILIKE LOWER('${event_id}')`)
     } catch (error) {
         isError = true
         log.error(`ERROR | /general/editEvent - Error found while connect to DB - ${error}`)
@@ -1096,30 +1086,36 @@ exports.getEventDetail = asyncHandler(async function getEventDetail(req, res, ev
         A.NAME AS EVENT_NAME, 
         A.DESCRIPTION AS EVENT_DESCRIPTION,
         D.NAME AS CATEGORY,
+        F.NAME AS INTEREST,
         A.DURATION,
         A.DATE AS EVENT_DATE, 
         C.NAME AS CITY_BASED,
         E.NAME AS PROVINCE_BASED,
         A.LOCATION,
-        A.ADDRESS,
         A.ID_PROFILE,
+        A.ADDRESS,
         A.NUMBER_PARTICIPANT,
-        CASE 
-            WHEN A.ID_CREATOR LIKE 'C%' THEN (SELECT ROUND(AVG(RATING)) FROM review WHERE id_reviewee = A.id_creator GROUP BY id_reviewee)
-            WHEN A.ID_CREATOR LIKE 'U%' THEN (SELECT ROUND(AVG(RATING)) FROM review WHERE id_reviewee = A.id_creator GROUP BY id_reviewee)
-        END AS CREATOR_RATING_1,
+        (SELECT ROUND(AVG(rating)) AS average_rating FROM review
+            WHERE id_reviewee IN ( SELECT ID_EVENT FROM EVENTS WHERE ID_CREATOR = A.ID_CREATOR
+                UNION SELECT ID_EVENT FROM EVENTS WHERE ID_CREATOR IN (
+                    SELECT ID_COMMUNITY FROM IS_ADMIN WHERE ID_USER = A.ID_CREATOR
+                ))) AS AVG_RATING,
         CASE 
             WHEN A.ID_CREATOR LIKE 'C%' THEN (SELECT ID_PROFILE FROM COMMUNITY WHERE ID_COMMUNITY = A.ID_CREATOR)
             WHEN A.ID_CREATOR LIKE 'U%' THEN (SELECT ID_PROFILE FROM USERS WHERE ID_USER = A.ID_CREATOR)
         END AS CREATOR_ID_PROFILE,
         CASE 
+            WHEN A.ID_CREATOR LIKE 'C%' THEN (SELECT ID_COMMUNITY  FROM COMMUNITY WHERE ID_COMMUNITY = A.ID_CREATOR)
+            WHEN A.ID_CREATOR LIKE 'U%' THEN (SELECT ID_USER FROM USERS WHERE ID_USER = A.ID_CREATOR)
+        END AS CREATOR_ID,
+        CASE 
             WHEN A.ID_CREATOR LIKE 'C%' THEN (SELECT NAME FROM COMMUNITY WHERE ID_COMMUNITY = A.ID_CREATOR)
             WHEN A.ID_CREATOR LIKE 'U%' THEN (SELECT NAME FROM USERS WHERE ID_USER = A.ID_CREATOR)
         END AS CREATOR_NAME,
         CASE 
-            WHEN A.ID_CREATOR LIKE 'C%' THEN (SELECT ID_COMMUNITY  FROM COMMUNITY WHERE ID_COMMUNITY = A.ID_CREATOR)
-            WHEN A.ID_CREATOR LIKE 'U%' THEN (SELECT ID_USER FROM USERS WHERE ID_USER = A.ID_CREATOR)
-        END AS CREATOR_ID,
+            WHEN A.ID_CREATOR LIKE 'C%' THEN 'Community'
+            WHEN A.ID_CREATOR LIKE 'U%' THEN 'User'
+        END AS CREATOR_TYPE,
         CASE 
             WHEN (SELECT ID_EVENT FROM EVENTS WHERE ID_EVENT ILIKE LOWER('${event_id}') AND ID_CREATOR = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}'))) IS NOT NULL THEN 'isCreator'
             WHEN (SELECT IS_APPROVED FROM EVENTS_LINK WHERE ID_EVENT ILIKE LOWER('${event_id}') AND ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}'))) = 'true' THEN 'Accepted'
@@ -1127,63 +1123,64 @@ exports.getEventDetail = asyncHandler(async function getEventDetail(req, res, ev
             ELSE 'Nothing'
         END AS CONDITION,
         A.latitude, A.longitude
-        FROM EVENTS A JOIN CATEGORY B ON A.ID_CATEGORY = B.ID
+        FROM EVENTS A 
+        JOIN INTEREST F ON F.ID = A.ID_INTEREST
+        JOIN CATEGORY D ON F.ID_CATEGORY = D.ID
         JOIN CITY C ON A.CITY_BASED = C.ID
-        JOIN PROVINCE E ON C.ID_PROVINCE = E.ID
-        JOIN CATEGORY D ON A.ID_CATEGORY = D.ID 
+        JOIN PROVINCE E ON C.ID_PROVINCE = E.ID 
         ${query_event_name} ${query_event_id} 
         ORDER BY A.ID_EVENT ${query_pagination}`)
 
     try {
         var query_result = await pool.query(`SELECT 
-                                            A.ID_EVENT,
-                                            A.NAME AS EVENT_NAME, 
-                                            A.DESCRIPTION AS EVENT_DESCRIPTION,
-                                            D.NAME AS CATEGORY,
-                                            F.NAME AS INTEREST,
-                                            A.DURATION,
-                                            A.DATE AS EVENT_DATE, 
-                                            C.NAME AS CITY_BASED,
-                                            E.NAME AS PROVINCE_BASED,
-                                            A.LOCATION,
-                                            A.ID_PROFILE,
-                                            A.ADDRESS,
-                                            A.NUMBER_PARTICIPANT,
-                                            (SELECT ROUND(AVG(rating)) AS average_rating FROM review
-                                                WHERE id_reviewee IN ( SELECT ID_EVENT FROM EVENTS WHERE ID_CREATOR = A.ID_CREATOR
-                                                    UNION SELECT ID_EVENT FROM EVENTS WHERE ID_CREATOR IN (
-                                                        SELECT ID_COMMUNITY FROM IS_ADMIN WHERE ID_USER = A.ID_CREATOR
-                                                    ))) AS AVG_RATING,
-                                            CASE 
-                                                WHEN A.ID_CREATOR LIKE 'C%' THEN (SELECT ID_PROFILE FROM COMMUNITY WHERE ID_COMMUNITY = A.ID_CREATOR)
-                                                WHEN A.ID_CREATOR LIKE 'U%' THEN (SELECT ID_PROFILE FROM USERS WHERE ID_USER = A.ID_CREATOR)
-                                            END AS CREATOR_ID_PROFILE,
-                                            CASE 
-                                                WHEN A.ID_CREATOR LIKE 'C%' THEN (SELECT ID_COMMUNITY  FROM COMMUNITY WHERE ID_COMMUNITY = A.ID_CREATOR)
-                                                WHEN A.ID_CREATOR LIKE 'U%' THEN (SELECT ID_USER FROM USERS WHERE ID_USER = A.ID_CREATOR)
-                                            END AS CREATOR_ID,
-                                            CASE 
-                                                WHEN A.ID_CREATOR LIKE 'C%' THEN (SELECT NAME FROM COMMUNITY WHERE ID_COMMUNITY = A.ID_CREATOR)
-                                                WHEN A.ID_CREATOR LIKE 'U%' THEN (SELECT NAME FROM USERS WHERE ID_USER = A.ID_CREATOR)
-                                            END AS CREATOR_NAME,
-                                            CASE 
-                                                WHEN A.ID_CREATOR LIKE 'C%' THEN 'Community'
-                                                WHEN A.ID_CREATOR LIKE 'U%' THEN 'User'
-                                            END AS CREATOR_TYPE,
-                                            CASE 
-                                                WHEN (SELECT ID_EVENT FROM EVENTS WHERE ID_EVENT ILIKE LOWER('${event_id}') AND ID_CREATOR = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}'))) IS NOT NULL THEN 'isCreator'
-                                                WHEN (SELECT IS_APPROVED FROM EVENTS_LINK WHERE ID_EVENT ILIKE LOWER('${event_id}') AND ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}'))) = 'true' THEN 'Accepted'
-                                                WHEN (SELECT IS_APPROVED FROM EVENTS_LINK WHERE ID_EVENT ILIKE LOWER('${event_id}') AND ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}'))) = 'false' THEN 'Pending'
-                                                ELSE 'Nothing'
-                                            END AS CONDITION,
-                                            A.latitude, A.longitude
-                                            FROM EVENTS A JOIN CATEGORY B ON A.ID_CATEGORY = B.ID
-                                            JOIN INTEREST F ON B.ID = F.ID_CATEGORY
-                                            JOIN CITY C ON A.CITY_BASED = C.ID
-                                            JOIN PROVINCE E ON C.ID_PROVINCE = E.ID
-                                            JOIN CATEGORY D ON A.ID_CATEGORY = D.ID 
-                                            ${query_event_name} ${query_event_id} 
-                                            ORDER BY A.ID_EVENT ${query_pagination}`)
+                                                A.ID_EVENT,
+                                                A.NAME AS EVENT_NAME, 
+                                                A.DESCRIPTION AS EVENT_DESCRIPTION,
+                                                D.NAME AS CATEGORY,
+                                                F.NAME AS INTEREST,
+                                                A.DURATION,
+                                                A.DATE AS EVENT_DATE, 
+                                                C.NAME AS CITY_BASED,
+                                                E.NAME AS PROVINCE_BASED,
+                                                A.LOCATION,
+                                                A.ID_PROFILE,
+                                                A.ADDRESS,
+                                                A.NUMBER_PARTICIPANT,
+                                                (SELECT ROUND(AVG(rating)) AS average_rating FROM review
+                                                    WHERE id_reviewee IN ( SELECT ID_EVENT FROM EVENTS WHERE ID_CREATOR = A.ID_CREATOR
+                                                        UNION SELECT ID_EVENT FROM EVENTS WHERE ID_CREATOR IN (
+                                                            SELECT ID_COMMUNITY FROM IS_ADMIN WHERE ID_USER = A.ID_CREATOR
+                                                        ))) AS AVG_RATING,
+                                                CASE 
+                                                    WHEN A.ID_CREATOR LIKE 'C%' THEN (SELECT ID_PROFILE FROM COMMUNITY WHERE ID_COMMUNITY = A.ID_CREATOR)
+                                                    WHEN A.ID_CREATOR LIKE 'U%' THEN (SELECT ID_PROFILE FROM USERS WHERE ID_USER = A.ID_CREATOR)
+                                                END AS CREATOR_ID_PROFILE,
+                                                CASE 
+                                                    WHEN A.ID_CREATOR LIKE 'C%' THEN (SELECT ID_COMMUNITY  FROM COMMUNITY WHERE ID_COMMUNITY = A.ID_CREATOR)
+                                                    WHEN A.ID_CREATOR LIKE 'U%' THEN (SELECT ID_USER FROM USERS WHERE ID_USER = A.ID_CREATOR)
+                                                END AS CREATOR_ID,
+                                                CASE 
+                                                    WHEN A.ID_CREATOR LIKE 'C%' THEN (SELECT NAME FROM COMMUNITY WHERE ID_COMMUNITY = A.ID_CREATOR)
+                                                    WHEN A.ID_CREATOR LIKE 'U%' THEN (SELECT NAME FROM USERS WHERE ID_USER = A.ID_CREATOR)
+                                                END AS CREATOR_NAME,
+                                                CASE 
+                                                    WHEN A.ID_CREATOR LIKE 'C%' THEN 'Community'
+                                                    WHEN A.ID_CREATOR LIKE 'U%' THEN 'User'
+                                                END AS CREATOR_TYPE,
+                                                CASE 
+                                                    WHEN (SELECT ID_EVENT FROM EVENTS WHERE ID_EVENT ILIKE LOWER('${event_id}') AND ID_CREATOR = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}'))) IS NOT NULL THEN 'isCreator'
+                                                    WHEN (SELECT IS_APPROVED FROM EVENTS_LINK WHERE ID_EVENT ILIKE LOWER('${event_id}') AND ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}'))) = 'true' THEN 'Accepted'
+                                                    WHEN (SELECT IS_APPROVED FROM EVENTS_LINK WHERE ID_EVENT ILIKE LOWER('${event_id}') AND ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}'))) = 'false' THEN 'Pending'
+                                                    ELSE 'Nothing'
+                                                END AS CONDITION,
+                                                A.latitude, A.longitude
+                                                FROM EVENTS A 
+                                                JOIN INTEREST F ON F.ID = A.ID_INTEREST
+                                                JOIN CATEGORY D ON F.ID_CATEGORY = D.ID
+                                                JOIN CITY C ON A.CITY_BASED = C.ID
+                                                JOIN PROVINCE E ON C.ID_PROVINCE = E.ID 
+                                                ${query_event_name} ${query_event_id} 
+                                                ORDER BY A.ID_EVENT ${query_pagination}`)
     } catch (error) {
         isError = true
         log.error(`ERROR | /general/getEventDetail - Error found while connect to DB - ${error}`)

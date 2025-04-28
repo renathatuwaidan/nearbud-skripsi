@@ -186,14 +186,14 @@ exports.getUser = asyncHandler(async function (req, res, suspended, users_id, us
     }
 
     if(province){
-        query_province = ` AND A.ID_PROVINCE IN (SELECT ID FROM PROVINCE ILIKE LOWER('%${province}%'))`
+        query_province = ` AND A.ID_CITY IN (SELECT ID FROM CITY WHERE ID_PROVINCE = (SELECT ID FROM PROVINCE WHERE NAME ILIKE LOWER('%${province}%')))`
     }
 
     // KALO ADA CATERGORY ATAU INTEREST
     if(category || interest_id1 || interest_id2 || interest_id3 || interest_id4 || interest_id5){
         query_join_intrest_link = `JOIN INTEREST_LINK B ON A.ID_USER = B.ID_USER
                                     JOIN INTEREST C ON B.ID_INTEREST = C.ID
-                                        JOIN CATEGORY D ON C.id_category = D.ID`
+                                    JOIN CATEGORY D ON C.id_category = D.ID`
 
         if(category){
             query_category = ` AND D.NAME ILIKE LOWER('${category}')`
@@ -215,7 +215,7 @@ exports.getUser = asyncHandler(async function (req, res, suspended, users_id, us
     console.log(`
         WITH USER_QUERY AS (
             SELECT DISTINCT (A.ID_USER), A.NAME, A.USERNAME, A.ID_PROFILE,
-                CASE WHEN (SELECT NAME FROM PROVINCE WHERE ID = A.ID_PROVINCE) IS NOT NULL THEN (SELECT NAME FROM PROVINCE WHERE ID = A.ID_PROVINCE)
+                CASE WHEN A.ID_CITY IS NOT NULL THEN (SELECT NAME FROM PROVINCE WHERE ID = (SELECT ID_PROVINCE FROM CITY WHERE ID = A.ID_CITY))
                 ELSE null END AS PROVINCE_NAME,
                 CASE WHEN (SELECT NAME FROM CITY WHERE ID = A.ID_CITY) IS NOT NULL THEN (SELECT NAME FROM CITY WHERE ID = A.ID_CITY)
                 ELSE null END AS CITY_NAME,
@@ -238,7 +238,7 @@ exports.getUser = asyncHandler(async function (req, res, suspended, users_id, us
         var query_result = await pool.query(`
             WITH USER_QUERY AS (
                 SELECT DISTINCT (A.ID_USER), A.NAME, A.USERNAME, A.ID_PROFILE,
-                    CASE WHEN (SELECT NAME FROM PROVINCE WHERE ID = A.ID_PROVINCE) IS NOT NULL THEN (SELECT NAME FROM PROVINCE WHERE ID = A.ID_PROVINCE)
+                    CASE WHEN A.ID_CITY IS NOT NULL THEN (SELECT NAME FROM PROVINCE WHERE ID = (SELECT ID_PROVINCE FROM CITY WHERE ID = A.ID_CITY))                    
                     ELSE null END AS PROVINCE_NAME,
                     CASE WHEN (SELECT NAME FROM CITY WHERE ID = A.ID_CITY) IS NOT NULL THEN (SELECT NAME FROM CITY WHERE ID = A.ID_CITY)
                     ELSE null END AS CITY_NAME,
@@ -352,7 +352,7 @@ exports.getSingleUser = asyncHandler(async function getSingleUser(req, res, user
 
     console.log(`SELECT 
         DISTINCT A.ID_USER, A.NAME, A.USERNAME, A.GENDER, A.DATE_OF_BIRTH, A.DESCRIPTION, A.EMAIL, A.GENDER, A.ID_PROFILE,
-        (SELECT NAME FROM PROVINCE WHERE ID = A.ID_PROVINCE) AS PROVINCE_NAME,
+        (SELECT NAME FROM PROVINCE WHERE ID = (SELECT ID_PROVINCE FROM CITY WHERE ID = A.ID_CITY)) AS PROVINCE_NAME,
 		(SELECT NAME FROM CITY WHERE ID = A.ID_CITY) AS CITY_NAME,
         CASE WHEN A.id_user NOT IN (SELECT ID_REPORTEE FROM SUSPENDED) THEN 'No'
         ELSE 'Yes' END AS SUSPENDED
@@ -364,7 +364,7 @@ exports.getSingleUser = asyncHandler(async function getSingleUser(req, res, user
     try {
         var query_result = await pool.query(`SELECT 
                 DISTINCT A.ID_USER, A.NAME, A.USERNAME, A.GENDER, A.DATE_OF_BIRTH, A.DESCRIPTION, A.EMAIL, A.GENDER,A.ID_PROFILE,
-                (SELECT NAME FROM PROVINCE WHERE ID = A.ID_PROVINCE) AS PROVINCE_NAME,
+                (SELECT NAME FROM PROVINCE WHERE ID = (SELECT ID_PROVINCE FROM CITY WHERE ID = A.ID_CITY)) AS PROVINCE_NAME,
 		        (SELECT NAME FROM CITY WHERE ID = A.ID_CITY) AS CITY_NAME,
                 CASE WHEN A.id_user NOT IN (SELECT ID_REPORTEE FROM SUSPENDED) THEN 'No'
                 ELSE 'Yes' END AS SUSPENDED

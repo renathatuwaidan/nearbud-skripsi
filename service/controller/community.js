@@ -278,8 +278,8 @@ exports.getCommunityPreview = asyncHandler(async function getCommunityPreview(re
             A.ID_PROFILE,
             (SELECT COUNT(ID_USER) FROM COMMUNITY_LINK WHERE ID_COMMUNITY = A.ID_COMMUNITY AND IS_APPROVED = TRUE) AS MEMBER
         FROM COMMUNITY A JOIN INTEREST B ON A.ID_INTEREST = B.ID
-        JOIN PROVINCE C ON A.ID_PROVINCE = C.ID 
         JOIN CITY D ON A.ID_CITY = D.ID
+        JOIN PROVINCE C ON D.ID_PROVINCE = C.ID 
         ${query_interest} ${query_community_id} ${query_community_name} ${query_number_participant} ${query_category} ${query_city} ${query_province} ${query_status} ${query_suspended}
     )   
     SELECT *, COUNT(*) OVER ()
@@ -297,8 +297,8 @@ exports.getCommunityPreview = asyncHandler(async function getCommunityPreview(re
                                                     A.ID_PROFILE,
                                                     (SELECT COUNT(ID_USER) FROM COMMUNITY_LINK WHERE ID_COMMUNITY = A.ID_COMMUNITY AND IS_APPROVED = TRUE) AS MEMBER
                                                 FROM COMMUNITY A JOIN INTEREST B ON A.ID_INTEREST = B.ID
-                                                JOIN PROVINCE C ON A.ID_PROVINCE = C.ID 
                                                 JOIN CITY D ON A.ID_CITY = D.ID
+                                                JOIN PROVINCE C ON D.ID_PROVINCE = C.ID 
                                                 ${query_interest} ${query_community_id} ${query_community_name} ${query_number_participant} 
                                                 ${query_category} ${query_city} ${query_province} ${query_status} ${query_suspended}
                                             )
@@ -624,8 +624,8 @@ exports.getCommunityDetail = asyncHandler(async function getCommunityDetail(req,
                     ELSE false
                 END AS IS_SUSPENDED
                 FROM COMMUNITY A JOIN INTEREST B ON A.ID_INTEREST = B.ID
-            JOIN PROVINCE C ON A.ID_PROVINCE = C.ID
-            JOIN CITY D ON A.ID_CITY = D.ID
+                JOIN CITY D ON A.ID_CITY = D.ID
+                JOIN PROVINCE C ON D.ID_PROVINCE = C.ID
             ${query_community}
         )
         SELECT *, COUNT(*) OVER ()
@@ -637,12 +637,12 @@ exports.getCommunityDetail = asyncHandler(async function getCommunityDetail(req,
                                                     A.ID_COMMUNITY,
                                                     A.NAME AS COMMUNITY_NAME,
                                                     A.DESCRIPTION,
+                                                    A.ID_PROFILE,
                                                     (SELECT COUNT(ID_EVENT) FROM EVENTS WHERE ID_CREATOR = A.ID_COMMUNITY) AS CREATED_EVENT,
                                                     (SELECT COUNT(ID_USER) FROM COMMUNITY_LINK WHERE ID_COMMUNITY = A.ID_COMMUNITY AND IS_APPROVED = TRUE) AS MEMBER,
                                                     B.NAME AS INTEREST_NAME,
                                                     D.NAME AS CITY_NAME,
                                                     C.NAME AS PROVINCE_NAME,
-                                                    A.ID_PROFILE,
                                                     A.ID_GALLERY,
                                                     CASE 
                                                         WHEN ((SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')) = (SELECT ID_USER FROM IS_ADMIN WHERE ID_COMMUNITY = A.ID_COMMUNITY AND ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')))) THEN 'isCreator'
@@ -654,8 +654,8 @@ exports.getCommunityDetail = asyncHandler(async function getCommunityDetail(req,
                                                         ELSE false
                                                     END AS IS_SUSPENDED
                                                     FROM COMMUNITY A JOIN INTEREST B ON A.ID_INTEREST = B.ID
-                                                JOIN PROVINCE C ON A.ID_PROVINCE = C.ID
-                                                JOIN CITY D ON A.ID_CITY = D.ID
+                                                    JOIN CITY D ON A.ID_CITY = D.ID
+                                                    JOIN PROVINCE C ON D.ID_PROVINCE = C.ID
                                                 ${query_community}
                                             )
                                             SELECT *, COUNT(*) OVER ()
@@ -720,9 +720,9 @@ exports.addCommunity = asyncHandler(async function addEvent(req, res, community_
     community_name = utility.toTitleCase(community_name)
 
     try {
-        var query_result = await pool.query(`INSERT INTO COMMUNITY (CREATED, NAME, ID_PROVINCE, ID_CITY, ID_INTEREST, DESCRIPTION, ID_PROFILE) 
-                                            VALUES (NOW(), '${community_name}', (SELECT ID FROM PROVINCE WHERE NAME ILIKE LOWER('${province_name}')),
-                                            (SELECT ID FROM CITY WHERE NAME ILIKE LOWER('${city_name}')), ${interest_id},'${community_description}', '${community_id_profile}')
+        var query_result = await pool.query(`INSERT INTO COMMUNITY (CREATED, NAME, ID_CITY, ID_INTEREST, DESCRIPTION, ID_PROFILE) 
+                                            VALUES (NOW(), '${community_name}', (SELECT ID FROM CITY WHERE NAME ILIKE LOWER('${city_name}')), 
+                                            ${interest_id},'${community_description}', '${community_id_profile}')
                                             RETURNING ID_COMMUNITY`)
     } catch (error) {
         isError = true
@@ -815,10 +815,6 @@ exports.editCommunity = asyncHandler(async function editCommunity(req, res, comm
         community_description = `,DESCRIPTION = '${community_description}'`
     } else { community_description = '' }
 
-    if(province_name){
-        province_name = `,ID_PROVINCE = (SELECT ID FROM PROVINCE WHERE NAME ILIKE LOWER('${province_name}'))`
-    } else { province_name = '' }
-
     if(city_name){
         city_name = `,ID_CITY = (SELECT ID FROM CITY WHERE NAME ILIKE LOWER('${city_name}'))`
     } else { city_name = '' }
@@ -832,11 +828,11 @@ exports.editCommunity = asyncHandler(async function editCommunity(req, res, comm
     } else { community_id_profile = '' }
 
     console.log(`UPDATE COMMUNITY SET MODIFIED = NOW() ${community_name}${community_description} 
-        ${province_name} ${city_name} ${interest_id} ${community_id_profile} WHERE ID_COMMUNITY ILIKE LOWER('${community_id}')`)
+        ${city_name} ${interest_id} ${community_id_profile} WHERE ID_COMMUNITY ILIKE LOWER('${community_id}')`)
 
     try {
         query_result_1 = await pool.query(`UPDATE COMMUNITY SET MODIFIED = NOW() ${community_name}${community_description} 
-            ${province_name} ${city_name} ${interest_id} ${community_id_profile} WHERE ID_COMMUNITY ILIKE LOWER('${community_id}')`)
+            ${city_name} ${interest_id} ${community_id_profile} WHERE ID_COMMUNITY ILIKE LOWER('${community_id}')`)
     } catch (error) {
         isError = true
         log.error(`ERROR | /community/editCommunity [username : "${users_username_token}"] - Error found while connect to DB - ${error}`)
