@@ -472,20 +472,22 @@ exports.getCommunityMember = asyncHandler(async function getCommunityMember(req,
     }
     
     console.log(`WITH LIST_PARTICIPANT AS (
-            SELECT DISTINCT ON (C.ID_USER)
-            C.ID_USER AS USERS_ID,
-            C.NAME AS USERS_NAME,
-            'MEMBER' as role, c.ID_PROFILE
-            FROM COMMUNITY_LINK A JOIN COMMUNITY B ON A.ID_COMMUNITY = B.ID_COMMUNITY
-            JOIN USERS C ON A.ID_USER = C.ID_USER
-            WHERE A.ID_COMMUNITY ILIKE LOWER('${community_id}') AND A.IS_APPROVED = true
-            UNION 
-            SELECT ID_USER, (SELECT NAME FROM USERS WHERE ID_USER = A.ID_USER), 'ADMIN' as role, (SELECT ID_PROFILE FROM USERS WHERE ID_USER = A.ID_USER) AS ID_PROFILE
-            FROM IS_ADMIN A WHERE ID_COMMUNITY ILIKE LOWER('${community_id}')
-            AND ID_COMMUNITY NOT IN (SELECT ID_REPORTEE FROM SUSPENDED)
-        )
-        SELECT *, COUNT (*)OVER ()
-        FROM LIST_PARTICIPANT`)
+                    SELECT DISTINCT ON (C.ID_USER)
+                    C.ID_USER AS USERS_ID,
+                    C.NAME AS USERS_NAME,
+                    'MEMBER' as role, c.ID_PROFILE
+                    FROM COMMUNITY_LINK A JOIN COMMUNITY B ON A.ID_COMMUNITY = B.ID_COMMUNITY
+                    JOIN USERS C ON A.ID_USER = C.ID_USER
+                    WHERE A.ID_COMMUNITY ILIKE LOWER('${community_id}') AND A.IS_APPROVED = true
+                    AND C.ID_USER NOT IN (SELECT ID_REPORTEE FROM SUSPENDED)
+                    UNION 
+                    SELECT ID_USER, (SELECT NAME FROM USERS WHERE ID_USER = A.ID_USER), 'ADMIN' as role, (SELECT ID_PROFILE FROM USERS WHERE ID_USER = A.ID_USER) AS ID_PROFILE
+                    FROM IS_ADMIN A WHERE ID_COMMUNITY ILIKE LOWER('${community_id}')
+                    AND A.ID_USER NOT IN (SELECT ID_REPORTEE FROM SUSPENDED)
+                )
+                SELECT *, COUNT (*)OVER ()
+                FROM LIST_PARTICIPANT
+                `)
 
     try {
         var query_result = await pool.query(`WITH LIST_PARTICIPANT AS (
@@ -496,10 +498,11 @@ exports.getCommunityMember = asyncHandler(async function getCommunityMember(req,
                                             FROM COMMUNITY_LINK A JOIN COMMUNITY B ON A.ID_COMMUNITY = B.ID_COMMUNITY
                                             JOIN USERS C ON A.ID_USER = C.ID_USER
                                             WHERE A.ID_COMMUNITY ILIKE LOWER('${community_id}') AND A.IS_APPROVED = true
+                                            AND C.ID_USER NOT IN (SELECT ID_REPORTEE FROM SUSPENDED)
                                             UNION 
                                             SELECT ID_USER, (SELECT NAME FROM USERS WHERE ID_USER = A.ID_USER), 'ADMIN' as role, (SELECT ID_PROFILE FROM USERS WHERE ID_USER = A.ID_USER) AS ID_PROFILE
                                             FROM IS_ADMIN A WHERE ID_COMMUNITY ILIKE LOWER('${community_id}')
-                                            AND ID_COMMUNITY NOT IN (SELECT ID_REPORTEE FROM SUSPENDED)
+                                            AND A.ID_USER NOT IN (SELECT ID_REPORTEE FROM SUSPENDED)
                                         )
                                         SELECT *, COUNT (*)OVER ()
                                         FROM LIST_PARTICIPANT
@@ -578,8 +581,8 @@ exports.getCommunity_preview = asyncHandler(async function getCommunity_preview(
                         A.ID_PROFILE,
                         (SELECT COUNT(ID_USER) FROM COMMUNITY_LINK WHERE ID_COMMUNITY = A.ID_COMMUNITY AND IS_APPROVED = TRUE) + (SELECT COUNT(ID_USER) FROM IS_ADMIN  WHERE ID_COMMUNITY = A.ID_COMMUNITY) AS MEMBER
                     FROM COMMUNITY A JOIN INTEREST B ON A.ID_INTEREST = B.ID
-                    JOIN PROVINCE C ON A.ID_PROVINCE = C.ID 
                     JOIN CITY D ON A.ID_CITY = D.ID
+                    JOIN PROVINCE C ON D.ID_PROVINCE = C.ID 
                     ${query_user}
                 )
                 SELECT *, COUNT(*) OVER ()
@@ -597,8 +600,8 @@ exports.getCommunity_preview = asyncHandler(async function getCommunity_preview(
                                                     A.ID_PROFILE,
                                                     (SELECT COUNT(ID_USER) FROM COMMUNITY_LINK WHERE ID_COMMUNITY = A.ID_COMMUNITY AND IS_APPROVED = TRUE) + (SELECT COUNT(ID_USER) FROM IS_ADMIN  WHERE ID_COMMUNITY = A.ID_COMMUNITY) AS MEMBER
                                                 FROM COMMUNITY A JOIN INTEREST B ON A.ID_INTEREST = B.ID
-                                                JOIN PROVINCE C ON A.ID_PROVINCE = C.ID 
                                                 JOIN CITY D ON A.ID_CITY = D.ID
+                                                JOIN PROVINCE C ON D.ID_PROVINCE = C.ID 
                                                 ${query_user}
                                             )
                                             SELECT *, COUNT(*) OVER ()

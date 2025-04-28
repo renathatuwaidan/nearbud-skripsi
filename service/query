@@ -277,22 +277,7 @@ INSERT INTO INTEREST (ID_CATEGORY, NAME, ID) VALUES ('0002','THEATER','0014');
 INSERT INTO INTEREST (ID_CATEGORY, NAME, ID) VALUES ('0003','STUDY BUDDY','0015');
 INSERT INTO INTEREST (ID_CATEGORY, NAME, ID) VALUES ('0003','DISKUSI TERBUKA','0016');
 
-INSERT INTO USERS (NAME, USERNAME, GENDER, DATE_OF_BIRTH, DESCRIPTION, EMAIL, PASSWORD, ID_PROVINCE, ID_CITY) VALUES ('RENATHA TUWAIDAN','renathadst','F','2003-06-14','Aku anak baik','1emailku@gmail.com','DhFzd9P','0001','0001');
-INSERT INTO USERS (NAME, USERNAME, GENDER, DATE_OF_BIRTH, DESCRIPTION, EMAIL, PASSWORD, ID_PROVINCE, ID_CITY) VALUES ('MICHIKO AMAYA','michikoam','F','2003-06-15','Aku rajin menabung','emailku1@gmail.com','R0COKjh','0002','0009');
-INSERT INTO USERS (NAME, USERNAME, GENDER, DATE_OF_BIRTH, DESCRIPTION, EMAIL, PASSWORD, ID_PROVINCE, ID_CITY) VALUES ('JESSICA HIDAYAT','jehidayat','F','2003-06-16','Aku anak baik','email12@gmail.com','gm1CWDO','0003','0011');
-INSERT INTO USERS (NAME, USERNAME, GENDER, DATE_OF_BIRTH, DESCRIPTION, EMAIL, PASSWORD, ID_PROVINCE, ID_CITY) VALUES ('JOYCELINE GRACIELLA','joishella','F','2003-06-17','Aku rajin menabung','2emialku@gmail.com','ZByZcCN','0001','0002');
-INSERT INTO USERS (NAME, USERNAME, GENDER, DATE_OF_BIRTH, DESCRIPTION, EMAIL, PASSWORD, ID_PROVINCE, ID_CITY) VALUES ('TESALONIKA ABIGAIL','testecaabi','F','2003-06-18','Aku anak baik','3emailku@gmail.com','IyjEPt7','0003','0015');
-INSERT INTO USERS (NAME, USERNAME, GENDER, DATE_OF_BIRTH, DESCRIPTION, EMAIL, PASSWORD, ID_PROVINCE, ID_CITY) VALUES ('CHYNTIA','chynhola','F','2003-06-19','Aku rajin menabung','emailku2@gmail.com','auGqAf2','0003','0015');
-INSERT INTO USERS (NAME, USERNAME, GENDER, DATE_OF_BIRTH, DESCRIPTION, EMAIL, PASSWORD, ID_PROVINCE, ID_CITY) VALUES ('VIANNY PANGESA','vianniuy','F','2003-06-20','Aku anak baik','emailku3@gmail.com','EG02z5K','0001','0003');
-INSERT INTO USERS (NAME, USERNAME, GENDER, DATE_OF_BIRTH, DESCRIPTION, EMAIL, PASSWORD, ID_PROVINCE, ID_CITY) VALUES ('YULIANI HERMANTO','yuli123','F','2003-06-21','Aku rajin menabung','4emailku@gmail.com','6wP6s5b','0002','0008');
-INSERT INTO USERS (NAME, USERNAME, GENDER, DATE_OF_BIRTH, DESCRIPTION, EMAIL, PASSWORD, ID_PROVINCE, ID_CITY) VALUES ('ERWIN GUNAWAN','erwgun','M','2003-06-22','Aku anak baik','5emailku@gmail.com','TFwjdnM','0003','0012');
-INSERT INTO USERS (NAME, USERNAME, GENDER, DATE_OF_BIRTH, DESCRIPTION, EMAIL, PASSWORD, ID_PROVINCE, ID_CITY) VALUES ('CALVIN KAMARDI','calvkam','M','2003-06-23','Aku rajin menabung','emailku4@gmail.com','Ld1557K','0001','0004');
-INSERT INTO USERS (NAME, USERNAME, GENDER, DATE_OF_BIRTH, DESCRIPTION, EMAIL, PASSWORD, ID_PROVINCE, ID_CITY) VALUES ('ADRIEL JUSTIN','adrieljloe','M','2003-06-24','Aku anak baik','emailku5@gmail.com','w07BwmD','0003','0012');
-INSERT INTO USERS (NAME, USERNAME, GENDER, DATE_OF_BIRTH, DESCRIPTION, EMAIL, PASSWORD, ID_PROVINCE, ID_CITY) VALUES ('PERRY KADEK','erryka','M','2003-06-25','Aku rajin menabung','6emailku@gmail.com','Dy94YtI','0001','0003');
-INSERT INTO USERS (NAME, USERNAME, GENDER, DATE_OF_BIRTH, DESCRIPTION, EMAIL, PASSWORD, ID_PROVINCE, ID_CITY) VALUES ('GALANG NURBUDI','galnurb','M','2003-06-26','Aku anak baik','7emailku@gmail.com','fv6WqS1','0001','0003');
-INSERT INTO USERS (NAME, USERNAME, GENDER, DATE_OF_BIRTH, DESCRIPTION, EMAIL, PASSWORD, ID_PROVINCE, ID_CITY) VALUES ('RAYMASTERIO','raymaster','M','2003-06-27','Aku rajin menabung','emailku6@gmail.com','6ahLu21','0001','0005');
-INSERT INTO USERS (NAME, USERNAME, GENDER, DATE_OF_BIRTH, DESCRIPTION, EMAIL, PASSWORD, ID_PROVINCE, ID_CITY) VALUES ('PARIMARTHA','pari234','M','2003-06-28','Aku anak baik','emailku7@gmail.com','WfGyLH7','0002','0006');
-
+(SELECT NAME FROM PROVINCE WHERE ID = (SELECT ID_PROVINCE FROM CITY WHERE ID = A.ID_CITY)) AS PROVINCE_NAME,
 INSERT INTO INTEREST_LINK (ID, ID_USER, ID_INTEREST) VALUES ('0001','U001','0001');
 INSERT INTO INTEREST_LINK (ID, ID_USER, ID_INTEREST) VALUES ('0002','U002','0002');
 INSERT INTO INTEREST_LINK (ID, ID_USER, ID_INTEREST) VALUES ('0003','U003','0015');
@@ -324,14 +309,49 @@ INSERT INTO INTEREST_LINK (ID, ID_USER, ID_INTEREST) VALUES ('0028','U013','0014
 INSERT INTO INTEREST_LINK (ID, ID_USER, ID_INTEREST) VALUES ('0029','U014','0014');
 INSERT INTO INTEREST_LINK (ID, ID_USER, ID_INTEREST) VALUES ('0030','U015','0014');
 
-INSERT INTO COMMUNITY (NAME, ID_PROVINCE, ID_CITY, ID_INTEREST, DESCRIPTION) VALUES ('KOMUNITAS BASKET 1','0001','0002','0001','Penjelasan soal 123');
-INSERT INTO COMMUNITY (NAME, ID_PROVINCE, ID_CITY, ID_INTEREST, DESCRIPTION) VALUES ('KOMUNITAS BASKET 2','0002','0002','0001','Penjelasan soal 345');
-INSERT INTO COMMUNITY (NAME, ID_PROVINCE, ID_CITY, ID_INTEREST, DESCRIPTION) VALUES ('LARI SORE HARI','0001','0003','0002','Penjelasan soal 567');
-INSERT INTO COMMUNITY (NAME, ID_PROVINCE, ID_CITY, ID_INTEREST, DESCRIPTION) VALUES ('LARI MALAM HARI','0001','0004','0002','Penjelasan soal 789');
-INSERT INTO COMMUNITY (NAME, ID_PROVINCE, ID_CITY, ID_INTEREST, DESCRIPTION) VALUES ('FUTSAL BINTARO','0002','0003','0003','Penjelasan soal 1011');
-INSERT INTO COMMUNITY (NAME, ID_PROVINCE, ID_CITY, ID_INTEREST, DESCRIPTION) VALUES ('KONSER JAKSEL','0001','0003','0013','Penjelasan soal 1233');
-INSERT INTO COMMUNITY (NAME, ID_PROVINCE, ID_CITY, ID_INTEREST, DESCRIPTION) VALUES ('THEATER ISMAIL','0002','0004','0014','Penjelasan soal 1455');
-INSERT INTO COMMUNITY (NAME, ID_PROVINCE, ID_CITY, ID_INTEREST, DESCRIPTION) VALUES ('MELUKIS SENJA','0003','0002','0011','Penjelasan soal 1677');
+INSERT INTO COMMUNITY (NAME, ID_CITY, ID_INTEREST, DESCRIPTION, ID_GALLERY) VALUES
+('Basket Lovers', 1, 1, 'Komunitas pecinta basket untuk latihan dan pertandingan seru.', 'gallery_image/C001'),
+('Runner Vibes', 2, 2, 'Komunitas lari santai hingga maraton untuk semua level.', 'gallery_image/C002'),
+('Futsal Squad', 3, 3, 'Tempat berkumpulnya pecinta futsal untuk bermain bersama.', 'gallery_image/C003'),
+('Ace Tennis Club', 4, 4, 'Komunitas tenis untuk latihan rutin dan turnamen mini.', 'gallery_image/C004'),
+('Smash Badminton', 5, 5, 'Pecinta bulu tangkis dari berbagai tingkat keahlian.', 'gallery_image/C005'),
+('Volley Mates', 8, 6, 'Komunitas voli indoor dan pantai untuk semua usia.', 'gallery_image/C006'),
+('Paddel Champs', 9, 7, 'Klub paddel santai hingga kompetitif.', 'gallery_image/C007'),
+('Singing Circle', 10, 8, 'Komunitas bagi yang suka bernyanyi bersama.', 'gallery_image/C008'),
+('Music Jammers', 11, 9, 'Tempat musisi berbagi dan berkolaborasi.', 'gallery_image/C009'),
+('Live Music Lovers', 12, 10, 'Penggemar live music dan konser kecil.', 'gallery_image/C010'),
+('Music Fest Crew', 1, 11, 'Komunitas pecinta festival musik tahunan.', 'gallery_image/C011'),
+('Concert Goers', 2, 12, 'Tempat berkumpul penggemar konser lokal dan internasional.', 'gallery_image/C012'),
+('Skill Up Workshop', 3, 13, 'Pelatihan berbagai keterampilan praktis.', 'gallery_image/C013'),
+('Edu Training Hub', 4, 14, 'Pelatihan profesional dan pengembangan diri.', 'gallery_image/C014'),
+('Art Exhibit Fans', 5, 15, 'Komunitas pencinta pameran seni kontemporer.', 'gallery_image/C015'),
+('Teater Enthusiasts', 8, 16, 'Forum bagi pecinta seni peran dan pertunjukan.', 'gallery_image/C016'),
+('Backpackers United', 9, 17, 'Komunitas untuk berbagi tips backpacking.', 'gallery_image/C017'),
+('Roadtrip Nation', 10, 18, 'Bergabung dengan pecinta roadtrip ke destinasi seru.', 'gallery_image/C018'),
+('Trekker Society', 11, 19, 'Komunitas pendaki dan pencinta trekking.', 'gallery_image/C019'),
+('City Explorer', 12, 20, 'Menjelajahi sudut kota dan hidden gems bersama.', 'gallery_image/C020'),
+('Esports Arena', 1, 21, 'Tempat para gamers esports berlatih dan bertanding.', 'gallery_image/C021'),
+('Mobile Gamers', 2, 22, 'Komunitas khusus untuk pecinta mobile games.', 'gallery_image/C022'),
+('Online Game Zone', 3, 23, 'Klub pecinta game online dari berbagai genre.', 'gallery_image/C023'),
+('Virtual Connect', 4, 24, 'Jaringan pertemanan di dunia virtual.', 'gallery_image/C024'),
+('Community Hub', 5, 25, 'Networking antar komunitas berbagai bidang.', 'gallery_image/C025'),
+
+-- Tambahan komunitas untuk Basket
+('Basket Night Squad', 8, 1, 'Komunitas basket malam hari untuk seru-seruan dan latihan rutin.', 'gallery_image/C026'),
+('Street Basketballers', 9, 1, 'Komunitas pecinta street basketball dan turnamen jalanan.', 'gallery_image/C027'),
+
+-- Tambahan komunitas untuk Running
+('Morning Runners', 10, 2, 'Komunitas lari pagi untuk memulai hari dengan semangat.', 'gallery_image/C028'),
+('Trail Blazers', 11, 2, 'Komunitas lari lintas alam dan jalur menantang.', 'gallery_image/C029'),
+
+-- Tambahan komunitas untuk Music Festival
+('Fest Music Club', 12, 11, 'Tempat berbagi pengalaman seru di festival musik.', 'gallery_image/C030'),
+('Beat Festival Gang', 1, 11, 'Komunitas pecinta festival musik EDM, pop, dan indie.', 'gallery_image/C031'),
+
+-- Tambahan komunitas "repetitif" lainnya
+('Badminton Champs', 2, 5, 'Komunitas bulu tangkis untuk sparring rutin.', 'gallery_image/C032'),
+('City Trekkers', 3, 20, 'Grup jelajah kota sambil trekking ringan.', 'gallery_image/C033');
+
 
 INSERT INTO COMMUNITY_LINK (ID,ID_USER, ID_COMMUNITY, IS_APPROVED) VALUES ('0001','U001','C001','0');
 INSERT INTO COMMUNITY_LINK (ID,ID_USER, ID_COMMUNITY, IS_APPROVED) VALUES ('0002','U002','C003','0');
@@ -386,25 +406,257 @@ INSERT INTO COMMUNITY_BULLETIN (ID, ID_COMMUNITY, ID_CREATOR, TITLE, BODY) VALUE
 ALTER TABLE EVENTS
 DROP CONSTRAINT events_id_creator_fkey
 
-INSERT INTO EVENTS (ID_CATEGORY, ID_CREATOR, NAME, DESCRIPTION, DATE, DURATION, CITY_BASED, LOCATION, ADDRESS, NUMBER_PARTICIPANT,ID_INTEREST) VALUES ('1','C001','Basket Girls Squad','Basket Bersama Wanita Jakselian','2025-02-25 07:00:00','90','3','GELORA BUNG KARNO','JL GELORA KARYA NO 7A','10', '1');
-INSERT INTO EVENTS (ID_CATEGORY, ID_CREATOR, NAME, DESCRIPTION, DATE, DURATION, CITY_BASED, LOCATION, ADDRESS, NUMBER_PARTICIPANT,ID_INTEREST) VALUES ('1','C003','Endurance Training','Latihan Endurance Bersama Lari','2025-03-01 08:30:00','60','1','GOR LARI JAKARTA','JL MENANG 123','10','2');
-INSERT INTO EVENTS (ID_CATEGORY, ID_CREATOR, NAME, DESCRIPTION, DATE, DURATION, CITY_BASED, LOCATION, ADDRESS, NUMBER_PARTICIPANT,ID_INTEREST) VALUES ('2','C006','Nonton Bernadya Fest','Nonton Galau Bersama Bernadya','2025-03-15 17:30:00','120','9','BINTARO XCHANGE','JL BINTARO SEKTOR 10','10','13');
-INSERT INTO EVENTS (ID_CATEGORY, ID_CREATOR, NAME, DESCRIPTION, DATE, DURATION, CITY_BASED, LOCATION, ADDRESS, NUMBER_PARTICIPANT,ID_INTEREST) VALUES ('1','C005','Futsal After Office','Main futsal bersama kawan after jam kerja','2025-03-13 20:20:00','90','9','LAP FUTSAL KEDOMAS','JL KEDOMAS 12','15','3');
-INSERT INTO EVENTS (ID_CATEGORY, ID_CREATOR, NAME, DESCRIPTION, DATE, DURATION, CITY_BASED, LOCATION, ADDRESS, NUMBER_PARTICIPANT,ID_INTEREST) VALUES ('2','C007','THEATER INTERAKSI TULUS','Theater INTERAKSI TULUS by JKT Movin','2025-03-15 18:30:00','120','8 ','THEATER ISMAIL','JL ISMAIL RAYA 23','10','13');
-INSERT INTO EVENTS (ID_CATEGORY, ID_CREATOR, NAME, DESCRIPTION, DATE, DURATION, CITY_BASED, LOCATION, ADDRESS, NUMBER_PARTICIPANT,ID_INTEREST) VALUES ('2','C008','Meluki Contemporer','Melukis bersama Contemporer dengan Cat','2025-05-11 16:00:00','90','6','PERPUS CILEGON','JL MAWAR 34','20','11');
-INSERT INTO EVENTS (ID_CATEGORY, ID_CREATOR, NAME, DESCRIPTION, DATE, DURATION, CITY_BASED, LOCATION, ADDRESS, NUMBER_PARTICIPANT,ID_INTEREST) VALUES ('1','U003','Jogging Santai','Jogging Sore Santai disambung Ngopi Malming','2025-03-24 17:00:00','60','12','SUKARASA BOGOR','JL SUKASUKA 89','5','2');
-INSERT INTO EVENTS (ID_CATEGORY, ID_CREATOR, NAME, DESCRIPTION, DATE, DURATION, CITY_BASED, LOCATION, ADDRESS, NUMBER_PARTICIPANT,ID_INTEREST) VALUES ('1','C003','Strenght Training','Latihan Strength Bersama Coach','2025-03-10 17:30:00','60','4','GOR TIMUR JAKARTA','JL TIMUR TIMOR 12','10','2');
-INSERT INTO EVENTS (ID_CATEGORY, ID_CREATOR, NAME, DESCRIPTION, DATE, DURATION, CITY_BASED, LOCATION, ADDRESS, NUMBER_PARTICIPANT,ID_INTEREST) VALUES ('4','U007','Hunting STAMP MRT','Hunting Stamp MRT ','2025-04-11 10:00:00','150','2','MRT DUKUH ATAS','JL DUKUH 2','3','19');
-INSERT INTO EVENTS (ID_CATEGORY, ID_CREATOR, NAME, DESCRIPTION, DATE, DURATION, CITY_BASED, LOCATION, ADDRESS, NUMBER_PARTICIPANT,ID_INTEREST) VALUES ('4','U004','Ngafe Santai','Ngobrol Sore Santai soal Politik','2025-02-21 14:30:00','90','12','CIOMAS RAYA TUKU','JL CIOMAS UTAMA','5','3');
-INSERT INTO EVENTS (ID_CATEGORY, ID_CREATOR, NAME, DESCRIPTION, DATE, DURATION, CITY_BASED, LOCATION, ADDRESS, NUMBER_PARTICIPANT,ID_INTEREST) VALUES ('4','U001','Pet Meet Up','Dogs Meet Up and Coffe','2025-03-01 14:00:00','90','8','BUMI SERPONG','JL BSD RAYA','7','17');
-INSERT INTO EVENTS (ID_CATEGORY, ID_CREATOR, NAME, DESCRIPTION, DATE, DURATION, CITY_BASED, LOCATION, ADDRESS, NUMBER_PARTICIPANT,ID_INTEREST) VALUES ('1','C001','Basket Girls Fun Squad','Basket Bersama Wanita Jakselian','2025-04-10 08:00:00','60','3','GOR BULUNGAN','JL KENANGAN 10','10','1');
-INSERT INTO EVENTS (ID_CATEGORY, ID_CREATOR, NAME, DESCRIPTION, DATE, DURATION, CITY_BASED, LOCATION, ADDRESS, NUMBER_PARTICIPANT,ID_INTEREST) VALUES ('2','C007','THEATER PETUALANGAN SHERINA','Theater Musikal Adopsi Petualangan Sherina ','2025-05-04 10:30','120','4','RUANG SENI TIMUR','JL TIMUR JAKARTA 19','10','14');
-INSERT INTO EVENTS (ID_CATEGORY, ID_CREATOR, NAME, DESCRIPTION, DATE, DURATION, CITY_BASED, LOCATION, ADDRESS, NUMBER_PARTICIPANT,ID_INTEREST) VALUES ('4','U005','Night Ride BSD','Keliling BSD Naik Motor','2025-03-15 21:00:00','90','2','GRAND INDONESIA','JL GRAND INDO 11','10','18');
-INSERT INTO EVENTS (ID_CATEGORY, ID_CREATOR, NAME, DESCRIPTION, DATE, DURATION, CITY_BASED, LOCATION, ADDRESS, NUMBER_PARTICIPANT,ID_INTEREST) VALUES ('1','C003','Lari Sore Bahagia','Fun Run 5k dan Ngopi Santai','2025-11-02 18:30:00','60','1','GOR BARAT JAKARTA','JL BARAT WEST 10','5','1');
-INSERT INTO EVENTS (ID_CATEGORY, ID_CREATOR, NAME, DESCRIPTION, DATE, DURATION, CITY_BASED, LOCATION, ADDRESS, NUMBER_PARTICIPANT,ID_INTEREST) VALUES ('2','C006','Nonton Yura Yunita','Nonton Support Yura Yunita Yunited','2025-04-01 18:00:00','120','10','GEDUNG SATE','JL SATE BAKAR 10','7','13');
-INSERT INTO EVENTS (ID_CATEGORY, ID_CREATOR, NAME, DESCRIPTION, DATE, DURATION, CITY_BASED, LOCATION, ADDRESS, NUMBER_PARTICIPANT,ID_INTEREST) VALUES ('4','U001','Food Hunter Blok M','Hunting Makanan Viral Blok M','2025-03-28 12:00:00','120','3','BLOK M','JL BLOK M 11','5','19');
-INSERT INTO EVENTS (ID_CATEGORY, ID_CREATOR, NAME, DESCRIPTION, DATE, DURATION, CITY_BASED, LOCATION, ADDRESS, NUMBER_PARTICIPANT,ID_INTEREST) VALUES ('1','C004','Lari Laps','Lari keliling arena lari','2025-03-11 06:30:00','60','2','GOR PUSAT JAKARTA','JL PUSAT DKI','10','2');
-INSERT INTO EVENTS (ID_CATEGORY, ID_CREATOR, NAME, DESCRIPTION, DATE, DURATION, CITY_BASED, LOCATION, ADDRESS, NUMBER_PARTICIPANT,ID_INTEREST) VALUES ('2','C006','Nonton Saiful Jamil','Dangdut ria bersama Jamil','2025-03-28 19:00:00','120','11','GELANGANG SENI ','JL BEKASI RAYA','15','13');
+INSERT INTO events (created, modified, id_creator, name, description, duration, city_based, location, address, number_participant, date, id_interest, latitude, longitude, id_profile, room_chat_id)
+VALUES ('2025-04-28 17:29:13.93247', NULL, 'C017', 'Backpacking Adventure', 'Acara bagi para backpackers untuk berbagi pengalaman dan rencana perjalanan.', 120, 1, 'Taman Mini Indonesia Indah', 'Jl. TMII No.1, Jakarta Timur', 15, '2025-04-29 10:00:00', 17, -6.3037, 106.9144, NULL, NULL);
+
+INSERT INTO events (created, modified, id_creator, name, description, duration, city_based, location, address, number_participant, date, id_interest, latitude, longitude, id_profile, room_chat_id)
+VALUES ('2025-04-28 17:29:21.057804', NULL, 'C001', 'Basketball Training Session', 'Sesi latihan rutin untuk pecinta basket Jakarta.', 90, 1, 'GOR Soemantri Brodjonegoro', 'Jl. Soemantri Brodjonegoro No.1, Jakarta Selatan', 20, '2025-04-30 18:00:00', 1, -6.2509, 106.8254, NULL, NULL);
+
+INSERT INTO events (created, modified, id_creator, name, description, duration, city_based, location, address, number_participant, date, id_interest, latitude, longitude, id_profile, room_chat_id)
+VALUES ('2025-04-28 17:29:27.097365', NULL, 'C002', 'Morning Run Meetup', 'Sesi lari pagi bersama komunitas Runner Vibes di area Monas.', 60, 1, 'Monumen Nasional (Monas)', 'Jl. Merdeka Selatan, Jakarta Pusat', 25, '2025-04-29 06:00:00', 2, -6.1754, 106.8272, NULL, NULL);
+
+INSERT INTO events (created, modified, id_creator, name, description, duration, city_based, location, address, number_participant, date, id_interest, latitude, longitude, id_profile, room_chat_id)
+VALUES ('2025-04-28 17:29:33.02882', NULL, 'C003', 'Futsal Friendly Match', 'Pertandingan futsal antar anggota Futsal Squad di Jakarta.', 90, 1, 'Futsal Arena Jakarta', 'Jl. Kebon Jeruk Raya No.56, Jakarta Barat', 12, '2025-04-30 19:30:00', 3, -6.1888, 106.7434, NULL, NULL);
+
+INSERT INTO events (created, modified, id_creator, name, description, duration, city_based, location, address, number_participant, date, id_interest, latitude, longitude, id_profile, room_chat_id)
+VALUES ('2025-04-28 17:29:47.046728', NULL, 'C005', 'Badminton Practice Session', 'Latihan rutin bulu tangkis untuk semua tingkat keahlian di Jakarta.', 120, 1, 'Lapangan Bulutangkis Gelora Bung Karno', 'Jl. Pintu Satu Senayan, Jakarta Pusat', 15, '2025-04-30 17:00:00', 5, -6.2277, 106.8034, NULL, NULL);
+
+INSERT INTO events (created, modified, id_creator, name, description, duration, city_based, location, address, number_participant, date, id_interest, latitude, longitude, id_profile, room_chat_id)
+VALUES ('2025-04-28 17:37:10.525914', NULL, 'C007', 'Paddel Tournament', 'Turnamen paddel yang penuh tantangan dan seru.', 120, 1, 'Paddel Club Jakarta', 'Jl. Raya Jakarta No.45, Jakarta Selatan', 12, '2025-04-29 14:00:00', 7, -6.2925, 106.82, NULL, NULL);
+
+INSERT INTO events (created, modified, id_creator, name, description, duration, city_based, location, address, number_participant, date, id_interest, latitude, longitude, id_profile, room_chat_id)
+VALUES ('2025-04-28 17:37:16.364408', NULL, 'C008', 'Community Singing Night', 'Sesi bernyanyi bersama di malam hari, bebas genre musik.', 120, 1, 'Komunitas Seni Jakarta', 'Jl. Sumber Raya No.20, Jakarta Barat', 15, '2025-04-30 19:00:00', 10, -6.1872, 106.7965, NULL, NULL);
+
+INSERT INTO events (created, modified, id_creator, name, description, duration, city_based, location, address, number_participant, date, id_interest, latitude, longitude, id_profile, room_chat_id)
+VALUES ('2025-04-28 17:37:22.171417', NULL, 'C009', 'Jam Session Musisi', 'Acara jam session bagi musisi dari berbagai genre di Jakarta.', 180, 1, 'Music Jam Venue', 'Jl. Melodia No.10, Jakarta Selatan', 10, '2025-04-30 20:00:00', 9, -6.2447, 106.8292, NULL, NULL);
+
+INSERT INTO events (created, modified, id_creator, name, description, duration, city_based, location, address, number_participant, date, id_interest, latitude, longitude, id_profile, room_chat_id)
+VALUES ('2025-04-28 17:37:29.114752', NULL, 'C010', 'Live Music Night', 'Nikmati musik live dari band lokal di Jakarta.', 180, 1, 'Café Musik Jakarta', 'Jl. Jendral Sudirman No.88, Jakarta Pusat', 25, '2025-05-01 21:00:00', 12, -6.1803, 106.822, NULL, NULL);
+
+INSERT INTO events (created, modified, id_creator, name, description, duration, city_based, location, address, number_participant, date, id_interest, latitude, longitude, id_profile, room_chat_id)
+VALUES ('2025-04-28 17:37:35.875503', NULL, 'C011', 'Festival Music Gathering', 'Berkumpul dan berbagi cerita tentang pengalaman festival musik.', 120, 1, 'Festival Area Jakarta', 'Jl. Raya Musik No.7, Jakarta Timur', 30, '2025-05-02 15:00:00', 11, -6.2575, 106.8902, NULL, NULL);
+
+INSERT INTO events (created, modified, id_creator, name, description, duration, city_based, location, address, number_participant, date, id_interest, latitude, longitude, id_profile, room_chat_id)
+VALUES ('2025-04-28 17:37:46.618587', NULL, 'C012', 'Concert Meet and Greet', 'Acara berkumpul sebelum konser besar dimulai.', 90, 1, 'Venue Konser Jakarta', 'Jl. Merdeka No.100, Jakarta Pusat', 20, '2025-05-02 16:00:00', 12, -6.1964, 106.8286, NULL, NULL);
+
+INSERT INTO events (created, modified, id_creator, name, description, duration, city_based, location, address, number_participant, date, id_interest, latitude, longitude, id_profile, room_chat_id)
+VALUES ('2025-04-28 17:37:57.395689', NULL, 'C013', 'Workshop Pengembangan Diri', 'Workshop keterampilan praktis untuk pengembangan diri.', 180, 1, 'Tempat Pelatihan Jakarta', 'Jl. Kebon Sirih No.3, Jakarta Pusat', 25, '2025-05-01 10:00:00', 13, -6.1973, 106.8241, NULL, NULL);
+
+INSERT INTO events (created, modified, id_creator, name, description, duration, city_based, location, address, number_participant, date, id_interest, latitude, longitude, id_profile, room_chat_id)
+VALUES ('2025-04-28 17:38:04.585347', NULL, 'C014', 'Pelatihan Profesional', 'Pelatihan profesional untuk meningkatkan keterampilan kerja.', 240, 1, 'Edu Training Center', 'Jl. Pendidikan No.12, Jakarta Selatan', 30, '2025-04-30 09:00:00', 14, -6.2502, 106.8139, NULL, NULL);
+
+INSERT INTO events (created, modified, id_creator, name, description, duration, city_based, location, address, number_participant, date, id_interest, latitude, longitude, id_profile, room_chat_id)
+VALUES ('2025-04-28 17:38:11.202178', NULL, 'C015', 'Pameran Seni Kontemporer', 'Pameran seni kontemporer yang menampilkan berbagai karya seniman muda.', 180, 1, 'Galeri Seni Jakarta', 'Jl. Duta No.5, Jakarta Barat', 20, '2025-05-03 14:00:00', 15, -6.1689, 106.8214, NULL, NULL);
+
+INSERT INTO events (created, modified, id_creator, name, description, duration, city_based, location, address, number_participant, date, id_interest, latitude, longitude, id_profile, room_chat_id)
+VALUES ('2025-04-28 17:38:18.468905', NULL, 'C016', 'Pentas Teater Jakarta', 'Pertunjukan teater yang mengangkat kisah kehidupan sosial di Jakarta.', 120, 1, 'Teater Jakarta', 'Jl. Teater No.3, Jakarta Pusat', 30, '2025-05-01 20:00:00', 16, -6.1805, 106.8218, NULL, NULL);
+
+INSERT INTO events (created, modified, id_creator, name, description, duration, city_based, location, address, number_participant, date, id_interest, latitude, longitude, id_profile, room_chat_id)
+VALUES ('2025-04-28 17:38:43.869497', NULL, 'C019', 'Trekking ke Gunung Gede', 'Trekking seru menuju Gunung Gede untuk pendakian bersama Trekker Society.', 720, 3, 'Gunung Gede', 'Jl. Gunung No.1, Cianjur', 10, '2025-05-03 05:00:00', 19, -6.7314, 106.9779, NULL, NULL);
+
+INSERT INTO events (created, modified, id_creator, name, description, duration, city_based, location, address, number_participant, date, id_interest, latitude, longitude, id_profile, room_chat_id)
+VALUES ('2025-04-28 17:38:50.373152', NULL, 'C020', 'Jelajah Kota Jakarta', 'Bergabung dalam tur keliling kota Jakarta untuk eksplorasi sejarah dan budaya.', 240, 1, 'Monas', 'Jl. Merdeka Selatan, Jakarta Pusat', 25, '2025-05-02 10:00:00', 20, -6.1754, 106.8272, NULL, NULL);
+
+INSERT INTO events (created, modified, id_creator, name, description, duration, city_based, location, address, number_participant, date, id_interest, latitude, longitude, id_profile, room_chat_id)
+VALUES ('2025-04-28 17:38:59.431341', NULL, 'C021', 'Esports Tournament', 'Turnamen esports antar tim di Jakarta dengan berbagai kategori game.', 240, 1, 'Esports Arena Jakarta', 'Jl. E-Sports No.5, Jakarta Barat', 15, '2025-04-30 13:00:00', 21, -6.2152, 106.7449, NULL, NULL);
+
+INSERT INTO events (created, modified, id_creator, name, description, duration, city_based, location, address, number_participant, date, id_interest, latitude, longitude, id_profile, room_chat_id)
+VALUES ('2025-04-28 17:39:14.923967', NULL, 'C007', 'Paddel Tournament', 'Turnamen paddel yang penuh tantangan dan seru.', 120, 1, 'Paddel Club Jakarta', 'Jl. Raya Jakarta No.45, Jakarta Selatan', 12, '2025-04-29 14:00:00', 7, -6.2925, 106.82, NULL, NULL);
+
+INSERT INTO events (created, modified, id_creator, name, description, duration, city_based, location, address, number_participant, date, id_interest, latitude, longitude, id_profile, room_chat_id)
+VALUES ('2025-04-28 17:39:14.923967', NULL, 'C007', 'Paddel Friendly Match', 'Pertandingan paddel santai antar anggota komunitas.', 90, 1, 'Paddel Club Jakarta', 'Jl. Raya Jakarta No.45, Jakarta Selatan', 10, '2025-05-01 10:00:00', 7, -6.2925, 106.82, NULL, NULL);
+
+INSERT INTO events (created, modified, id_creator, name, description, duration, city_based, location, address, number_participant, date, id_interest, latitude, longitude, id_profile, room_chat_id)
+VALUES ('2025-04-28 17:39:14.923967', NULL, 'C008', 'Community Singing Night', 'Sesi bernyanyi bersama di malam hari, bebas genre musik.', 120, 1, 'Komunitas Seni Jakarta', 'Jl. Sumber Raya No.20, Jakarta Barat', 15, '2025-04-30 19:00:00', 10, -6.1872, 106.7965, NULL, NULL);
+
+INSERT INTO events (created, modified, id_creator, name, description, duration, city_based, location, address, number_participant, date, id_interest, latitude, longitude, id_profile, room_chat_id)
+VALUES ('2025-04-28 17:39:14.923967', NULL, 'C008', 'Singing Workshop', 'Workshop vokal untuk mengasah kemampuan bernyanyi bersama.', 180, 1, 'Studio Musik Jakarta', 'Jl. Melodi No.10, Jakarta Selatan', 20, '2025-05-02 10:00:00', 10, -6.2447, 106.8292, NULL, NULL);
+
+INSERT INTO events (created, modified, id_creator, name, description, duration, city_based, location, address, number_participant, date, id_interest, latitude, longitude, id_profile, room_chat_id)
+VALUES ('2025-04-28 17:39:14.923967', NULL, 'C009', 'Jam Session Musisi', 'Acara jam session bagi musisi dari berbagai genre di Jakarta.', 180, 1, 'Music Jam Venue', 'Jl. Melodia No.10, Jakarta Selatan', 10, '2025-04-30 20:00:00', 9, -6.2447, 106.8292, NULL, NULL);
+
+INSERT INTO events (created, modified, id_creator, name, description, duration, city_based, location, address, number_participant, date, id_interest, latitude, longitude, id_profile, room_chat_id)
+VALUES ('2025-04-28 17:37:02.014575', NULL, 'C006', 'Voli Match Fun', 'Pertandingan voli santai untuk semua anggota Volley Mates.', 90, 1, 'Lapangan Voli Senayan', 'Jl. Pintu Satu Senayan, Jakarta Pusat', 20, '2025-04-29 18:30:00', 6, -6.2322, 106.8068, NULL, NULL);
+
+INSERT INTO events (created, modified, id_creator, name, description, duration, city_based, location, address, number_participant, date, id_interest, latitude, longitude, id_profile, room_chat_id)
+VALUES ('2025-04-28 17:39:14.923967', NULL, 'C006', 'Voli Match Fun', 'Pertandingan voli santai untuk semua anggota Volley Mates.', 90, 1, 'Lapangan Voli Senayan', 'Jl. Pintu Satu Senayan, Jakarta Pusat', 20, '2025-04-29 18:30:00', 6, -6.2322, 106.8068, NULL, NULL);
+
+INSERT INTO events (created, modified, id_creator, name, description, duration, city_based, location, address, number_participant, date, id_interest, latitude, longitude, id_profile, room_chat_id)
+VALUES ('2025-04-28 17:39:14.923967', NULL, 'C006', 'Voli Championship', 'Turnamen voli tingkat komunitas dengan hadiah menarik.', 120, 1, 'Lapangan Voli Senayan', 'Jl. Pintu Satu Senayan, Jakarta Pusat', 25, '2025-04-30 15:00:00', 6, -6.2322, 106.8068, NULL, NULL);
+
+INSERT INTO events (created, modified, id_creator, name, description, duration, city_based, location, address, number_participant, date, id_interest, latitude, longitude, id_profile, room_chat_id)
+VALUES ('2025-04-28 17:39:14.923967', NULL, 'C009', 'Music Collaboration', 'Kolaborasi musisi untuk menciptakan lagu baru bersama.', 150, 1, 'Jam Space Jakarta', 'Jl. Raya No.45, Jakarta Timur', 12, '2025-05-01 16:00:00', 9, -6.2703, 106.8693, NULL, NULL);
+
+INSERT INTO events (created, modified, id_creator, name, description, duration, city_based, location, address, number_participant, date, id_interest, latitude, longitude, id_profile, room_chat_id)
+VALUES ('2025-04-28 17:39:14.923967', NULL, 'C010', 'Live Music Night', 'Nikmati musik live dari band lokal di Jakarta.', 180, 1, 'Café Musik Jakarta', 'Jl. Jendral Sudirman No.88, Jakarta Pusat', 25, '2025-05-01 21:00:00', 12, -6.1803, 106.822, NULL, NULL);
+
+INSERT INTO events (created, modified, id_creator, name, description, duration, city_based, location, address, number_participant, date, id_interest, latitude, longitude, id_profile, room_chat_id)
+VALUES ('2025-04-28 17:39:14.923967', NULL, 'C010', 'Indie Music Session', 'Sesi musik indie live untuk para pecinta genre ini.', 120, 1, 'Indie Café Jakarta', 'Jl. Sumber Raya No.5, Jakarta Barat', 15, '2025-05-02 19:00:00', 12, -6.2072, 106.8235, NULL, NULL);
+
+INSERT INTO events (created, modified, id_creator, name, description, duration, city_based, location, address, number_participant, date, id_interest, latitude, longitude, id_profile, room_chat_id)
+VALUES ('2025-04-28 17:39:14.923967', NULL, 'C011', 'Festival Music Gathering', 'Berkumpul dan berbagi cerita tentang pengalaman festival musik.', 120, 1, 'Festival Area Jakarta', 'Jl. Raya Musik No.7, Jakarta Timur', 30, '2025-05-02 15:00:00', 11, -6.2575, 106.8902, NULL, NULL);
+
+INSERT INTO events (created, modified, id_creator, name, description, duration, city_based, location, address, number_participant, date, id_interest, latitude, longitude, id_profile, room_chat_id)
+VALUES ('2025-04-28 17:39:14.923967', NULL, 'C011', 'Festival Preparation Meetup', 'Persiapan komunitas untuk festival musik besar di Jakarta.', 120, 1, 'Meeting Point Jakarta', 'Jl. Jendral Sudirman No.45, Jakarta Pusat', 20, '2025-05-03 14:00:00', 11, -6.196, 106.829, NULL, NULL);
+
+INSERT INTO events (created, modified, id_creator, name, description, duration, city_based, location, address, number_participant, date, id_interest, latitude, longitude, id_profile, room_chat_id)
+VALUES ('2025-04-28 17:39:14.923967', NULL, 'C012', 'Concert Meet and Greet', 'Acara berkumpul sebelum konser besar dimulai.', 90, 1, 'Venue Konser Jakarta', 'Jl. Merdeka No.100, Jakarta Pusat', 20, '2025-05-02 16:00:00', 12, -6.1964, 106.8286, NULL, NULL);
+
+INSERT INTO events (created, modified, id_creator, name, description, duration, city_based, location, address, number_participant, date, id_interest, latitude, longitude, id_profile, room_chat_id)
+VALUES ('2025-04-28 17:39:14.923967', NULL, 'C012', 'Post-Concert Party', 'Acara after-party setelah konser dengan para penggemar.', 180, 1, 'Concert Hall Jakarta', 'Jl. Raya No.60, Jakarta Selatan', 50, '2025-05-02 23:30:00', 12, -6.2335, 106.81, NULL, NULL);
+
+INSERT INTO events (created, modified, id_creator, name, description, duration, city_based, location, address, number_participant, date, id_interest, latitude, longitude, id_profile, room_chat_id)
+VALUES ('2025-04-28 17:39:14.923967', NULL, 'C013', 'Workshop Pengembangan Diri', 'Workshop keterampilan praktis untuk pengembangan diri.', 180, 1, 'Tempat Pelatihan Jakarta', 'Jl. Kebon Sirih No.3, Jakarta Pusat', 25, '2025-05-01 10:00:00', 13, -6.1973, 106.8241, NULL, NULL);
+
+INSERT INTO events (created, modified, id_creator, name, description, duration, city_based, location, address, number_participant, date, id_interest, latitude, longitude, id_profile, room_chat_id)
+VALUES ('2025-04-28 17:39:14.923967', NULL, 'C013', 'Digital Skills Training', 'Pelatihan keterampilan digital untuk karir masa depan.', 240, 1, 'Tech Hub Jakarta', 'Jl. Teknologi No.2, Jakarta Selatan', 30, '2025-05-02 09:00:00', 13, -6.2457, 106.8103, NULL, NULL);
+
+INSERT INTO events (created, modified, id_creator, name, description, duration, city_based, location, address, number_participant, date, id_interest, latitude, longitude, id_profile, room_chat_id)
+VALUES ('2025-04-28 17:50:30.83058', NULL, 'C022', 'Mobile Game Tournament', 'Turnamen game mobile antar anggota komunitas.', 120, 1, 'Gaming Hub Jakarta', 'Jl. Gatot Subroto No.30, Jakarta Selatan', 20, '2025-04-30 18:00:00', 6, -6.2307, 106.8194, NULL, NULL);
+
+INSERT INTO events (created, modified, id_creator, name, description, duration, city_based, location, address, number_participant, date, id_interest, latitude, longitude, id_profile, room_chat_id)
+VALUES ('2025-04-28 17:50:30.83058', NULL, 'C022', 'Mobile Gaming Night', 'Acara santai bermain game mobile bersama anggota komunitas.', 120, 1, 'Game Lounge Jakarta', 'Jl. Sudirman No.15, Jakarta Pusat', 25, '2025-05-02 20:00:00', 6, -6.1952, 106.8288, NULL, NULL);
+
+INSERT INTO events (created, modified, id_creator, name, description, duration, city_based, location, address, number_participant, date, id_interest, latitude, longitude, id_profile, room_chat_id)
+VALUES ('2025-04-28 17:50:30.83058', NULL, 'C023', 'Online Gaming Challenge', 'Tantangan game online antar anggota komunitas.', 180, 1, 'Cyber Cafe Jakarta', 'Jl. Melawai No.20, Jakarta Selatan', 30, '2025-04-30 20:00:00', 6, -6.263, 106.7983, NULL, NULL);
+
+INSERT INTO events (created, modified, id_creator, name, description, duration, city_based, location, address, number_participant, date, id_interest, latitude, longitude, id_profile, room_chat_id)
+VALUES ('2025-04-28 17:50:30.83058', NULL, 'C023', 'Esports Friendly Match', 'Pertandingan persahabatan antar pemain esports komunitas.', 180, 1, 'Esports Arena Jakarta', 'Jl. Senayan No.10, Jakarta Pusat', 25, '2025-05-02 17:00:00', 6, -6.2294, 106.803, NULL, NULL);
+
+INSERT INTO events (created, modified, id_creator, name, description, duration, city_based, location, address, number_participant, date, id_interest, latitude, longitude, id_profile, room_chat_id)
+VALUES ('2025-04-28 17:50:30.83058', NULL, 'C024', 'Virtual Networking Meetup', 'Acara pertemuan virtual antar komunitas dan profesi.', 120, 1, 'Virtual Event', 'Online', 50, '2025-04-30 16:00:00', 7, 0, 0, NULL, NULL);
+
+INSERT INTO events (created, modified, id_creator, name, description, duration, city_based, location, address, number_participant, date, id_interest, latitude, longitude, id_profile, room_chat_id)
+VALUES ('2025-04-28 17:50:30.83058', NULL, 'C024', 'Digital Networking Night', 'Acara networking untuk membangun hubungan profesional secara virtual.', 120, 1, 'Online Event', 'Online', 40, '2025-05-02 19:00:00', 7, 0, 0, NULL, NULL);
+
+INSERT INTO events (created, modified, id_creator, name, description, duration, city_based, location, address, number_participant, date, id_interest, latitude, longitude, id_profile, room_chat_id)
+VALUES ('2025-04-28 17:50:30.83058', NULL, 'C025', 'Community Meet and Greet', 'Acara kumpul komunitas untuk saling mengenal lebih dekat.', 150, 1, 'Café Community Hub', 'Jl. Kebon Jeruk No.8, Jakarta Barat', 30, '2025-04-30 10:00:00', 7, -6.1742, 106.7991, NULL, NULL);
+
+INSERT INTO events (created, modified, id_creator, name, description, duration, city_based, location, address, number_participant, date, id_interest, latitude, longitude, id_profile, room_chat_id)
+VALUES ('2025-04-28 17:50:30.83058', NULL, 'C025', 'Networking Event', 'Acara untuk saling berkenalan antar komunitas dan memperluas jaringan.', 150, 1, 'Community Hub Jakarta', 'Jl. Merdeka No.50, Jakarta Barat', 40, '2025-05-02 16:00:00', 7, -6.191, 106.804, NULL, NULL);
+
+INSERT INTO events (created, modified, id_creator, name, description, duration, city_based, location, address, number_participant, date, id_interest, latitude, longitude, id_profile, room_chat_id)
+VALUES ('2025-04-28 17:50:30.83058', NULL, 'C026', 'Basketball Night', 'Bermain basket di malam hari untuk anggota komunitas.', 120, 1, 'Basket Court Night', 'Jl. Raya No.8, Jakarta Selatan', 15, '2025-04-29 19:00:00', 1, -6.2505, 106.8044, NULL, NULL);
+
+INSERT INTO events (created, modified, id_creator, name, description, duration, city_based, location, address, number_participant, date, id_interest, latitude, longitude, id_profile, room_chat_id)
+VALUES ('2025-04-28 17:50:30.83058', NULL, 'C026', 'Basketball Game Session', 'Sesi latihan dan pertandingan basket untuk meningkatkan keterampilan.', 120, 1, 'Indoor Basketball Court', 'Jl. Pemuda No.5, Jakarta Utara', 20, '2025-05-01 16:00:00', 1, -6.215, 106.8667, NULL, NULL);
+
+INSERT INTO events (created, modified, id_creator, name, description, duration, city_based, location, address, number_participant, date, id_interest, latitude, longitude, id_profile, room_chat_id)
+VALUES ('2025-04-28 17:50:30.83058', NULL, 'C027', 'Street Basketball Jam', 'Pertandingan street basketball antar anggota komunitas.', 120, 1, 'Street Court Jakarta', 'Jl. Tanjung No.5, Jakarta Selatan', 25, '2025-04-29 16:00:00', 1, -6.2332, 106.7893, NULL, NULL);
+
+INSERT INTO events (id, created, modified, id_creator, name, description, duration, city_based, location, address, number_participant, date, id_interest, latitude, longitude) VALUES (53, '2025-04-28 17:50:30.83058', NULL, 'C027', 'Street Basketball Showdown', 'Kompetisi street basketball antar anggota komunitas.', 120, 1, 'Street Court Jakarta', 'Jl. Kebon Pala No.7, Jakarta Timur', 30, '2025-05-01 14:00:00', 1, -6.2445, 106.8205);
+
+INSERT INTO events (id, created, modified, id_creator, name, description, duration, city_based, location, address, number_participant, date, id_interest, latitude, longitude) VALUES (54, '2025-04-28 17:50:30.83058', NULL, 'C028', 'Morning Run Meetup', 'Kegiatan lari pagi bersama anggota komunitas.', 90, 1, 'Monas Park', 'Jl. Merdeka Barat, Jakarta Pusat', 20, '2025-05-01 06:00:00', 2, -6.1754, 106.8223);
+
+INSERT INTO events (id, created, modified, id_creator, name, description, duration, city_based, location, address, number_participant, date, id_interest, latitude, longitude) VALUES (55, '2025-04-28 17:50:30.83058', NULL, 'C028', 'Sunrise Run', 'Lari pagi di waktu matahari terbit untuk menjaga kebugaran.', 90, 1, 'Taman Suropati', 'Jl. Taman Suropati No.2, Jakarta Pusat', 25, '2025-05-02 06:00:00', 2, -6.1903, 106.8301);
+
+INSERT INTO events (id, created, modified, id_creator, name, description, duration, city_based, location, address, number_participant, date, id_interest, latitude, longitude) VALUES (56, '2025-04-28 17:50:30.83058', NULL, 'C029', 'Trail Running', 'Komunitas lari lintas alam di jalur menantang.', 180, 1, 'Gunung Gede Pangrango', 'Jl. Raya No.10, Cianjur', 20, '2025-05-01 07:00:00', 2, -6.7134, 106.9982);
+
+INSERT INTO events (id, created, modified, id_creator, name, description, duration, city_based, location, address, number_participant, date, id_interest, latitude, longitude) VALUES (57, '2025-04-28 17:50:30.83058', NULL, 'C029', 'Trail Challenge', 'Tantangan lari lintas alam dengan rute yang lebih sulit.', 180, 1, 'Gunung Pangrango', 'Jl. Raya No.15, Cianjur', 25, '2025-05-03 08:00:00', 2, -6.7135, 106.9983);
+
+INSERT INTO events (created, modified, id_creator, name, description, duration, city_based, location, address, number_participant, date, id_interest, latitude, longitude, id_profile, room_chat_id) VALUES ('2025-04-28 17:50:30.83058', NULL, 'C027', 'Street Basketball Jam', 'Pertandingan street basketball antar anggota komunitas.', 120, 1, 'Street Court Jakarta', 'Jl. Tanjung No.5, Jakarta Selatan', 25, '2025-04-29 16:00:00', 1, -6.2332, 106.7893, NULL, NULL);
+
+INSERT INTO public.events (
+    id, created, modified, id_creator, name, description, 
+    date, duration, number_participant, id_interest, location, address, 
+    longitude, latitude, city_based
+)
+VALUES 
+(54, NOW(), NULL, 'U003', 'Futsal Friendly Match', 'Pertandingan futsal santai di Jakarta Barat', 
+ '2025-05-05 08:00:00', '90', '5', 3, 
+ 'Lapangan Futsal Tifosi, Jakarta Barat', 'Jl. Panjang No.17, Kebon Jeruk, Jakarta Barat', 
+ 106.7735, -6.1944, 1),
+
+(55, NOW(), NULL, 'U005', 'Basketball Training Camp', 'Latihan basket terbuka untuk semua kalangan', 
+ '2025-05-06 09:00:00', '60', '4', 1, 
+ 'Gor Basket Bulungan, Jakarta Selatan', 'Jl. Bulungan No.1, Blok M, Jakarta Selatan', 
+ 106.7996, -6.2459, 3),
+
+(56, NOW(), NULL, 'U007', 'Morning Run Gathering', 'Event lari pagi santai di area Senayan', 
+ '2025-05-07 06:00:00', '30', '7', 2, 
+ 'GBK Senayan, Jakarta', 'Jl. Pintu Satu Senayan, Jakarta Pusat', 
+ 106.8026, -6.2185, 3),
+
+(57, NOW(), NULL, 'U009', 'Beach Volleyball Tournament', 'Turnamen voli pantai di Anyer', 
+ '2025-05-08 13:00:00', '90', '8', 7, 
+ 'Pantai Anyer, Banten', 'Jl. Raya Anyer, Banten', 
+ 106.1700, -6.2966, 7),
+
+(58, NOW(), NULL, 'U011', 'Yoga in The Park', 'Sesi yoga outdoor untuk pemula', 
+ '2025-05-09 07:00:00', '60', '5', 2, 
+ 'Taman Menteng, Jakarta Pusat', 'Jl. HOS Cokroaminoto, Menteng, Jakarta Pusat', 
+ 106.8325, -6.1987, 2),
+
+(59, NOW(), NULL, 'U013', 'Photography Walk', 'Keliling kota sambil belajar fotografi street', 
+ '2025-05-10 15:00:00', '120', '7',  3, 
+ 'Kota Tua Jakarta', 'Jl. Taman Fatahillah, Jakarta Barat', 
+ 106.8133, -6.1352, 1),
+
+(60, NOW(), NULL, 'U015', 'Hiking Gunung Pancar', 'Pendakian ringan dan camping di Gunung Pancar', 
+ '2025-05-11 05:00:00', '90', '4',  5, 
+ 'Gunung Pancar, Bogor', 'Jl. Desa Karang Tengah, Babakan Madang, Bogor', 
+ 106.9118, -6.5661, 12),
+
+(61, NOW(), NULL, 'U017', 'Music Open Mic Night', 'Event open mic untuk musisi baru', 
+ '2025-05-12 18:00:00', '240', '2',  4, 
+ 'M Bloc Space, Jakarta Selatan', 'Jl. Panglima Polim No.37, Melawai, Jakarta Selatan', 
+ 106.7985, -6.2444, 3),
+
+(62, NOW(), NULL, 'U019', 'Cycling City Tour', 'Bersepeda santai mengelilingi Jakarta Pusat', 
+ '2025-05-13 06:00:00', '90', '8',  2, 
+ 'Bundaran HI, Jakarta Pusat', 'Jl. MH Thamrin, Jakarta Pusat', 
+ 106.8219, -6.1951, 2),
+
+(63, NOW(), NULL, 'U021', 'Kayaking Adventure', 'Seru-seruan naik kayak di Situ Gintung', 
+ '2025-05-14 09:00:00', '120', '3', 7, 
+ 'Situ Gintung, Tangerang Selatan', 'Jl. Kertamukti, Ciputat Timur, Tangerang Selatan', 
+ 106.7545, -6.3144, 9);
+
+INSERT INTO public.events_link (created, modified, id_event, id_user, is_approved) VALUES
+(NOW(), NULL, 'E053', 'U005', TRUE),
+(NOW(), NULL, 'E053', 'U011', FALSE),
+(NOW(), NULL, 'E053', 'U018', TRUE),
+
+(NOW(), NULL, 'E054', 'U002', TRUE),
+(NOW(), NULL, 'E054', 'U020', FALSE),
+(NOW(), NULL, 'E054', 'U028', TRUE),
+
+(NOW(), NULL, 'E055', 'U009', TRUE),
+(NOW(), NULL, 'E055', 'U014', FALSE),
+(NOW(), NULL, 'E055', 'U025', TRUE),
+
+(NOW(), NULL, 'E056', 'U007', FALSE),
+(NOW(), NULL, 'E056', 'U016', TRUE),
+(NOW(), NULL, 'E056', 'U031', FALSE),
+
+(NOW(), NULL, 'E057', 'U004', TRUE),
+(NOW(), NULL, 'E057', 'U017', TRUE),
+(NOW(), NULL, 'E057', 'U022', FALSE),
+
+(NOW(), NULL, 'E058', 'U001', TRUE),
+(NOW(), NULL, 'E058', 'U012', FALSE),
+(NOW(), NULL, 'E058', 'U030', TRUE),
+
+(NOW(), NULL, 'E059', 'U006', TRUE),
+(NOW(), NULL, 'E059', 'U019', TRUE),
+(NOW(), NULL, 'E059', 'U024', FALSE),
+
+(NOW(), NULL, 'E060', 'U008', FALSE),
+(NOW(), NULL, 'E060', 'U023', TRUE),
+(NOW(), NULL, 'E060', 'U035', TRUE),
+
+(NOW(), NULL, 'E061', 'U003', TRUE),
+(NOW(), NULL, 'E061', 'U015', FALSE),
+(NOW(), NULL, 'E061', 'U027', TRUE),
+
+(NOW(), NULL, 'E062', 'U010', TRUE),
+(NOW(), NULL, 'E062', 'U026', FALSE),
+(NOW(), NULL, 'E062', 'U033', TRUE),
+
+(NOW(), NULL, 'E063', 'U013', FALSE),
+(NOW(), NULL, 'E063', 'U021', TRUE),
+(NOW(), NULL, 'E063', 'U032', TRUE);
+
 
 INSERT INTO SUSPENDED (ID, ID_REPORTEE) VALUES ('0001', 'U008')
 
@@ -600,3 +852,98 @@ INSERT INTO public.community_link (id, created, modified, id_user, id_community,
 
 ALTER TABLE users
 ADD COLUMN is_verified boolean;
+
+-- Insert untuk komunitas C001 - C021
+INSERT INTO public.community_bulletin (id, created, modified, id_creator, id_community, title, body, id_picture) VALUES
+(1, now(), NULL, 'U001', 'C001', 'Pengumuman Penting 1', 'Selamat datang di komunitas C001!', NULL),
+(2, now(), NULL, 'U001', 'C001', 'Agenda Kegiatan', 'Jangan lupa hadir di kegiatan kita minggu ini.', NULL),
+(3, now(), NULL, 'U001', 'C001', 'Pengumpulan Dana', 'Kami membuka pengumpulan dana untuk kegiatan sosial.', NULL),
+
+(4, now(), NULL, 'U002', 'C001', 'Event Bulanan', 'Event bulanan komunitas kita akan diadakan pekan depan.', NULL),
+(5, now(), NULL, 'U002', 'C001', 'Peringatan', 'Mohon menjaga etika di grup ini.', NULL),
+
+(6, now(), NULL, 'U003', 'C002', 'Selamat Datang', 'Selamat bergabung di komunitas C002.', NULL),
+(7, now(), NULL, 'U003', 'C002', 'Peraturan Baru', 'Kami memberlakukan peraturan baru.', NULL),
+(8, now(), NULL, 'U003', 'C002', 'Kegiatan Mingguan', 'Ikuti kegiatan rutin setiap minggu.', NULL),
+
+(9, now(), NULL, 'U004', 'C002', 'Update Komunitas', 'Ada update baru, cek di forum.', NULL),
+(10, now(), NULL, 'U004', 'C002', 'Pemilihan Pengurus', 'Mari pilih pengurus baru.', NULL),
+
+(11, now(), NULL, 'U006', 'C003', 'Meet Up Perdana', 'Mari bertemu di event pertama komunitas.', NULL),
+(12, now(), NULL, 'U006', 'C003', 'Info Merchandise', 'Merchandise komunitas sudah tersedia.', NULL),
+(13, now(), NULL, 'U006', 'C003', 'Sponsorship', 'Kami membuka peluang sponsor.', NULL),
+
+(14, now(), NULL, 'U009', 'C004', 'Forum Diskusi', 'Diskusi rutin kita akan dimulai minggu depan.', NULL),
+(15, now(), NULL, 'U009', 'C004', 'Jadwal Kegiatan', 'Lihat jadwal kegiatan bulan ini.', NULL),
+(16, now(), NULL, 'U009', 'C004', 'Workshop Gratis', 'Ikuti workshop gratis untuk anggota.', NULL),
+
+(17, now(), NULL, 'U011', 'C005', 'Survey Komunitas', 'Kami mengadakan survey anggota.', NULL),
+(18, now(), NULL, 'U011', 'C005', 'Penghargaan Anggota', 'Kami akan memberikan penghargaan.', NULL),
+(19, now(), NULL, 'U011', 'C005', 'Tantangan Bulan Ini', 'Ikuti tantangan komunitas!', NULL),
+
+(20, now(), NULL, 'U014', 'C006', 'Pembukaan Anggota Baru', 'Rekrutmen anggota baru dibuka.', NULL),
+(21, now(), NULL, 'U014', 'C006', 'Update Aplikasi', 'Update aplikasi komunitas.', NULL),
+(22, now(), NULL, 'U014', 'C006', 'Tutorial Member', 'Cek tutorial untuk member baru.', NULL),
+
+(23, now(), NULL, 'U014', 'C005', 'Pengumuman Penting', 'Harap dibaca oleh semua anggota C005.', NULL),
+(24, now(), NULL, 'U014', 'C005', 'Tata Tertib', 'Tata tertib baru sudah berlaku.', NULL),
+
+(25, now(), NULL, 'U016', 'C007', 'Selamat Datang', 'Anggota baru selamat bergabung.', NULL),
+(26, now(), NULL, 'U016', 'C007', 'Agenda Rutin', 'Agenda rutin komunitas diumumkan.', NULL),
+(27, now(), NULL, 'U016', 'C007', 'Sesi Sharing', 'Ada sesi sharing pengalaman.', NULL),
+
+(28, now(), NULL, 'U016', 'C008', 'Workshop Gratis', 'Workshop coding gratis.', NULL),
+(29, now(), NULL, 'U016', 'C008', 'Seminar Online', 'Seminar online minggu depan.', NULL),
+(30, now(), NULL, 'U016', 'C008', 'Project Komunitas', 'Mulai project komunitas bersama.', NULL),
+
+(31, now(), NULL, 'U020', 'C009', 'Penutupan Pendaftaran', 'Pendaftaran akan segera ditutup.', NULL),
+(32, now(), NULL, 'U020', 'C009', 'Informasi Penting', 'Baca informasi penting di forum.', NULL),
+(33, now(), NULL, 'U020', 'C009', 'Agenda Online', 'Kegiatan online segera dimulai.', NULL),
+
+(34, now(), NULL, 'U024', 'C010', 'Pengenalan Komunitas', 'Pengenalan untuk member baru.', NULL),
+(35, now(), NULL, 'U024', 'C010', 'Buku Panduan', 'Unduh buku panduan komunitas.', NULL),
+(36, now(), NULL, 'U024', 'C010', 'Reminder Kegiatan', 'Jangan lupa kegiatan akhir bulan.', NULL),
+
+(37, now(), NULL, 'U026', 'C011', 'Update Sistem', 'Sistem komunitas telah diperbarui.', NULL),
+(38, now(), NULL, 'U026', 'C011', 'Feedback Member', 'Berikan feedback untuk komunitas.', NULL),
+(39, now(), NULL, 'U026', 'C011', 'Lowongan Volunteer', 'Buka lowongan volunteer.', NULL),
+
+(40, now(), NULL, 'U027', 'C012', 'Event Tahunan', 'Persiapkan event tahunan komunitas.', NULL),
+(41, now(), NULL, 'U027', 'C012', 'Kompetisi Internal', 'Ikuti kompetisi komunitas.', NULL),
+(42, now(), NULL, 'U027', 'C012', 'Tips dan Trik', 'Tips sukses di komunitas.', NULL),
+
+(43, now(), NULL, 'U029', 'C013', 'Diskusi Umum', 'Diskusi terbuka untuk semua anggota.', NULL),
+(44, now(), NULL, 'U029', 'C013', 'Sesi Tanya Jawab', 'Ada sesi tanya jawab.', NULL),
+(45, now(), NULL, 'U029', 'C013', 'Sharing Session', 'Sharing session bersama alumni.', NULL),
+
+(46, now(), NULL, 'U030', 'C014', 'Upgrade Platform', 'Kami upgrade platform diskusi.', NULL),
+(47, now(), NULL, 'U030', 'C014', 'Perubahan Aturan', 'Ada perubahan aturan komunitas.', NULL),
+(48, now(), NULL, 'U030', 'C014', 'Workshop Offline', 'Workshop offline pertama akan diadakan.', NULL),
+
+(49, now(), NULL, 'U031', 'C015', 'Event Lokal', 'Event lokal komunitas.', NULL),
+(50, now(), NULL, 'U031', 'C015', 'Kegiatan Sosial', 'Kegiatan sosial untuk amal.', NULL),
+(51, now(), NULL, 'U031', 'C015', 'Pembuatan Grup', 'Pembuatan grup minat khusus.', NULL),
+
+(52, now(), NULL, 'U032', 'C016', 'Bantuan Teknis', 'Tim bantuan teknis siap membantu.', NULL),
+(53, now(), NULL, 'U032', 'C016', 'Pelatihan Online', 'Pelatihan online akan dimulai.', NULL),
+(54, now(), NULL, 'U032', 'C016', 'Partnership', 'Informasi partnership baru.', NULL),
+
+(55, now(), NULL, 'U033', 'C017', 'Pengenalan Admin', 'Kenalan dengan admin baru.', NULL),
+(56, now(), NULL, 'U033', 'C017', 'Pengumpulan Ide', 'Kumpulkan ide untuk komunitas.', NULL),
+(57, now(), NULL, 'U033', 'C017', 'Challenge Mingguan', 'Ikuti challenge mingguan.', NULL),
+
+(58, now(), NULL, 'U034', 'C018', 'Update Jadwal', 'Update jadwal event.', NULL),
+(59, now(), NULL, 'U034', 'C018', 'Forum Saran', 'Berikan saran dan kritik.', NULL),
+(60, now(), NULL, 'U034', 'C018', 'Game Online', 'Event game online komunitas.', NULL),
+
+(61, now(), NULL, 'U035', 'C019', 'Pertemuan Perdana', 'Pertemuan perdana komunitas.', NULL),
+(62, now(), NULL, 'U035', 'C019', 'Rekrutmen Admin', 'Buka rekrutmen admin baru.', NULL),
+(63, now(), NULL, 'U035', 'C019', 'Open Discussion', 'Diskusi bebas.', NULL),
+
+(64, now(), NULL, 'U003', 'C020', 'Diskusi Startup', 'Diskusi tentang startup.', NULL),
+(65, now(), NULL, 'U003', 'C020', 'Pembuatan Produk', 'Pembuatan produk komunitas.', NULL),
+(66, now(), NULL, 'U003', 'C020', 'Bootcamp Online', 'Bootcamp online gratis.', NULL),
+
+(67, now(), NULL, 'U004', 'C021', 'Tips Pengembangan Diri', 'Tips untuk pengembangan diri.', NULL),
+(68, now(), NULL, 'U004', 'C021', 'Kompetisi Esai', 'Kompetisi esai terbuka.', NULL),
+(69, now(), NULL, 'U004', 'C021', 'Pengumuman Hadiah', 'Pengumuman pemenang hadiah.', NULL);

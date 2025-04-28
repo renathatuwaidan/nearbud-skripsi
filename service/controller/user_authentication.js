@@ -260,10 +260,6 @@ exports.registerUser_optional = asyncHandler(async function registerUser_optiona
     if(users_description){
         query_users_description = `,DESCRIPTION = '${users_description}'`
     }
-    
-    if(province_name){
-        query_province_name = `,ID_PROVINCE = (SELECT ID FROM PROVINCE WHERE NAME ILIKE LOWER('%${province_name}%'))`
-    }
 
     if(city_name){
         query_city_name = `,ID_CITY = (SELECT ID FROM CITY WHERE NAME ILIKE LOWER('%${city_name}%'))`
