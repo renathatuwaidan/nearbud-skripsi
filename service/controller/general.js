@@ -486,7 +486,6 @@ exports.getUserInterestCategory = asyncHandler(async function getUserInterestCat
 
 exports.getInterestCateory = asyncHandler(async function getInterestCateory(req, res, interest_name, category_name, page, size) {
     let query_interest = "", query_category = "", query_where = "", isError = false, result = []
-    var query_pagination = respond.query_pagination(req,res, page, size)
 
     if(interest_name){
         query_interest = ` A.NAME ILIKE LOWER('${interest_name}')`
@@ -505,7 +504,7 @@ exports.getInterestCateory = asyncHandler(async function getInterestCateory(req,
     try {
         var query_result = await pool.query(`SELECT A.ID AS ID_INTEREST, A.NAME AS INTEREST_NAME,
                                             B.ID AS ID_CATEGORY, B.NAME AS CATEGORY_NAME, COUNT (*) OVER ()
-                                            FROM INTEREST A JOIN CATEGORY B ON A.id_category = B.id ${query_where} ORDER BY A.ID ${query_pagination}`)
+                                            FROM INTEREST A JOIN CATEGORY B ON A.id_category = B.id ${query_where} ORDER BY A.ID`)
     } catch (error) {
         isError = true
         log.error(`ERROR | /general/getInterest - Error found while connect to DB - ${error}`)
