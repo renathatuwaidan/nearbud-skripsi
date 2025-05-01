@@ -52,9 +52,10 @@ app.get("/getUser", user_auth_controller.tokenVerif, function (req, res){
     let province = req.query.province
     let page = req.query.page
     let size = req.query.size
+    let users_username_token = res.getHeader('users_username')
 
     general_controller.getUser(req, res, suspended, users_id, users_name, users_username, users_gender, category, province, interest_id1, interest_id2, 
-        interest_id3, interest_id4, interest_id5, city_id1, city_id2, city_id3, city_id4, city_id5, page, size)
+        interest_id3, interest_id4, interest_id5, city_id1, city_id2, city_id3, city_id4, city_id5, page, size, users_username_token)
 })
 
 app.get("/getSingleUser", user_auth_controller.tokenVerif, function (req, res) {

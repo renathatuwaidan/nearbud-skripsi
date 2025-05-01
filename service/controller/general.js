@@ -146,7 +146,7 @@ exports.getCity = asyncHandler(async function getCity(req, res, province_id, pro
 })
 
 exports.getUser = asyncHandler(async function (req, res, suspended, users_id, users_name, users_username, users_gender, category, province, interest_id1, interest_id2, 
-    interest_id3, interest_id4, interest_id5, city_id1, city_id2, city_id3, city_id4, city_id5, page, size) {
+    interest_id3, interest_id4, interest_id5, city_id1, city_id2, city_id3, city_id4, city_id5, page, size, users_username_token) {
     let query_suspended, query_users_id = "", query_users_name = "", query_users_username = "", query_users_gender = ""
     let query_category = "", query_interest = "", query_province = "", query_city = "", isError = false, result = []
     let query_join_intrest_link = ""
@@ -226,7 +226,7 @@ exports.getUser = asyncHandler(async function (req, res, suspended, users_id, us
             FROM USERS A 
             ${query_join_intrest_link}   
             WHERE ${query_suspended} ${query_users_id} ${query_users_name} ${query_users_username} ${query_users_gender} 
-            ${query_category} ${query_interest} ${query_province} ${query_city} AND IS_VERIFIED = 'TRUE'
+            ${query_category} ${query_interest} ${query_province} ${query_city} AND IS_VERIFIED = 'TRUE AND A.USERNAME NOT ILIKE LOWER('${users_username_token}')'
         )
         SELECT *, 
             COUNT(*) OVER() AS TOTAL_DATA
@@ -249,7 +249,7 @@ exports.getUser = asyncHandler(async function (req, res, suspended, users_id, us
                 FROM USERS A 
                 ${query_join_intrest_link} 
                 WHERE ${query_suspended} ${query_users_id} ${query_users_name} ${query_users_username} ${query_users_gender} 
-                ${query_category} ${query_interest} ${query_province} ${query_city} AND a.IS_VERIFIED = 'TRUE'
+                ${query_category} ${query_interest} ${query_province} ${query_city} AND a.IS_VERIFIED = 'TRUE' AND A.USERNAME NOT ILIKE LOWER('${users_username_token}')
             )
             SELECT *, 
                 COUNT(*) OVER() AS TOTAL_DATA
