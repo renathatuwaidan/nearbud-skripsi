@@ -486,24 +486,34 @@ exports.isTokenValid = asyncHandler(async function isTokenValid(req, res, users_
                                                             ELSE 'Active'
                                                         END AS status
                                                     FROM users a LEFT JOIN suspended b ON a.id_user = b.id_reportee
-                                                    WHERE LOWER(a.username) ILIKE LOWER('michikoam')`)
+                                                    WHERE LOWER(a.username) ILIKE LOWER('${users_username_token}')`)
             } catch (error) {
                 isError = true
                 log.error(`ERROR | /auth/verifyToken/checkSuspended [username : "${users_username_token}"] - Error found - ${error}`)
             } finally{
                 if(!isError){
                     if(query_result.rowCount > 0){
+                        console.log(query_result.rows[0].status )
+                        if(query_result.rows[0].status == 'Suspended'){
+                            return res.status(401).json({
+                                "error_schema" : {
+                                    "error_code" : "nearbud-000-001",
+                                    "error_message" : `User suspended`
+                                }
+                            })
+                        } else {
+                            return res.status(200).json({
+                                "error_schema" : {
+                                    "error_code" : "nearbud-000-000",
+                                    "error_message" : `Token valid`
+                                }
+                            })
+                        }
+                    } else {
                         return res.status(401).json({
                             "error_schema" : {
-                                "error_code" : "nearbud-000-001",
-                                "error_message" : `User suspended`
-                            }
-                        })
-                    } else {
-                        return res.status(200).json({
-                            "error_schema" : {
-                                "error_code" : "nearbud-000-000",
-                                "error_message" : `Token valid`
+                                "error_code" : "nearbud-002-001",
+                                "error_message" : `Unauthorized inserted token`
                             }
                         })
                     }
