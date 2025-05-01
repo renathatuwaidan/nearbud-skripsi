@@ -2,7 +2,7 @@ require('dotenv').config()
 
 module.exports = {
     base_response : {
-        pagination : 10
+        pagination : 100
     },
     auth : {
         secretKey : "sV0pBm6lZLAPINearbud",

@@ -405,6 +405,7 @@ exports.loginUser = asyncHandler(async function loginUser(req, res, users_userna
 
 exports.tokenVerif = asyncHandler(async function tokenVerif(req, res, next) {
     const bearerToken = req.headers.authorization
+
     if (!bearerToken || !bearerToken.includes(" ")) {
         return res.status(401).json({
             "error_schema" : {
@@ -422,18 +423,39 @@ exports.tokenVerif = asyncHandler(async function tokenVerif(req, res, next) {
         isError = true
         log.error(`ERROR | /auth/verifyToken - Error found - ${error}`)
     } finally {
-        if(isError){
+        if(!isError){
+            let isError1 = false
+            console.log(token.users_username)
+            try {
+                query_result = await pool.query(`SELECT * FROM USERS WHERE USERNAME ILIKE LOWER('${token.users_username}')`)
+            } catch (error) {
+                isError1 = true
+                log.error(`ERROR | /auth/verifyToken/getUser - Error found - ${error}`)
+            } finally {
+                if(!isError1){
+                    console.log(query_result.rows)
+                    if(query_result.rowCount > 0){
+                        res.setHeader('token', generatedToken)
+                        res.setHeader('users_username', token.users_username)
+                        next()
+                    }
+                } else {
+                    return res.status(401).json({
+                        "error_schema" : {
+                            "error_code" : "nearbud-002-001",
+                            "error_message" : `Unauthorized inserted token`
+                        }
+                    })
+                }
+            }
+        } else {
             return res.status(401).json({
                 "error_schema" : {
                     "error_code" : "nearbud-002-001",
                     "error_message" : `Unauthorized inserted token`
                 }
             })
-        } else {
-            res.setHeader('token', generatedToken)
-            res.setHeader('users_username', token.users_username)
-            next()
-        }
+        }        
     }
 })
 
@@ -457,7 +479,14 @@ exports.isTokenValid = asyncHandler(async function isTokenValid(req, res, users_
             let isError = false, result = []
 
             try {
-                var query_result = await pool.query(`SELECT * FROM SUSPENDED WHERE ID_REPORTEE = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}'))`)
+                var query_result = await pool.query(`SELECT
+                                                        a.id_user,
+                                                        CASE
+                                                            WHEN b.id_reportee IS NOT NULL THEN 'Suspended'
+                                                            ELSE 'Active'
+                                                        END AS status
+                                                    FROM users a LEFT JOIN suspended b ON a.id_user = b.id_reportee
+                                                    WHERE LOWER(a.username) ILIKE LOWER('michikoam')`)
             } catch (error) {
                 isError = true
                 log.error(`ERROR | /auth/verifyToken/checkSuspended [username : "${users_username_token}"] - Error found - ${error}`)
