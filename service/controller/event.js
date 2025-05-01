@@ -716,7 +716,7 @@ exports.getEventsPreviewList = asyncHandler(async function getEventsPreviewList(
                         "event_city_based" : query_result.rows[i].city_based,
                         "event_province_based" : query_result.rows[i].province_based,
                         "event_time" : `${query_result.rows[i].start_time} - ${getEndTime} WIB`,
-                        "event_start_date_timestamp" : dayjs.utc(query_result.rows[i].event_date).tz('Asia/Jakarta').format('YYYY-MM-DDTHH:mm:ss'),
+                        "event_start_date_timestamp" : dayjs(query_result.rows[i].event_date).format('YYYY-MM-DDTHH:mm:ss'),
                         "event_end_date_timestamp" : timestampEndDate,
                         "current_participant_number" : query_result.rows[i].current_participant
                     }
