@@ -620,13 +620,18 @@ exports.updateProfile = asyncHandler (async function updatedProfile(req, res, us
         query_users_description = `,DESCRIPTION = '${users_description}'`
     }
 
-    if(users_province){
-        query_province_name = `,ID_PROVINCE = (SELECT ID FROM PROVINCE WHERE NAME ILIKE LOWER('%${users_province}%'))`
+    if(users_city && users_province){
+        query_city_name = `,ID_CITY = (SELECT ID FROM CITY WHERE NAME ILIKE LOWER('%${users_city}%'))`
+    } else {
+        if(users_province){
+            query_province_name = `,ID_CITY = (SELECT ID FROM CITY WHERE ID_PROVINCE = (SELECT ID FROM PROVINCE WHERE NAME ILIKE LOWER('%${users_province}%')))`
+        }
+    
+        if(users_city){
+            query_city_name = `,ID_CITY = (SELECT ID FROM CITY WHERE NAME ILIKE LOWER('%${users_city}%'))`
+        }
     }
 
-    if(users_city){
-        query_city_name = `,ID_CITY = (SELECT ID FROM CITY WHERE NAME ILIKE LOWER('%${users_city}%'))`
-    }
 
     if(users_id_profile){
         query_users_id_profile = `, ID_PROFILE = '${users_id_profile}'`
@@ -645,7 +650,6 @@ exports.updateProfile = asyncHandler (async function updatedProfile(req, res, us
             isError = true
             log.error(`ERROR | /auth/registerUser [username : "${users_username}"] - Error found while connect to DB - ${error}`)
         } finally {
-            console.log(query_result)
             if(isError){
                 return res.status(500).json({
                     "error_schema" : {
@@ -655,15 +659,16 @@ exports.updateProfile = asyncHandler (async function updatedProfile(req, res, us
                 })
             } else {
                 if(interest){
+                    let isError1 = false
                     console.log(`DELETE FROM INTEREST_LINK WHERE ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}'))`)
     
                     try {
                         var query_result = await pool.query(`DELETE FROM INTEREST_LINK WHERE ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}'))`)
                     } catch (error) {
-                        isError = true
+                        isError1 = true
                         log.error(`ERROR | /general/updateProfile - DELETE EXISTING INTEREST [username : "${users_username_token}"] - Error found while connecting to DB - ${error}`);
                     } finally {
-                        if(!isError){
+                        if(!isError1){
                             for (const item of interest) {
                                 await exports.putInterestLink(req, res, users_username_token, item.interest_id)
                             }

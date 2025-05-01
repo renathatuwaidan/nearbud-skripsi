@@ -61,27 +61,33 @@ exports.getEventLink_preview = asyncHandler(async function getEventLink_preview(
         }
         
         if(status.toLowerCase() == "today"){
-            query_conditional_1 = `WITH EVENT_DATE_LIST AS (
-                                    SELECT TO_CHAR(DATE, 'YYYY-MM-DD') AS event_date
-                                    FROM EVENTS
-                                    WHERE ID_EVENT IN (SELECT A.ID_EVENT FROM EVENTS A WHERE A.DATE::DATE = (NOW() AT TIME ZONE 'Asia/Jakarta')::DATE) AND 
-                                    ID_EVENT IN (SELECT ID_EVENT FROM EVENTS_LINK WHERE ID_USER = ${getUser} AND IS_APPROVED = true)
-                                    AND ID_EVENT NOT IN (SELECT ID_REPORTEE FROM SUSPENDED)
-                                    UNION
-                                    SELECT TO_CHAR(DATE, 'YYYY-MM-DD') AS event_date
-                                    FROM EVENTS C WHERE ID_CREATOR = ${getUser} 
-                                    AND ID_EVENT IN (SELECT A.ID_EVENT FROM EVENTS A WHERE A.DATE::DATE = (NOW() AT TIME ZONE 'Asia/Jakarta')::DATE)
-                                    AND ID_EVENT NOT IN (SELECT ID_REPORTEE FROM SUSPENDED)
-                                    UNION 
-                                    SELECT TO_CHAR(DATE, 'YYYY-MM-DD') AS event_date
-                                    FROM EVENTS D WHERE ID_CREATOR IN (SELECT ID_COMMUNITY FROM IS_ADMIN WHERE ID_USER = ${getUser})
-                                    AND ID_EVENT IN (SELECT A.ID_EVENT FROM EVENTS A WHERE A.DATE::DATE = (NOW() AT TIME ZONE 'Asia/Jakarta')::DATE)
-                                    AND ID_EVENT NOT IN (SELECT ID_REPORTEE FROM SUSPENDED)
-                                )
-                                SELECT *, COUNT (*)OVER ()
-                                FROM EVENT_DATE_LIST
-                                ORDER BY EVENT_DATE DESC
-                                ${query_pagination}`
+            query_conditional_1 = `WITH EVENTS_ID AS(
+                SELECT ID_EVENT
+                FROM EVENTS
+                WHERE ID_EVENT IN (SELECT A.ID_EVENT FROM EVENTS A WHERE A.DATE::DATE = (NOW() AT TIME ZONE 'Asia/Jakarta')::DATE) AND 
+                ID_EVENT IN (SELECT ID_EVENT FROM EVENTS_LINK WHERE ID_USER = ${getUser} AND IS_APPROVED = true)
+                AND ID_EVENT NOT IN (SELECT ID_REPORTEE FROM SUSPENDED)
+                UNION
+                SELECT ID_EVENT
+                FROM EVENTS C WHERE ID_CREATOR = ${getUser}
+                AND ID_EVENT IN (SELECT A.ID_EVENT FROM EVENTS A WHERE A.DATE::DATE = (NOW() AT TIME ZONE 'Asia/Jakarta')::DATE)
+                AND ID_EVENT NOT IN (SELECT ID_REPORTEE FROM SUSPENDED)
+                UNION 
+                SELECT ID_EVENT
+                FROM EVENTS D WHERE ID_CREATOR IN (SELECT ID_COMMUNITY FROM IS_ADMIN WHERE ID_USER = ${getUser})
+                AND ID_EVENT IN (SELECT A.ID_EVENT FROM EVENTS A WHERE A.DATE::DATE = (NOW() AT TIME ZONE 'Asia/Jakarta')::DATE)
+                AND ID_EVENT NOT IN (SELECT ID_REPORTEE FROM SUSPENDED)
+            ),
+            event_date_list AS (
+                SELECT TO_CHAR(E.DATE, 'YYYY-MM-DD') AS event_date
+                FROM EVENTS E
+                WHERE E.ID_EVENT IN (SELECT ID_EVENT FROM events_id)
+            )
+            SELECT event_date, (SELECT COUNT(*) FROM events_id) AS total_events
+            FROM event_date_list
+            GROUP BY event_date
+            ORDER BY event_date
+            ${query_pagination}`
 
             query_conditional_2 = `(SELECT ID_EVENT
                                     FROM EVENTS
@@ -116,25 +122,32 @@ exports.getEventLink_preview = asyncHandler(async function getEventLink_preview(
                 })
             }
 
-            query_conditional_1 = `WITH EVENT_DATE_LIST AS (
-                            SELECT TO_CHAR((SELECT DATE FROM EVENTS WHERE ID_EVENT = B.ID_EVENT), 'YYYY-MM-DD') AS event_date
+            query_conditional_1 = `
+                        WITH EVENTS_ID AS(
+                            SELECT B.ID_EVENT
                             FROM EVENTS_LINK B
                             WHERE ID_EVENT IN (SELECT A.ID_EVENT FROM EVENTS A WHERE ${query_status}) ${query_rsvp1} AND ID_USER = ${getUser} AND IS_APPROVED = true
                             AND ID_EVENT NOT IN (SELECT ID_REPORTEE FROM SUSPENDED)
                             UNION
-                            SELECT TO_CHAR(DATE, 'YYYY-MM-DD') AS event_date
+                            SELECT ID_EVENT
                             FROM EVENTS C WHERE ID_CREATOR = ${getUser} 
                             AND ID_EVENT IN (SELECT A.ID_EVENT FROM EVENTS A WHERE ${query_status}) ${query_rsvp1}
                             AND ID_EVENT NOT IN (SELECT ID_REPORTEE FROM SUSPENDED)
                             UNION 
-                            SELECT TO_CHAR(DATE, 'YYYY-MM-DD') AS event_date
+                            SELECT ID_EVENT
                             FROM EVENTS D WHERE ID_CREATOR IN (SELECT ID_COMMUNITY FROM IS_ADMIN WHERE ID_USER = ${getUser})
                             AND ID_EVENT IN (SELECT A.ID_EVENT FROM EVENTS A WHERE ${query_status}) ${query_rsvp1}
                             AND ID_EVENT NOT IN (SELECT ID_REPORTEE FROM SUSPENDED)
+                        ),
+                        event_date_list AS (
+                            SELECT TO_CHAR(E.DATE, 'YYYY-MM-DD') AS event_date
+                            FROM EVENTS E
+                            WHERE E.ID_EVENT IN (SELECT ID_EVENT FROM events_id)
                         )
-                        SELECT *, COUNT (*)OVER ()
-                        FROM EVENT_DATE_LIST
-                        ORDER BY EVENT_DATE ASC
+                        SELECT event_date, (SELECT COUNT(*) FROM events_id) AS total_events
+                        FROM event_date_list
+                        GROUP BY event_date
+                        ORDER BY event_date
                         ${query_pagination}`
 
             query_conditional_2 = `SELECT B.ID_EVENT
@@ -180,7 +193,7 @@ exports.getEventLink_preview = asyncHandler(async function getEventLink_preview(
                     result.push(object)
                 }
 
-                var total_data = query_result.rows[0].count
+                var total_data = query_result.rows[0].total_events
                 var total_query_data = query_result.rowCount
 
                 respond.successResp(req, res, "nearbud-000-000", "Berhasil mendapatkan hasil", total_data, total_query_data, page, result, size)
