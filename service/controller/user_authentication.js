@@ -213,8 +213,6 @@ exports.registerUser = asyncHandler(async function registerUser(req, res, users_
             VALUES ('${utility.toTitleCase(users_name)}','${users_username.toLowerCase()}','${users_email.toLowerCase()}','${users_password}', '${users_dob}', 'false', ${otp}, NOW(), NOW() AT TIME ZONE 'Asia/Jakarta')`
         }          
     }
-    
-    console.log(query)
 
     try {
         var query_result = await pool.query(query)
@@ -369,7 +367,7 @@ exports.loginUser = asyncHandler(async function loginUser(req, res, users_userna
                 let isError = false, result = []
 
                 try {
-                    var query_result = await pool.query(`SELECT * FROM SUSPENDED WHERE ID_REPORTEE = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username}'))`)
+                    var query_result = await pool.query(`SELECT * FROM SUSPENDED WHERE ID_REPORTEE = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username}') AND IS_VERIFIED = true)`)
                 } catch (error) {
                     isError = true
                     log.error(`ERROR | /auth/loginUser/checkSuspended  - Error found - ${error}`)
@@ -536,6 +534,9 @@ exports.checkExistedUser = asyncHandler(async function checkExistedUser(username
         return false
     }
 
+    console.log(`SELECT * FROM USERS WHERE (EMAIL ILIKE LOWER('${email}') AND IS_VERIFIED = 'TRUE') 
+                                        OR (USERNAME ILIKE LOWER('${username}') AND IS_VERIFIED = 'TRUE')`)
+
     try { 
         var query_result = await pool.query(`SELECT * FROM USERS WHERE (EMAIL ILIKE LOWER('${email}') AND IS_VERIFIED = 'TRUE') 
                                         OR (USERNAME ILIKE LOWER('${username}') AND IS_VERIFIED = 'TRUE')
@@ -545,7 +546,8 @@ exports.checkExistedUser = asyncHandler(async function checkExistedUser(username
         log.error(`ERROR | /auth/registerUser - checkExistUser [username : "${username}"] - Error found while connect to DB - ${error}`)
     } finally {
         if(!isError){
-            if(query_result.rowCount > 1){
+            console.log(query_result)
+            if(query_result.rowCount > 0){
                 return false
             } else {
                 return true

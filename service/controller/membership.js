@@ -390,6 +390,7 @@ exports.addEventLink = asyncHandler(async function addEventLink(req, res, users_
     }
 
     let isCreator = await events.isCreator(req, res, users_username_token, event_id)
+    console.log(isCreator)
     if(isCreator.includes("isCreator")){
         return res.status(500).json({
             "error_schema" : {
@@ -400,7 +401,7 @@ exports.addEventLink = asyncHandler(async function addEventLink(req, res, users_
     }
 
     if(!users_id){
-        temp_query_user_id = `(SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}'))`
+        temp_query_user_id = `(SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}') AND IS_VERIFIED = TRUE)`
     } else {
         temp_query_user_id = `'${users_id.toUpperCase()}'`
     }
@@ -447,7 +448,7 @@ exports.addEventLink = asyncHandler(async function addEventLink(req, res, users_
 
                         try {
                             var query_result_2 = await pool.query(`INSERT INTO NOTIFICATION (ACTION, ID_SENDER, ID_RECEIVER, STRING1)
-                                                                VALUES ('requestEvent', (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')), 
+                                                                VALUES ('requestEvent', (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}') AND IS_VERIFIED = TRUE), 
                                                                 (SELECT ID_CREATOR FROM EVENTS WHERE ID_EVENT ILIKE LOWER('${event_id}')), 
                                                                 (SELECT ID_EVENT FROM EVENTS WHERE ID_EVENT ILIKE LOWER('${event_id}')))`)
                         } catch (error) {

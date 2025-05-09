@@ -735,12 +735,14 @@ exports.getCreator = asyncHandler(async function getCreator(req, res, id_creator
     let isError = false, result = [], query_creator = "", query_community = ""
 
     if(id_creator){
-        query_creator = `A.ID_CREATOR ILIKE LOWER('%${id_creator}%')`
+        query_creator = `A.ID_CREATOR ILIKE LOWER('%${id_creator}%') 
+                        OR A.ID_EVENT IN (SELECT ID_EVENT FROM EVENTS WHERE ID_CREATOR IN (SELECT ID_COMMUNITY FROM IS_ADMIN WHERE ID_USER ILIKE LOWER('%${id_creator}%')))`
     } else {
         if(id_community){
             query_community = `A.ID_CREATOR ILIKE LOWER((SELECT ID_COMMUNITY FROM COMMUNITY WHERE ID_COMMUNITY ILIKE LOWER('%${id_community}%')))`
         } else {
-            query_creator = `A.ID_CREATOR ILIKE LOWER((SELECT ID_USER FROM USERS WHERE USERNAME = '${users_username_token}'))`
+            query_creator = `A.ID_CREATOR ILIKE LOWER((SELECT ID_USER FROM USERS WHERE USERNAME = '${users_username_token}'))
+            OR A.ID_EVENT IN (SELECT ID_EVENT FROM EVENTS WHERE ID_CREATOR IN (SELECT ID_COMMUNITY FROM IS_ADMIN WHERE ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('%${users_username_token}%'))))`
         }
     }
 
@@ -1026,15 +1028,15 @@ exports.isCreator = asyncHandler(async function isCreator(res, res, id_creator, 
 
     if(id_temp.startsWith("E")){
         if(id_creator.startsWith('U')){
-            query = (`SELECT * FROM EVENTS WHERE ID_CREATOR ILIKE LOWER('${id_creator}') AND ID_EVENT ILIKE LOWER('${id_temp}')`)
+            query = (`SELECT * FROM EVENTS WHERE ID_CREATOR ILIKE LOWER('${id_creator}') AND ID_EVENT ILIKE LOWER('${id_temp}') `)
         } else {
-            query = (`SELECT * FROM EVENTS WHERE ID_CREATOR = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${id_creator}')) AND ID_EVENT ILIKE LOWER('${id_temp}')`)
+            query = (`SELECT * FROM EVENTS WHERE ID_CREATOR = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${id_creator}') AND IS_VERIFIED = TRUE) AND ID_EVENT ILIKE LOWER('${id_temp}')`)
         }
     } else if (id_temp.startsWith("C")){
         if(id_creator.startsWith('U')||id_creator.startsWith('u')){
             query = (`SELECT * FROM IS_ADMIN WHERE ID_USER ILIKE LOWER('${id_creator}') AND ID_COMMUNITY ILIKE LOWER('${id_temp}')`)
         } else {
-            query = (`SELECT * FROM IS_ADMIN WHERE ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${id_creator}')) AND ID_COMMUNITY ILIKE LOWER('${id_temp}')`)
+            query = (`SELECT * FROM IS_ADMIN WHERE ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${id_creator}') AND IS_VERIFIED = TRUE) AND ID_COMMUNITY ILIKE LOWER('${id_temp}')`)
         }
     }
 

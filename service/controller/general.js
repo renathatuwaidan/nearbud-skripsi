@@ -621,14 +621,14 @@ exports.updateProfile = asyncHandler (async function updatedProfile(req, res, us
     }
 
     if(users_city && users_province){
-        query_city_name = `,ID_CITY = (SELECT ID FROM CITY WHERE NAME ILIKE LOWER('%${users_city}%'))`
+        query_city_name = `,ID_CITY = (SELECT ID FROM CITY WHERE NAME ILIKE LOWER('${users_city}'))`
     } else {
         if(users_province){
-            query_province_name = `,ID_CITY = (SELECT ID FROM CITY WHERE ID_PROVINCE = (SELECT ID FROM PROVINCE WHERE NAME ILIKE LOWER('%${users_province}%')))`
+            query_province_name = `,ID_CITY = (SELECT ID FROM CITY WHERE ID_PROVINCE = (SELECT ID FROM PROVINCE WHERE NAME ILIKE LOWER('${users_province}')))`
         }
     
         if(users_city){
-            query_city_name = `,ID_CITY = (SELECT ID FROM CITY WHERE NAME ILIKE LOWER('%${users_city}%'))`
+            query_city_name = `,ID_CITY = (SELECT ID FROM CITY WHERE NAME ILIKE LOWER('${users_city}'))`
         }
     }
 
@@ -732,6 +732,17 @@ exports.getReportType = asyncHandler(async function getReportType(req, res, page
 
 exports.addReport = asyncHandler(async function addReport(req, res, reportee, report_type, report_detail, users_username_token) {
     var isError = false, result = []
+
+    console.log(`INSERT INTO REPORT_LINK 
+        (id, CREATED, ID_REPORTEE, ID_REPORTER, REPORT_TYPE, REPORT_DETAIL) VALUES 
+        ( (SELECT MAX(ID)+1 FROM REPORT_LINK), 
+            NOW(), 
+            '${reportee.toUpperCase()}',
+            (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')),
+            (SELECT ID FROM REPORT_TYPE WHERE REPORT_TYPE ILIKE LOWER('%${report_type}%')),
+            '${report_detail}'
+        )`)
+
     try {
         var query_result = await pool.query(`INSERT INTO REPORT_LINK 
                                             (id, CREATED, ID_REPORTEE, ID_REPORTER, REPORT_TYPE, REPORT_DETAIL) VALUES 
