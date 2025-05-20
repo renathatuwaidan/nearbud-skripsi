@@ -748,33 +748,46 @@ exports.getCreator = asyncHandler(async function getCreator(req, res, id_creator
 
     var query_pagination = respond.query_pagination(req,res, page, size)
 
-    console.log(`WITH EVENT_CREATOR AS (
-                                            SELECT DISTINCT (TO_CHAR(A.DATE, 'YYYY-MM-DD')) AS EVENT_DATE 
-                                            FROM EVENTS A 
-                                            JOIN CITY C ON A.CITY_BASED = C.ID
-                                            JOIN PROVINCE E ON C.ID_PROVINCE = E.ID
-                                            JOIN INTEREST F ON A.ID_INTEREST = F.ID
-                                            JOIN CATEGORY D ON F.ID_CATEGORY = D.ID 
-                                            WHERE ${query_creator} ${query_community}
-                                        )
-                                        SELECT *, COUNT (*)OVER ()
-                                        FROM EVENT_CREATOR
-                                        ${query_pagination}`)
+    console.log(`WITH RAW_EVENTS AS (
+                    SELECT TO_CHAR(A.DATE, 'YYYY-MM-DD') AS EVENT_DATE
+                    FROM EVENTS A
+                    JOIN CITY C ON A.CITY_BASED = C.ID
+                    JOIN PROVINCE E ON C.ID_PROVINCE = E.ID
+                    JOIN INTEREST F ON A.ID_INTEREST = F.ID
+                    JOIN CATEGORY D ON F.ID_CATEGORY = D.ID
+                    WHERE ${query_creator} ${query_community}
+                ),
+                DISTINCT_EVENTS AS (
+                    SELECT DISTINCT EVENT_DATE FROM RAW_EVENTS
+                ),
+                TOTAL_COUNT AS (
+                    SELECT COUNT(*) AS total_all_data FROM RAW_EVENTS
+                )
+                SELECT D.EVENT_DATE, T.total_all_data
+                FROM DISTINCT_EVENTS D, TOTAL_COUNT T
+                ORDER BY EVENT_DATE DESC
+                ${query_pagination}`)
 
     try {
-        var query_result = await pool.query(`WITH EVENT_CREATOR AS (
-                                            SELECT DISTINCT (TO_CHAR(A.DATE, 'YYYY-MM-DD')) AS EVENT_DATE 
-                                            FROM EVENTS A 
-                                            JOIN CITY C ON A.CITY_BASED = C.ID
-                                            JOIN PROVINCE E ON C.ID_PROVINCE = E.ID
-                                            JOIN INTEREST F ON A.ID_INTEREST = F.ID
-                                            JOIN CATEGORY D ON F.ID_CATEGORY = D.ID 
-                                            WHERE ${query_creator} ${query_community}
-                                        )
-                                        SELECT *, COUNT (*)OVER ()
-                                        FROM EVENT_CREATOR
-                                        ORDER BY EVENT_DATE DESC
-                                        ${query_pagination}`)
+        var query_result = await pool.query(`WITH RAW_EVENTS AS (
+                                                SELECT TO_CHAR(A.DATE, 'YYYY-MM-DD') AS EVENT_DATE
+                                                FROM EVENTS A
+                                                JOIN CITY C ON A.CITY_BASED = C.ID
+                                                JOIN PROVINCE E ON C.ID_PROVINCE = E.ID
+                                                JOIN INTEREST F ON A.ID_INTEREST = F.ID
+                                                JOIN CATEGORY D ON F.ID_CATEGORY = D.ID
+                                                WHERE ${query_creator} ${query_community}
+                                            ),
+                                            DISTINCT_EVENTS AS (
+                                                SELECT DISTINCT EVENT_DATE FROM RAW_EVENTS
+                                            ),
+                                            TOTAL_COUNT AS (
+                                                SELECT COUNT(*) AS total_all_data FROM RAW_EVENTS
+                                            )
+                                            SELECT D.EVENT_DATE, T.total_all_data
+                                            FROM DISTINCT_EVENTS D, TOTAL_COUNT T
+                                            ORDER BY EVENT_DATE DESC
+                                            ${query_pagination}`)
     } catch (error) {
         isError = true
         log.error(`ERROR | /general/getCreator - Error found while connect to DB - ${error}`)
@@ -793,8 +806,10 @@ exports.getCreator = asyncHandler(async function getCreator(req, res, id_creator
                     result.push(object)
                 }
 
-                var total_data = query_result.rows[0].count
-                var total_query_data = query_result.rowCount
+                console.log(query_result)
+
+                var total_data = query_result.rows[0].total_all_data
+                var total_query_data = query_result.rows[0].total_all_data
 
                 respond.successResp(req, res, "nearbud-000-000", "Berhasil mendapatkan hasil", total_data, total_query_data, page, result, size)
             } else {
@@ -1277,49 +1292,49 @@ exports.deleteEvent = asyncHandler(async function deleteEvent(req, res, event_id
     }
 
     console.log(`
-        WITH DELETE_REVIEW AS (
-            DELETE FROM REVIEW 
-            WHERE ID_REVIEWEE IN (SELECT ID_EVENT FROM EVENTS WHERE ID_EVENT ILIKE LOWER('${event_id}')) OR ID_REVIEWEE ILIKE LOWER('${event_id}')
-            RETURNING ID_REVIEWEE
-        ),
-        DELETE_REPORT_LINK AS (
-            DELETE FROM REPORT_LINK 
-            WHERE ID_REPORTEE ILIKE LOWER('${event_id}')
-            RETURNING ID_REPORTEE
-        ),
-        DELETE_NOTIFICATION AS (
-            DELETE FROM NOTIFICATION 
-            WHERE ID_SENDER ILIKE LOWER('${event_id}') OR ID_RECEIVER ILIKE LOWER('${event_id}')
-            RETURNING ID_SENDER, ID_RECEIVER
-        ),
-        DELETE_EVENT_LINK AS (
-            DELETE FROM EVENTS_LINK 
-            WHERE ID_EVENT ILIKE LOWER('${event_id}')
-            RETURNING ID_EVENT
-        ),
-        DELETE_EVENT_RATING_TASKS AS (
-            DELETE FROM EVENT_RATING_TASKS
-            WHERE ID_REVIEWEE ILIKE LOWER('${event_id}')
-            RETURNING ID_REVIEWEE
-        ),
-        DELETE_SUSPENDED AS (
-            DELETE FROM SUSPENDED
-            WHERE ID_REPORTEE ILIKE LOWER('${event_id}')
-            RETURNING ID_REPORTEE
-        ),
-        DELETE_REPORT_LINK AS (
-            DELETE FROM REPORT_LINK
-            WHERE ID_REPORTEE ILIKE LOWER('${event_id}')
-            RETURNING ID_REPORTEE
-        ),
-        DELETE_EVENTS AS (
-            DELETE FROM EVENTS 
-            WHERE ID_EVENT ILIKE LOWER('${event_id}')
-            RETURNING ID_EVENT
-        )
-        SELECT * 
-        FROM DELETE_REVIEW, DELETE_REPORT_LINK, DELETE_EVENT_RATING_TASKS, DELETE_SUSPENDED
-            DELETE_NOTIFICATION, DELETE_EVENT_LINK, DELETE_EVENTS, DELETE_REPORT_LINK
+            WITH DELETE_REVIEW AS (
+                DELETE FROM REVIEW 
+                WHERE ID_REVIEWEE IN (SELECT ID_EVENT FROM EVENTS WHERE ID_EVENT ILIKE LOWER('${event_id}')) OR ID_REVIEWEE ILIKE LOWER('${event_id}')
+                RETURNING ID_REVIEWEE
+            ),
+            DELETE_REPORT_LINK AS (
+                DELETE FROM REPORT_LINK 
+                WHERE ID_REPORTEE ILIKE LOWER('${event_id}')
+                RETURNING ID_REPORTEE
+            ),
+            DELETE_NOTIFICATION AS (
+                DELETE FROM NOTIFICATION 
+                WHERE ID_SENDER ILIKE LOWER('${event_id}') OR ID_RECEIVER ILIKE LOWER('${event_id}')
+                RETURNING ID_SENDER, ID_RECEIVER
+            ),
+            DELETE_EVENT_LINK AS (
+                DELETE FROM EVENTS_LINK 
+                WHERE ID_EVENT ILIKE LOWER('${event_id}')
+                RETURNING ID_EVENT
+            ),
+            DELETE_EVENT_RATING_TASKS AS (
+                DELETE FROM EVENT_RATING_TASKS
+                WHERE ID_REVIEWEE ILIKE LOWER('${event_id}')
+                RETURNING ID_REVIEWEE
+            ),
+            DELETE_SUSPENDED AS (
+                DELETE FROM SUSPENDED
+                WHERE ID_REPORTEE ILIKE LOWER('${event_id}')
+                RETURNING ID_REPORTEE
+            ),
+            DELETE_REPORT_LINK AS (
+                DELETE FROM REPORT_LINK
+                WHERE ID_REPORTEE ILIKE LOWER('${event_id}')
+                RETURNING ID_REPORTEE
+            ),
+            DELETE_EVENTS AS (
+                DELETE FROM EVENTS 
+                WHERE ID_EVENT ILIKE LOWER('${event_id}')
+                RETURNING ID_EVENT
+            )
+            SELECT * 
+            FROM DELETE_REVIEW, DELETE_REPORT_LINK, DELETE_EVENT_RATING_TASKS, DELETE_SUSPENDED
+                DELETE_NOTIFICATION, DELETE_EVENT_LINK, DELETE_EVENTS, DELETE_REPORT_LINK
     `)
 
     try {
