@@ -424,14 +424,33 @@ exports.addEventLink = asyncHandler(async function addEventLink(req, res, users_
                 })
             } else {
                 try {
-                    console.log((`
-                        INSERT INTO EVENTS_LINK (ID_EVENT, ID_USER, IS_APPROVED, CREATED) VALUES
-                        ('${event_id.toUpperCase()}', ${temp_query_user_id}, 'false', NOW())
-                    `))
+                    console.log(`INSERT INTO EVENTS_LINK (ID_EVENT, ID_USER, IS_APPROVED, CREATED)
+                                SELECT 
+                                '${event_id.toUpperCase()}' AS ID_EVENT,
+                                ${temp_query_user_id}AS ID_USER,
+                                CASE 
+                                    WHEN EXISTS (
+                                    SELECT 1 FROM IS_ADMIN WHERE ID_USER = ${temp_query_user_id}
+                                    ) THEN TRUE
+                                    ELSE FALSE
+                                END AS IS_APPROVED,
+                                NOW() AS CREATED
+                                RETURNING IS_APPROVED`)
+
                     var query_result = await pool.query(`
-                        INSERT INTO EVENTS_LINK (ID_EVENT, ID_USER, IS_APPROVED, CREATED) VALUES
-                        ('${event_id.toUpperCase()}', ${temp_query_user_id}, 'false', NOW())
-                    `)
+                                INSERT INTO EVENTS_LINK (ID_EVENT, ID_USER, IS_APPROVED, CREATED)
+                                SELECT 
+                                '${event_id.toUpperCase()}' AS ID_EVENT,
+                                ${temp_query_user_id}AS ID_USER,
+                                CASE 
+                                    WHEN EXISTS (
+                                    SELECT 1 FROM IS_ADMIN WHERE ID_USER = ${temp_query_user_id}
+                                    ) THEN TRUE
+                                    ELSE FALSE
+                                END AS IS_APPROVED,
+                                NOW() AS CREATED
+                                RETURNING IS_APPROVED
+                            `)
                 } catch (error) {
                     isError1 = true;
                     log.error(`ERROR | /membership/addEventLink [username : "${users_username_token}"] - Error found while connecting to DB - ${error}`);
@@ -444,20 +463,23 @@ exports.addEventLink = asyncHandler(async function addEventLink(req, res, users_
                             }
                         })
                     } else {
-                        let isError3 = false
-
-                        try {
-                            var query_result_2 = await pool.query(`INSERT INTO NOTIFICATION (ACTION, ID_SENDER, ID_RECEIVER, STRING1)
-                                                                VALUES ('requestEvent', (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}') AND IS_VERIFIED = TRUE), 
-                                                                (SELECT ID_CREATOR FROM EVENTS WHERE ID_EVENT ILIKE LOWER('${event_id}')), 
-                                                                (SELECT ID_EVENT FROM EVENTS WHERE ID_EVENT ILIKE LOWER('${event_id}')))`)
-                        } catch (error) {
-                            isError3 = true
-                            log.error(`ERROR | /membership/addEventLink - Add Notif [username : "${users_username_token}"] - Error found while connecting to DB - ${error}`);
-                        } finally {
-                            if(!isError3){
-                                respond.successResp(req, res, "nearbud-000-000", "Berhasil menambahkan data", 0, 0, 0, result)
+                        if(!query_result.rows[0].is_approved){
+                            let isError3 = false
+                            try {
+                                var query_result_2 = await pool.query(`INSERT INTO NOTIFICATION (ACTION, ID_SENDER, ID_RECEIVER, STRING1)
+                                                                    VALUES ('requestEvent', (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}') AND IS_VERIFIED = TRUE), 
+                                                                    (SELECT ID_CREATOR FROM EVENTS WHERE ID_EVENT ILIKE LOWER('${event_id}')), 
+                                                                    (SELECT ID_EVENT FROM EVENTS WHERE ID_EVENT ILIKE LOWER('${event_id}')))`)
+                            } catch (error) {
+                                isError3 = true
+                                log.error(`ERROR | /membership/addEventLink - Add Notif [username : "${users_username_token}"] - Error found while connecting to DB - ${error}`);
+                            } finally {
+                                if(!isError3){
+                                    respond.successResp(req, res, "nearbud-000-000", "Berhasil menambahkan data", 0, 0, 0, result)
+                                }
                             }
+                        } else {
+                           respond.successResp(req, res, "nearbud-000-000", "Berhasil menambahkan data", 0, 0, 0, result)
                         }
                     }
                 }

@@ -94,59 +94,83 @@ exports.verifyOtpEmail = asyncHandler(async function verifyOtpEmail(req, res, us
     }
 
     console.log(`select 
-        CASE WHEN  otp_created < NOW() AT TIME ZONE 'Asia/Jakarta' - INTERVAL '10 minutes' THEN 'Expired' 
-        ELSE 'Not Expired' END AS isExpired,
+        CASE WHEN  otp_created < NOW() AT TIME ZONE 'Asia/Jakarta' - INTERVAL '10 minutes' THEN 'Not Expired' 
+        ELSE 'Expired' END AS isExpired,
         username, 
-        password
-    from users where email ILIKE LOWER('${users_email}') and otp = '${otp}'`)
+        password,
+        otp
+    from users where email ILIKE LOWER('${users_email}')`)
     
     try {
         var query_result = await pool.query(`select 
-                                                CASE WHEN  otp_created < NOW() AT TIME ZONE 'Asia/Jakarta' - INTERVAL '10 minutes' THEN 'Expired' 
-                                                ELSE 'Not Expired' END AS isExpired,
+                                                CASE WHEN  otp_created >= NOW() AT TIME ZONE 'Asia/Jakarta' - INTERVAL '10 minutes' THEN 'Not Expired' 
+                                                ELSE 'Expired' END AS isExpired,
                                                 username, 
-                                                password
-                                            from users where email ILIKE LOWER('${users_email}') and otp = '${otp}'`)
+                                                password, 
+                                                otp as otp_now
+                                            from users where email ILIKE LOWER('${users_email}')`)
     } catch (error) {
         isError = true
         log.error(`ERROR | /auth/registerUser [username : "${users_username}"] - Error found while connect to DB - ${error}`)
     } finally {
         if(!isError){
-            console.log(query_result.rows)
+
             if(query_result.rowCount > 0){
-                if(query_result.rows[0].isexpired == 'Expired'){
-                    return res.status(401).json({
-                        "error_schema" : {
-                            "error_code" : "nearbud-001-001",
-                            "error_message" : `Token sudah expired`
-                        }
-                    })
-                } else {
-                    if(process == "register") {
-                        let isError1 = false
-                        const users_username = query_result.rows[0].username
-                        const users_password = query_result.rows[0].password
-                        token = jwt.sign({users_username, users_password}, config.auth.secretKey, {expiresIn : config.auth.tokenExpired})
+                let match = null;
     
+                for (let i = 0; i < query_result.rowCount; i++) {
+                    if (query_result.rows[i].otp_now == otp) {
+                        match = query_result.rows[i]
+                        break
+                    }
+                }
+
+                if (match) {
+                    if (match.isexpired == 'Expired') {
+                        return res.status(401).json({
+                        "error_schema": {
+                            "error_code": "nearbud-001-001",
+                            "error_message": `Token sudah expired`
+                        }
+                        });
+                    } else {
+                        if (process == "register") {
+                        let isError1 = false
+                        const users_username = match.username
+                        const users_password = match.password
+
+                        const token = jwt.sign({ users_username, users_password }, config.auth.secretKey, { expiresIn: config.auth.tokenExpired })
+
                         try {
-                            var query_result = await pool.query(`UPDATE users SET MODIFIED = NOW(), IS_VERIFIED = true where email ILIKE LOWER('${users_email}') and otp = '${otp}'`)
+                            var update_result = await pool.query(`
+                                UPDATE users 
+                                SET MODIFIED = NOW(), IS_VERIFIED = true 
+                                WHERE email ILIKE LOWER('${users_email}') AND otp = '${otp}'
+                            `)
                         } catch (error) {
-                            isError1 = true
+                            isError1 = true;
                             log.error(`ERROR | /auth/registerUser - register [username : "${users_username}"] - Error found while connect to DB - ${error}`)
                         } finally {
-                            if(!isError1){
-                                await exports.successResp(req, res, "nearbud-000-000", "Email terverifikasi", 0, query_result.rowCount, 0, token)
+                            if (!isError1) {
+                                await exports.successResp(req, res, "nearbud-000-000", "Email terverifikasi", 0, update_result.rowCount, 0, token)
                             }
                         }
-                        
-                    } else {
-                        return res.status(200).json({
-                            "error_schema" : {
-                                "error_code" : "nearbud-000-000",
-                                "error_message" : `Token terverifikasi`
-                            }
-                        })
+                        } else {
+                            return res.status(200).json({
+                                "error_schema": {
+                                "error_code": "nearbud-000-000",
+                                "error_message": `Token terverifikasi`
+                                }
+                            })
+                        }
                     }
+                } else {
+                    return res.status(401).json({
+                        "error_schema" : {
+                            "error_code" : "nearbud-000-001",
+                            "error_message" : `Data User dengan Email dan OTP tersebut tidak ditemukan`
+                        }
+                    })
                 }
             } else {
                 return res.status(401).json({
@@ -346,11 +370,15 @@ exports.loginUser = asyncHandler(async function loginUser(req, res, users_userna
         })
     }
 
-    let query_username = `USERNAME ILIKE LOWER('%${users_username}%')`
-    let query_password = `PASSWORD ILIKE LOWER('%${users_password}%')`
+    let query_username = `USERNAME ILIKE LOWER('${users_username}')`
+    let query_password = `PASSWORD ILIKE LOWER('${users_password}')`
+
+    console.log(`SELECT * FROM USERS WHERE ${query_username} AND ${query_password} AND IS_VERIFIED = true
+                                            AND ID_USER NOT IN (SELECT ID_REPORTEE FROM SUSPENDED WHERE ID_REPORTEE = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username}') AND IS_VERIFIED = true))`)
 
     try {
-        var query_result = await pool.query(`SELECT * FROM USERS WHERE ${query_username} AND ${query_password} AND IS_VERIFIED = true`)
+        var query_result = await pool.query(`SELECT * FROM USERS WHERE ${query_username} AND ${query_password} AND IS_VERIFIED = true
+                                            AND ID_USER NOT IN (SELECT ID_REPORTEE FROM SUSPENDED WHERE ID_REPORTEE = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username}') AND IS_VERIFIED = true))`)
     } catch (error) {
         isError = true
         log.error(`ERROR | /auth/loginUser [username : "${users_username}"] - Error found while connect to DB - ${error}`)

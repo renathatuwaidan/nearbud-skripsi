@@ -226,7 +226,7 @@ exports.getUser = asyncHandler(async function (req, res, suspended, users_id, us
             FROM USERS A 
             ${query_join_intrest_link}   
             WHERE ${query_suspended} ${query_users_id} ${query_users_name} ${query_users_username} ${query_users_gender} 
-            ${query_category} ${query_interest} ${query_province} ${query_city} AND IS_VERIFIED = 'TRUE AND A.USERNAME NOT ILIKE LOWER('${users_username_token}')'
+            ${query_category} ${query_interest} ${query_province} ${query_city} AND IS_VERIFIED = 'TRUE' AND A.USERNAME NOT ILIKE LOWER('${users_username_token}')
         )
         SELECT *, 
             COUNT(*) OVER() AS TOTAL_DATA
@@ -570,8 +570,6 @@ exports.putInterestLink = asyncHandler (async function putInterestLink(req, res,
 exports.updateProfile = asyncHandler (async function updatedProfile(req, res, users_name, users_email, users_dob, users_gender, users_province, users_city, users_description, interest, users_username_token, users_id_profile) {
     var isError = false, result = []
     var query_users_dob = "", query_users_gender = "", query_province_name = "", query_city_name = "", query_users_description = "", query_users_name = "", query_users_email = "", query_users_id_profile = ""
-    console.log("masuk")
-    console.log(req, res, users_name, users_email, users_dob, users_gender, users_province, users_city, users_description, interest, users_username_token, users_id_profile)
 
     if(users_name){
         query_users_name = `,NAME = '${utility.toTitleCase(users_name)}'`
@@ -898,6 +896,24 @@ exports.getPendingReview = asyncHandler(async function getPendingReview(req, res
     let isError = false, result = []
 
     var query_pagination = respond.query_pagination(req,res, page, size)
+
+    console.log(`WITH PENDING_REVIEW AS (
+                SELECT 
+                    A.ID,
+                    A.ID_REVIEWEE AS EVENT_ID,
+                    (SELECT ID_PROFILE FROM EVENTS WHERE ID_EVENT = A.ID_REVIEWEE) AS EVENT_PROFILE,
+                    (SELECT DATE FROM EVENTS WHERE ID_EVENT = A.ID_REVIEWEE) AS EVENT_DATE,
+                    (SELECT NAME FROM EVENTS WHERE ID_EVENT = A.ID_REVIEWEE) AS EVENT_NAME,
+                    (SELECT ID_CREATOR FROM EVENTS WHERE ID_EVENT = A.ID_REVIEWEE) AS EVENT_CREATOR_ID,
+                    CASE WHEN (SELECT ID_CREATOR FROM EVENTS WHERE ID_EVENT = A.ID_REVIEWEE) ILIKE ('C%') THEN (SELECT NAME FROM COMMUNITY WHERE ID_COMMUNITY = (SELECT ID_CREATOR FROM EVENTS WHERE ID_EVENT = A.ID_REVIEWEE))
+                    WHEN (SELECT ID_CREATOR FROM EVENTS WHERE ID_EVENT = A.ID_REVIEWEE) ILIKE ('U%') THEN (SELECT NAME FROM USERS WHERE ID_USER = (SELECT ID_CREATOR FROM EVENTS WHERE ID_EVENT = A.ID_REVIEWEE))
+                    END AS EVENT_CREATOR_NAME
+                FROM EVENT_RATING_TASKS A
+                WHERE A.ID_REVIEWER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}'))
+            )
+            SELECT *, COUNT(*) OVER () 
+            FROM PENDING_REVIEW
+            ${query_pagination}`)
 
     try {
         var query_result = await pool.query(`WITH PENDING_REVIEW AS (
