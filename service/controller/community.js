@@ -30,7 +30,7 @@ exports.getCommunityPreview = asyncHandler(async function getCommunityPreview(re
         }
 
         if(community_number_participant){
-            query_number_participant = `AND ((SELECT COUNT(ID_USER) FROM COMMUNITY_LINK WHERE ID_COMMUNITY = A.ID_COMMUNITY AND IS_APPROVED = TRUE) <= ${community_number_participant})`
+            query_number_participant = `AND ((SELECT COUNT(ID_USER) FROM COMMUNITY_LINK WHERE ID_COMMUNITY = A.ID_COMMUNITY AND IS_APPROVED = TRUE AND ID_USER NOT IN (SELECT ID_USER FROM IS_ADMIN WHERE ID_COMMUNITY = A.ID_COMMUNITY)) <= ${community_number_participant})`
         }
 
         if(category_id){
