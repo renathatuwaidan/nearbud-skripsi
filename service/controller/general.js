@@ -1373,9 +1373,7 @@ exports.getNotif = asyncHandler(async function getNotif(req, res, users_username
                         A.ID_SENDER,
                         A.ACTION
                     FROM NOTIFICATION A
-                    WHERE (A.ID_RECEIVER IN (SELECT ID_COMMUNITY FROM IS_ADMIN WHERE ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')))  -- WHEN RECEIVER = CXXX
-                    OR A.ID_RECEIVER IN (SELECT ID_CREATOR FROM EVENTS WHERE ID_CREATOR = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')))) -- KALO USER == CREATOR EVENT
-                    AND A.ACTION IN ('requestEvent', 'requestCommunity')
+                    WHERE A.ID_RECEIVER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')) AND A.ACTION IN ('requestEvent', 'requestCommunity')
                     UNION
                     SELECT '3' AS CLASSIFICATION, B.ID, B.STRING1,
                         CASE WHEN STRING1 ILIKE ('E%') THEN (SELECT NAME FROM EVENTS WHERE ID_EVENT = B.STRING1)
@@ -1414,9 +1412,7 @@ exports.getNotif = asyncHandler(async function getNotif(req, res, users_username
                         A.ID_SENDER,
                         A.ACTION
                     FROM NOTIFICATION A
-                    WHERE (A.ID_RECEIVER IN (SELECT ID_EVENT FROM EVENTS_LINK WHERE ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')) AND IS_APPROVED = TRUE)
-                    OR A.ID_RECEIVER IN (SELECT ID_COMMUNITY FROM COMMUNITY_LINK WHERE ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}') AND IS_APPROVED = TRUE)))
-                    AND A.ACTION IN ('newEvent')
+                    WHERE A.ID_RECEIVER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')) AND A.ACTION IN ('newEvent')
                 )
                 SELECT *, COUNT(*) OVER ()
                 FROM NOTIFICATION
@@ -1425,7 +1421,7 @@ exports.getNotif = asyncHandler(async function getNotif(req, res, users_username
 
     try {
         var query_result = await pool.query(`
-                WITH NOTIFICATION AS (
+        WITH NOTIFICATION AS (
                     SELECT '1' AS CLASSIFICATION,
                         A.ID,
                         A.STRING1,
@@ -1443,12 +1439,9 @@ exports.getNotif = asyncHandler(async function getNotif(req, res, users_username
                         END AS TIME,
                         (SELECT NAME FROM USERS WHERE ID_USER = A.ID_SENDER) AS SENDER_NAME,
                         A.ID_SENDER,
-                        A.CREATED AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Jakarta' AS date,
                         A.ACTION
                     FROM NOTIFICATION A
-                    WHERE (A.ID_RECEIVER IN (SELECT ID_COMMUNITY FROM IS_ADMIN WHERE ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')))  -- WHEN RECEIVER = CXXX
-                    OR A.ID_RECEIVER IN (SELECT ID_CREATOR FROM EVENTS WHERE ID_CREATOR = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')))) -- KALO USER == CREATOR EVENT
-                    AND A.ACTION IN ('requestEvent', 'requestCommunity')
+                    WHERE A.ID_RECEIVER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')) AND A.ACTION IN ('requestEvent', 'requestCommunity')
                     UNION
                     SELECT '3' AS CLASSIFICATION, B.ID, B.STRING1,
                         CASE WHEN STRING1 ILIKE ('E%') THEN (SELECT NAME FROM EVENTS WHERE ID_EVENT = B.STRING1)
@@ -1465,7 +1458,6 @@ exports.getNotif = asyncHandler(async function getNotif(req, res, users_username
                         END AS TIME,
                         (SELECT NAME FROM USERS WHERE ID_USER = B.ID_SENDER) AS SENDER_NAME,
                         B.ID_SENDER, 
-                        B.CREATED AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Jakarta' AS date,
                         B.ACTION
                     FROM NOTIFICATION B
                     WHERE (B.ID_RECEIVER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')))
@@ -1486,17 +1478,14 @@ exports.getNotif = asyncHandler(async function getNotif(req, res, users_username
                         END AS TIME,
                         (SELECT NAME FROM USERS WHERE ID_USER = A.ID_SENDER) AS SENDER_NAME,
                         A.ID_SENDER,
-                        A.CREATED AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Jakarta' AS date,
                         A.ACTION
                     FROM NOTIFICATION A
-                    WHERE (A.ID_RECEIVER IN (SELECT ID_EVENT FROM EVENTS_LINK WHERE ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')) AND IS_APPROVED = TRUE)
-                    OR A.ID_RECEIVER IN (SELECT ID_COMMUNITY FROM COMMUNITY_LINK WHERE ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}') AND IS_APPROVED = TRUE)))
-                    AND A.ACTION IN ('newEvent')
+                    WHERE A.ID_RECEIVER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')) AND A.ACTION IN ('newEvent')
                 )
                 SELECT *, COUNT(*) OVER ()
                 FROM NOTIFICATION
-                ORDER BY DATE DESC
-            `)
+                ORDER BY ID ASC
+                `)
     } catch (error) {
         isError = true
         log.error(`ERROR | /general/getRoomIdList - Error found while connect to DB - ${error}`)

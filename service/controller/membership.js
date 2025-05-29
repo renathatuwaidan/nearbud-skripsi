@@ -7,7 +7,7 @@ const events = require("./event")
 const utility = require("./utility")
 
 exports.getEventLink_preview = asyncHandler(async function getEventLink_preview(req, res, users_id, community_id, status, users_username_token, page, size) {
-    let isError = false, result = [], query_status = "", query_from = "", query_conditional_1 = "", query_conditional_2 = "", query_rsvp1 = "", query_rsvp2 = ""
+    let isError = false, result = [], query_status = "", query_from = "", query_conditional_1 = "", query_conditional_2 = "", query_rsvp1 = "", query_temp = ""
 
     var query_pagination = respond.query_pagination(req,res, page, size)
 
@@ -61,7 +61,7 @@ exports.getEventLink_preview = asyncHandler(async function getEventLink_preview(
         }
         
         if(status.toLowerCase() == "today"){
-            query_conditional_1 = `WITH EVENTS_ID AS(
+            query_temp = `WITH EVENTS_ID AS(
                 SELECT ID_EVENT
                 FROM EVENTS
                 WHERE ID_EVENT IN (SELECT A.ID_EVENT FROM EVENTS A WHERE A.DATE::DATE = (NOW() AT TIME ZONE 'Asia/Jakarta')::DATE) AND 
@@ -74,8 +74,9 @@ exports.getEventLink_preview = asyncHandler(async function getEventLink_preview(
                 AND ID_EVENT NOT IN (SELECT ID_REPORTEE FROM SUSPENDED)
                 UNION 
                 SELECT ID_EVENT
-                FROM EVENTS D WHERE ID_CREATOR IN (SELECT ID_COMMUNITY FROM IS_ADMIN WHERE ID_USER = ${getUser})
-                AND ID_EVENT IN (SELECT A.ID_EVENT FROM EVENTS A WHERE A.DATE::DATE = (NOW() AT TIME ZONE 'Asia/Jakarta')::DATE)
+                FROM EVENTS D WHERE D.DATE::DATE = (NOW() AT TIME ZONE 'Asia/Jakarta')::DATE
+                ID_CREATOR IN (SELECT ID_COMMUNITY FROM IS_ADMIN WHERE ID_USER = ${getUser})
+                AND ID_EVENT IN (SELECT A.ID_EVENT FROM EVENTS_LINK A WHERE A.ID_EVENT = ID_EVENT AND A.ID_USER = ${getUser} AND A.IS_APPROVED = true)
                 AND ID_EVENT NOT IN (SELECT ID_REPORTEE FROM SUSPENDED)
             ),
             event_date_list AS (
@@ -101,17 +102,68 @@ exports.getEventLink_preview = asyncHandler(async function getEventLink_preview(
                                     AND ID_EVENT NOT IN (SELECT ID_REPORTEE FROM SUSPENDED)
                                     UNION 
                                     SELECT ID_EVENT
-                                    FROM EVENTS D WHERE ID_CREATOR IN (SELECT ID_COMMUNITY FROM IS_ADMIN WHERE ID_USER = ${getUser})
-                                    AND ID_EVENT IN (SELECT A.ID_EVENT FROM EVENTS A WHERE A.DATE::DATE = (NOW() AT TIME ZONE 'Asia/Jakarta')::DATE)
+                                    FROM EVENTS D WHERE D.DATE::DATE = (NOW() AT TIME ZONE 'Asia/Jakarta')::DATE
+                                    ID_CREATOR IN (SELECT ID_COMMUNITY FROM IS_ADMIN WHERE ID_USER = ${getUser})
+                                    AND ID_EVENT IN (SELECT A.ID_EVENT FROM EVENTS_LINK A WHERE A.ID_EVENT = ID_EVENT AND A.ID_USER = ${getUser} AND A.IS_APPROVED = true)
                                     AND ID_EVENT NOT IN (SELECT ID_REPORTEE FROM SUSPENDED))`
         } else {
             if (status.toLowerCase() == "active"){
-                query_status = `A.DATE::DATE >= (NOW() AT TIME ZONE 'Asia/Jakarta')::DATE`
+                query_temp = `SELECT B.ID_EVENT --EVENTS YANG SUDAH ACCEPTED DI EVENT_LINK
+                                FROM EVENTS_LINK B
+                                WHERE ID_EVENT IN (SELECT A.ID_EVENT FROM EVENTS A WHERE A.DATE::DATE > (NOW() AT TIME ZONE 'Asia/Jakarta')::DATE) 
+                                AND ID_USER = ${getUser} AND IS_APPROVED = TRUE
+                                AND ID_EVENT NOT IN (SELECT ID_REPORTEE FROM SUSPENDED)
+                                UNION
+                                SELECT ID_EVENT --event yang creatornya diri sendiri
+                                FROM EVENTS C 
+                                WHERE ID_CREATOR = (SELECT ID_USER FROM USERS WHERE ID_USER = ${getUser})
+                                AND ID_EVENT IN (SELECT A.ID_EVENT FROM EVENTS A WHERE A.DATE::DATE > (NOW() AT TIME ZONE 'Asia/Jakarta')::DATE) 
+                                AND ID_EVENT NOT IN (SELECT ID_REPORTEE FROM SUSPENDED)
+                                UNION
+                                SELECT ID_EVENT
+                                FROM EVENTS 
+                                WHERE ID_CREATOR IN (SELECT ID_COMMUNITY FROM IS_ADMIN WHERE ID_USER = ${getUser})
+                                AND ID_EVENT IN (SELECT A.ID_EVENT FROM EVENTS A WHERE A.DATE::DATE > (NOW() AT TIME ZONE 'Asia/Jakarta')::DATE) 
+                                AND ID_EVENT IN (SELECT ID_EVENT FROM EVENTS_LINK WHERE ID_USER = ${getUser} AND IS_APPROVED = TRUE)
+                                AND ID_EVENT NOT IN (SELECT ID_REPORTEE FROM SUSPENDED)`
             } else if(status.toLowerCase() == "rsvp"){
-                query_rsvp1 = `AND ID_EVENT NOT IN (SELECT ID_EVENT FROM EVENTS WHERE ID_CREATOR = ${getUser}) AND
-                ID_EVENT NOT IN (SELECT ID_CREATOR FROM EVENTS WHERE ID_CREATOR IN (SELECT ID_COMMUNITY FROM IS_ADMIN WHERE ID_USER = ${getUser}))`
-                query_status = `A.DATE::DATE >= (NOW() AT TIME ZONE 'Asia/Jakarta')::DATE`
-            } else if(status.toLowerCase() == "attended"){
+                query_temp = `SELECT B.ID_EVENT --EVENTS YANG BELUM ACCEPTED DI EVENT_LINK
+                                FROM EVENTS_LINK B
+                                WHERE ID_EVENT IN (SELECT A.ID_EVENT FROM EVENTS A WHERE A.DATE::DATE >= (NOW() AT TIME ZONE 'Asia/Jakarta')::DATE) 
+                                AND IS_APPROVED = FALSE AND ID_USER = ${getUser}
+                                AND ID_EVENT NOT IN (SELECT ID_REPORTEE FROM SUSPENDED)
+                                UNION
+                                SELECT ID_EVENT --EVENT YANG NGGK ADA DIEVENT_LINK
+                                FROM EVENTS
+                                WHERE ID_EVENT IN (SELECT A.ID_EVENT FROM EVENTS A WHERE A.DATE::DATE >= NOW() AT TIME ZONE 'Asia/Jakarta') AND
+                                ID_EVENT NOT IN (SELECT ID_EVENT FROM EVENTS_LINK WHERE ID_USER = ${getUser} AND IS_APPROVED = TRUE) AND ID_EVENT NOT IN (SELECT ID_REPORTEE FROM SUSPENDED)
+                                UNION
+                                SELECT ID_EVENT --event yang creatornya komunitas yang dia is_admin
+                                FROM EVENTS 
+                                WHERE ID_CREATOR IN (SELECT ID_COMMUNITY FROM IS_ADMIN WHERE ID_USER = (SELECT ID_USER FROM USERS WHERE ID_USER ILIKE LOWER(${getUser})))
+                                AND ID_EVENT IN (SELECT A.ID_EVENT FROM EVENTS A WHERE A.DATE::DATE >= (NOW() AT TIME ZONE 'Asia/Jakarta')::DATE) 
+                                AND ID_EVENT NOT IN (SELECT ID_EVENT FROM EVENTS_LINK WHERE ID_USER = ${getUser} AND IS_APPROVED = TRUE)
+                                AND ID_EVENT NOT IN (SELECT ID_REPORTEE FROM SUSPENDED)`
+            } else if(status.toLowerCase() == "attended"){  
+                query_temp = `SELECT B.ID_EVENT --EVENTS YANG SUDAH ACCEPTED DI EVENT_LINK
+                                FROM EVENTS_LINK B
+                                WHERE ID_EVENT IN (SELECT A.ID_EVENT FROM EVENTS A WHERE A.DATE::DATE < (NOW() AT TIME ZONE 'Asia/Jakarta')::DATE) 
+                                AND IS_APPROVED = TRUE AND ID_USER = ${getUser}
+                                AND ID_EVENT NOT IN (SELECT ID_REPORTEE FROM SUSPENDED)
+                                UNION
+                                SELECT ID_EVENT --event yang creatornya diri sendiri
+                                FROM EVENTS C 
+                                WHERE ID_CREATOR = (SELECT ID_USER FROM USERS WHERE ID_USER = ${getUser})
+                                AND ID_EVENT IN (SELECT A.ID_EVENT FROM EVENTS A WHERE A.DATE::DATE < (NOW() AT TIME ZONE 'Asia/Jakarta')::DATE) 
+                                AND ID_EVENT NOT IN (SELECT ID_REPORTEE FROM SUSPENDED)
+                                UNION
+                                SELECT ID_EVENT
+                                FROM EVENTS 
+                                WHERE ID_CREATOR IN (SELECT ID_COMMUNITY FROM IS_ADMIN WHERE ID_USER = ${getUser})
+                                AND ID_EVENT IN (SELECT A.ID_EVENT FROM EVENTS A WHERE A.DATE::DATE < (NOW() AT TIME ZONE 'Asia/Jakarta')::DATE) 
+                                AND ID_EVENT IN (SELECT ID_EVENT FROM EVENTS_LINK WHERE ID_USER = ${getUser} AND IS_APPROVED = TRUE)
+                                AND ID_EVENT NOT IN (SELECT ID_REPORTEE FROM SUSPENDED)`
+
                 query_status = `A.DATE::DATE < (NOW() AT TIME ZONE 'Asia/Jakarta')::DATE`
             } else {
                 return res.status(500).json({
@@ -124,20 +176,7 @@ exports.getEventLink_preview = asyncHandler(async function getEventLink_preview(
 
             query_conditional_1 = `
                         WITH EVENTS_ID AS(
-                            SELECT B.ID_EVENT
-                            FROM EVENTS_LINK B
-                            WHERE ID_EVENT IN (SELECT A.ID_EVENT FROM EVENTS A WHERE ${query_status}) ${query_rsvp1} AND ID_USER = ${getUser} AND IS_APPROVED = true
-                            AND ID_EVENT NOT IN (SELECT ID_REPORTEE FROM SUSPENDED)
-                            UNION
-                            SELECT ID_EVENT
-                            FROM EVENTS C WHERE ID_CREATOR = ${getUser} 
-                            AND ID_EVENT IN (SELECT A.ID_EVENT FROM EVENTS A WHERE ${query_status}) ${query_rsvp1}
-                            AND ID_EVENT NOT IN (SELECT ID_REPORTEE FROM SUSPENDED)
-                            UNION 
-                            SELECT ID_EVENT
-                            FROM EVENTS D WHERE ID_CREATOR IN (SELECT ID_COMMUNITY FROM IS_ADMIN WHERE ID_USER = ${getUser})
-                            AND ID_EVENT IN (SELECT A.ID_EVENT FROM EVENTS A WHERE ${query_status}) ${query_rsvp1}
-                            AND ID_EVENT NOT IN (SELECT ID_REPORTEE FROM SUSPENDED)
+                            ${query_temp}
                         ),
                         event_date_list AS (
                             SELECT TO_CHAR(E.DATE, 'YYYY-MM-DD') AS event_date
@@ -150,28 +189,9 @@ exports.getEventLink_preview = asyncHandler(async function getEventLink_preview(
                         ORDER BY event_date
                         ${query_pagination}`
 
-            query_conditional_2 = `SELECT B.ID_EVENT
-                            FROM EVENTS_LINK B
-                            WHERE ID_EVENT IN (SELECT A.ID_EVENT FROM EVENTS A WHERE ${query_status}) ${query_rsvp1} AND ID_USER = ${getUser} AND IS_APPROVED = true
-                            AND ID_EVENT NOT IN (SELECT ID_REPORTEE FROM SUSPENDED)
-                            UNION
-                            SELECT ID_EVENT
-                            FROM EVENTS C WHERE ID_CREATOR = ${getUser} 
-                            AND ID_EVENT IN (SELECT A.ID_EVENT FROM EVENTS A WHERE ${query_status}) ${query_rsvp1}
-                            AND ID_EVENT NOT IN (SELECT ID_REPORTEE FROM SUSPENDED)
-                            UNION 
-                            SELECT ID_EVENT
-                            FROM EVENTS D WHERE ID_CREATOR IN (SELECT ID_COMMUNITY FROM IS_ADMIN WHERE ID_USER = ${getUser})
-                            AND ID_EVENT IN (SELECT A.ID_EVENT FROM EVENTS A WHERE ${query_status}) ${query_rsvp1}
-                            AND ID_EVENT NOT IN (SELECT ID_REPORTEE FROM SUSPENDED)`
+            query_conditional_2 = `${query_temp}`
         }
     }
-
-    console.log("1 ---- " + query_conditional_1)
-
-    console.log("2 ------- " + query_conditional_2)
-
-    console.log("==========================")
 
     try {
         var query_result = await pool.query(query_conditional_1)
@@ -351,10 +371,15 @@ exports.addCommunityLink = asyncHandler(async function addCommunityLink(req, res
                         let isError3 = false
 
                         try {
-                            var query_result_2 = await pool.query(`INSERT INTO NOTIFICATION (ACTION, ID_SENDER, ID_RECEIVER, STRING1)
-                                                                VALUES ('requestCommunity', (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username}')), 
-                                                                (SELECT ID_COMMUNITY FROM COMMUNITY WHERE ID_COMMUNITY ILIKE LOWER('${community_id}')), 
-                                                                (SELECT ID_COMMUNITY FROM COMMUNITY WHERE ID_COMMUNITY ILIKE LOWER('${community_id}')))`)
+                            var query_result_2 = await pool.query(`
+                                    INSERT INTO NOTIFICATION (action, id_sender, id_receiver, string1)
+                                    SELECT 
+                                    'requestCommunity',
+                                    (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username}')), -- id_sender
+                                    ID_USER, -- id_receiver
+                                    '${community_id}'
+                                    FROM IS_ADMIN WHERE ID_COMMUNITY = '${community_id}'
+                                `)
                         } catch (error) {
                             isError3 = true
                             log.error(`ERROR | /membership/addEventLink - Add Notif [username : "${users_username}"] - Error found while connecting to DB - ${error}`);
@@ -407,91 +432,164 @@ exports.addEventLink = asyncHandler(async function addEventLink(req, res, users_
     }
 
     try {
-        var query_result = await pool.query(`
-            SELECT * FROM EVENTS_LINK WHERE ID_USER = ${temp_query_user_id} AND ID_EVENT = '${event_id.toUpperCase()}'
-        `)
+        query_result = await pool.query(`
+                INSERT INTO EVENTS_LINK (ID_EVENT, ID_USER, IS_APPROVED, CREATED)
+                SELECT 
+                '${event_id.toUpperCase()}' AS ID_EVENT,
+                ${temp_query_user_id} AS ID_USER,
+                CASE 
+                    WHEN EXISTS (
+                    SELECT 1 FROM IS_ADMIN 
+                    WHERE ID_USER = ${temp_query_user_id} AND ID_COMMUNITY = (SELECT ID_CREATOR FROM EVENTS WHERE ID_EVENT = '${event_id.toUpperCase()}')
+                    ) THEN TRUE
+                    WHEN EXISTS (
+                    SELECT 1 FROM EVENTS 
+                    WHERE ID_EVENT = '${event_id.toUpperCase()}' AND ID_CREATOR = ${temp_query_user_id}
+                    ) THEN TRUE
+                    ELSE FALSE
+                END AS IS_APPROVED,
+                NOW() AS CREATED
+                WHERE 
+                (
+                    (
+                    (
+                        SELECT COUNT(*) 
+                        FROM EVENTS_LINK 
+                        WHERE ID_EVENT = '${event_id.toUpperCase()}' AND IS_APPROVED = TRUE 
+                    ) < (
+                        SELECT NUMBER_PARTICIPANT FROM EVENTS WHERE ID_EVENT = '${event_id.toUpperCase()}'
+                    )
+                    AND NOT EXISTS (
+                        SELECT 1 FROM IS_ADMIN 
+                        WHERE ID_USER = ${temp_query_user_id} AND ID_COMMUNITY = (SELECT ID_CREATOR FROM EVENTS WHERE ID_EVENT = '${event_id.toUpperCase()}')
+                    )
+                    AND NOT EXISTS (
+                        SELECT 1 FROM EVENTS 
+                        WHERE ID_EVENT = '${event_id.toUpperCase()}' AND ID_CREATOR = ${temp_query_user_id}
+                    )
+                    )
+                    OR EXISTS (
+                    SELECT 1 FROM IS_ADMIN 
+                    WHERE ID_USER = ${temp_query_user_id} AND ID_COMMUNITY = (SELECT ID_CREATOR FROM EVENTS WHERE ID_EVENT = '${event_id.toUpperCase()}')
+                    )
+                    OR EXISTS (
+                    SELECT 1 FROM EVENTS 
+                    WHERE ID_EVENT = '${event_id.toUpperCase()}' AND ID_CREATOR = ${temp_query_user_id}
+                    )
+                )
+                ON CONFLICT DO NOTHING
+                RETURNING (SELECT ID_CREATOR FROM EVENTS WHERE ID_EVENT = '${event_id.toUpperCase()}')
+            `)
+
+            console.log(`
+                INSERT INTO EVENTS_LINK (ID_EVENT, ID_USER, IS_APPROVED, CREATED)
+                SELECT 
+                '${event_id.toUpperCase()}' AS ID_EVENT,
+                ${temp_query_user_id} AS ID_USER,
+                CASE 
+                    WHEN EXISTS (
+                    SELECT 1 FROM IS_ADMIN 
+                    WHERE ID_USER = ${temp_query_user_id} AND ID_COMMUNITY = (SELECT ID_CREATOR FROM EVENTS WHERE ID_EVENT = '${event_id.toUpperCase()}')
+                    ) THEN TRUE
+                    WHEN EXISTS (
+                    SELECT 1 FROM EVENTS 
+                    WHERE ID_EVENT = '${event_id.toUpperCase()}' AND ID_CREATOR = ${temp_query_user_id}
+                    ) THEN TRUE
+                    ELSE FALSE
+                END AS IS_APPROVED,
+                NOW() AS CREATED
+                WHERE 
+                (
+                    (
+                    (
+                        SELECT COUNT(*) 
+                        FROM EVENTS_LINK 
+                        WHERE ID_EVENT = '${event_id.toUpperCase()}' AND IS_APPROVED = TRUE 
+                    ) < (
+                        SELECT NUMBER_PARTICIPANT FROM EVENTS WHERE ID_EVENT = '${event_id.toUpperCase()}'
+                    )
+                    AND NOT EXISTS (
+                        SELECT 1 FROM IS_ADMIN 
+                        WHERE ID_USER = ${temp_query_user_id} AND ID_COMMUNITY = (SELECT ID_CREATOR FROM EVENTS WHERE ID_EVENT = '${event_id.toUpperCase()}')
+                    )
+                    AND NOT EXISTS (
+                        SELECT 1 FROM EVENTS 
+                        WHERE ID_EVENT = '${event_id.toUpperCase()}' AND ID_CREATOR = ${temp_query_user_id}
+                    )
+                    )
+                    OR EXISTS (
+                    SELECT 1 FROM IS_ADMIN 
+                    WHERE ID_USER = ${temp_query_user_id} AND ID_COMMUNITY = (SELECT ID_CREATOR FROM EVENTS WHERE ID_EVENT = '${event_id.toUpperCase()}')
+                    )
+                    OR EXISTS (
+                    SELECT 1 FROM EVENTS 
+                    WHERE ID_EVENT = '${event_id.toUpperCase()}' AND ID_CREATOR = ${temp_query_user_id}
+                    )
+                )
+                ON CONFLICT DO NOTHING
+                RETURNING (SELECT ID_CREATOR FROM EVENTS WHERE ID_EVENT = '${event_id.toUpperCase()}')
+            `)
     } catch (error) {
         isError = true;
-        log.error(`ERROR | /membership/addEventLink [username : "${users_username_token}"] - Error found while connecting to DB - ${error}`);
+        log.error(`ERROR | /membership/addEventLink [username : "${users_username_token}"] - Error found while connecting to DB - ${error}`)
     } finally {
-        if(!isError){
-            if(query_result.rowCount > 0){
-                return res.status(500).json({
-                    "error_schema": {
-                        "error_code": "nearbud-000-001",
-                        "error_message": `Event Link sudah pernah ditambahkan`
-                    }
-                })
-            } else {
-                try {
-                    console.log(`INSERT INTO EVENTS_LINK (ID_EVENT, ID_USER, IS_APPROVED, CREATED)
-                                SELECT 
-                                '${event_id.toUpperCase()}' AS ID_EVENT,
-                                ${temp_query_user_id}AS ID_USER,
-                                CASE 
-                                    WHEN EXISTS (
-                                    SELECT 1 FROM IS_ADMIN WHERE ID_USER = ${temp_query_user_id}
-                                    ) THEN TRUE
-                                    ELSE FALSE
-                                END AS IS_APPROVED,
-                                NOW() AS CREATED
-                                RETURNING IS_APPROVED`)
-
-                    var query_result = await pool.query(`
-                                INSERT INTO EVENTS_LINK (ID_EVENT, ID_USER, IS_APPROVED, CREATED)
-                                SELECT 
-                                '${event_id.toUpperCase()}' AS ID_EVENT,
-                                ${temp_query_user_id}AS ID_USER,
-                                CASE 
-                                    WHEN EXISTS (
-                                    SELECT 1 FROM IS_ADMIN WHERE ID_USER = ${temp_query_user_id}
-                                    ) THEN TRUE
-                                    ELSE FALSE
-                                END AS IS_APPROVED,
-                                NOW() AS CREATED
-                                RETURNING IS_APPROVED
-                            `)
-                } catch (error) {
-                    isError1 = true;
-                    log.error(`ERROR | /membership/addEventLink [username : "${users_username_token}"] - Error found while connecting to DB - ${error}`);
-                } finally {
-                    if (isError1) {
-                        return res.status(500).json({
-                            "error_schema": {
-                                "error_code": "nearbud-003-001",
-                                "error_message": `Error while connecting to DB`
-                            }
-                        })
-                    } else {
-                        if(!query_result.rows[0].is_approved){
-                            let isError3 = false
-                            try {
-                                var query_result_2 = await pool.query(`INSERT INTO NOTIFICATION (ACTION, ID_SENDER, ID_RECEIVER, STRING1)
-                                                                    VALUES ('requestEvent', (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}') AND IS_VERIFIED = TRUE), 
-                                                                    (SELECT ID_CREATOR FROM EVENTS WHERE ID_EVENT ILIKE LOWER('${event_id}')), 
-                                                                    (SELECT ID_EVENT FROM EVENTS WHERE ID_EVENT ILIKE LOWER('${event_id}')))`)
-                            } catch (error) {
-                                isError3 = true
-                                log.error(`ERROR | /membership/addEventLink - Add Notif [username : "${users_username_token}"] - Error found while connecting to DB - ${error}`);
-                            } finally {
-                                if(!isError3){
-                                    respond.successResp(req, res, "nearbud-000-000", "Berhasil menambahkan data", 0, 0, 0, result)
-                                }
-                            }
-                        } else {
-                           respond.successResp(req, res, "nearbud-000-000", "Berhasil menambahkan data", 0, 0, 0, result)
-                        }
-                    }
-                }
-            }
-        } else {
+        if (isError1) {
             return res.status(500).json({
                 "error_schema": {
                     "error_code": "nearbud-003-001",
                     "error_message": `Error while connecting to DB`
                 }
-            });
-        }
+            })
+        } else {
+            if(query_result.rowCount == 0){
+                return res.status(500).json({
+                    "error_schema": {
+                        "error_code": "nearbud-000-001",
+                        "error_message": `Event sudah mencapai maksimum kapasitas partisipan`
+                    }
+                })
+            } else {
+                if(!query_result.rows[0].is_approved){
+                    let isError3 = false
+                    let event_creator = query_result.rows[0].id_creator
+                    let query_notification = ""
+                    
+                    if(event_creator.startsWith('C')){
+                        query_notification = `
+                                    INSERT INTO NOTIFICATION (action, id_sender, id_receiver, string1)
+                                    SELECT 
+                                    'requestEvent',
+                                    (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')), -- id_sender
+                                    ID_USER, -- id_receiver
+                                    '${event_id.toUpperCase()}'
+                                    FROM IS_ADMIN WHERE ID_COMMUNITY = '${event_creator}'
+                                `
+                    } else {
+                        query_notification = `
+                                    INSERT INTO NOTIFICATION (action, id_sender, id_receiver, string1)
+                                    VALUES ('requestEvent', (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')), -- id_sender
+                                    '${event_creator}','${event_id.toUpperCase()}')
+                                `
+                    }
+
+                    console.log(query_notification)
+
+                    try {
+                        var query_result_2 = await pool.query(query_notification)
+                    } catch (error) {
+                        isError3 = true
+                        console.log(error)
+                        log.error(`ERROR | /membership/addEventLink - Add Notif [username : "${users_username_token}"] - Error found while connecting to DB - ${error}`);
+                    } finally {
+                        if(!isError3){
+                            respond.successResp(req, res, "nearbud-000-000", "Berhasil menambahkan data", 0, 0, 0, result)
+                        }
+                    }
+                } else {
+                    respond.successResp(req, res, "nearbud-000-000", "Berhasil menambahkan data", 0, 0, 0, result)
+                }
+            }
+        } 
     }
 })
 

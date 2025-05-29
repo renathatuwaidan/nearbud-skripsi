@@ -74,7 +74,7 @@ exports.getEventsPreview = asyncHandler(async function getEventsPreview(req, res
             let query_status_1 = "", query_status_2 = ""
 
             if(status.includes("available")){
-                query_status_1 = `AND (SELECT COUNT(*) FROM EVENTS_LINK WHERE ID_EVENT = A.ID_EVENT) < A.NUMBER_PARTICIPANT`
+                query_status_1 = `AND (SELECT COUNT(*) FROM EVENTS_LINK WHERE ID_EVENT = A.ID_EVENT AND ID_APPROVED = TRUE AND ID_USER NOT IN (SELECT ID_USER FROM IS_ADMIN WHERE ID_COMMUNITY = (SELECT ID_CREATOR FROM EVENTS WHERE ID_EVENT = A.ID_EVENT))) < A.NUMBER_PARTICIPANT`
                 
                 if (status.includes("not-joined")){
                     query_status_2 = `AND A.ID_EVENT NOT IN (SELECT ID_EVENT FROM EVENTS_LINK WHERE ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}') AND IS_APPROVED = TRUE))`
@@ -146,7 +146,7 @@ exports.getEventsPreview = asyncHandler(async function getEventsPreview(req, res
                 let query_status_1 = "", query_status_2 = ""
 
                 if(status.includes("available")){
-                    query_status_1 = `AND (SELECT COUNT(*) FROM EVENTS_LINK WHERE ID_EVENT = A.ID_EVENT) < A.NUMBER_PARTICIPANT`
+                    query_status_1 = `AND (SELECT COUNT(*) FROM EVENTS_LINK WHERE ID_EVENT = A.ID_EVENT AND ID_APPROVED = TRUE AND ID_USER NOT IN (SELECT ID_USER FROM IS_ADMIN WHERE ID_COMMUNITY = (SELECT ID_CREATOR FROM EVENTS WHERE ID_EVENT = A.ID_EVENT))) < A.NUMBER_PARTICIPANT`
                     
                     if (status.includes("not-joined")){
                         query_status_2 = `AND A.ID_EVENT NOT IN (SELECT ID_EVENT FROM EVENTS_LINK WHERE ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}') AND IS_APPROVED = TRUE))`
@@ -207,7 +207,7 @@ exports.getEventsPreview = asyncHandler(async function getEventsPreview(req, res
                     let query_status_1 = "", query_status_2 = ""
 
                     if(status.includes("available")){
-                        query_status_1 = `AND (SELECT COUNT(*) FROM EVENTS_LINK WHERE ID_EVENT = A.ID_EVENT) < A.NUMBER_PARTICIPANT`
+                        query_status_1 = `AND (SELECT COUNT(*) FROM EVENTS_LINK WHERE ID_EVENT = A.ID_EVENT AND ID_APPROVED = TRUE AND ID_USER NOT IN (SELECT ID_USER FROM IS_ADMIN WHERE ID_COMMUNITY = (SELECT ID_CREATOR FROM EVENTS WHERE ID_EVENT = A.ID_EVENT))) < A.NUMBER_PARTICIPANT`
                         
                         if (status.includes("not-joined")){
                             query_status_2 = `AND A.ID_EVENT NOT IN (SELECT ID_EVENT FROM EVENTS_LINK WHERE ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}') AND IS_APPROVED = TRUE))`
@@ -259,7 +259,7 @@ exports.getEventsPreview = asyncHandler(async function getEventsPreview(req, res
                         let query_status_1 = "", query_status_2 = ""
 
                         if(status.includes("available")){
-                            query_status_1 = `AND (SELECT COUNT(*) FROM EVENTS_LINK WHERE ID_EVENT = A.ID_EVENT) < A.NUMBER_PARTICIPANT`
+                            query_status_1 = `AND (SELECT COUNT(*) FROM EVENTS_LINK WHERE ID_EVENT = A.ID_EVENT AND ID_APPROVED = TRUE AND ID_USER NOT IN (SELECT ID_USER FROM IS_ADMIN WHERE ID_COMMUNITY = (SELECT ID_CREATOR FROM EVENTS WHERE ID_EVENT = A.ID_EVENT))) < A.NUMBER_PARTICIPANT`
                             
                             if (status.includes("not-joined")){
                                 query_status_2 = `AND A.ID_EVENT NOT IN (SELECT ID_EVENT FROM EVENTS_LINK WHERE ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}') AND IS_APPROVED = TRUE))`
@@ -296,7 +296,7 @@ exports.getEventsPreview = asyncHandler(async function getEventsPreview(req, res
                             let query_status_1 = "", query_status_2 = ""
 
                             if(status.includes("available")){
-                                query_status_1 = `AND (SELECT COUNT(*) FROM EVENTS_LINK WHERE ID_EVENT = A.ID_EVENT) < A.NUMBER_PARTICIPANT`
+                                query_status_1 = `AND (SELECT COUNT(*) FROM EVENTS_LINK WHERE ID_EVENT = A.ID_EVENT AND ID_APPROVED = TRUE AND ID_USER NOT IN (SELECT ID_USER FROM IS_ADMIN WHERE ID_COMMUNITY = (SELECT ID_CREATOR FROM EVENTS WHERE ID_EVENT = A.ID_EVENT))) < A.NUMBER_PARTICIPANT`
                                 
                                 if (status.includes("not-joined")){
                                     query_status_2 = `AND A.ID_EVENT NOT IN (SELECT ID_EVENT FROM EVENTS_LINK WHERE ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}') AND IS_APPROVED = TRUE))`
@@ -340,7 +340,7 @@ exports.getEventsPreview = asyncHandler(async function getEventsPreview(req, res
                                 let query_status_1 = "", query_status_2 = ""
 
                                 if(status.includes("available")){
-                                    query_status_1 = `AND (SELECT COUNT(*) FROM EVENTS_LINK WHERE ID_EVENT = A.ID_EVENT) < A.NUMBER_PARTICIPANT`
+                                    query_status_1 = `AND (SELECT COUNT(*) FROM EVENTS_LINK WHERE ID_EVENT = A.ID_EVENT AND ID_APPROVED = TRUE AND ID_USER NOT IN (SELECT ID_USER FROM IS_ADMIN WHERE ID_COMMUNITY = (SELECT ID_CREATOR FROM EVENTS WHERE ID_EVENT = A.ID_EVENT))) < A.NUMBER_PARTICIPANT`
                                     
                                     if (status.includes("not-joined")){
                                         query_status_2 = `AND A.ID_EVENT NOT IN (SELECT ID_EVENT FROM EVENTS_LINK WHERE ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}') AND IS_APPROVED = TRUE))`
@@ -380,7 +380,7 @@ exports.getEventsPreview = asyncHandler(async function getEventsPreview(req, res
                                     let query_status_1 = "", query_status_2 = ""
 
                                     if(status.includes("available")){
-                                        query_status_1 = `AND (SELECT COUNT(*) FROM EVENTS_LINK WHERE ID_EVENT = A.ID_EVENT) < A.NUMBER_PARTICIPANT`
+                                        query_status_1 = `AND (SELECT COUNT(*) FROM EVENTS_LINK WHERE ID_EVENT = A.ID_EVENT AND ID_APPROVED = TRUE AND ID_USER NOT IN (SELECT ID_USER FROM IS_ADMIN WHERE ID_COMMUNITY = (SELECT ID_CREATOR FROM EVENTS WHERE ID_EVENT = A.ID_EVENT))) < A.NUMBER_PARTICIPANT`
                                         
                                         if (status.includes("not-joined")){
                                             query_status_2 = `AND A.ID_EVENT NOT IN (SELECT ID_EVENT FROM EVENTS_LINK WHERE ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}') AND IS_APPROVED = TRUE))`
@@ -410,7 +410,7 @@ exports.getEventsPreview = asyncHandler(async function getEventsPreview(req, res
                                     let query_status_1 = "", query_status_2 = ""
 
                                     if(status.includes("available")){
-                                        query_status_1 = `(SELECT COUNT(*) FROM EVENTS_LINK WHERE ID_EVENT = A.ID_EVENT) < A.NUMBER_PARTICIPANT`
+                                        query_status_1 = `(SELECT COUNT(*) FROM EVENTS_LINK WHERE ID_EVENT = A.ID_EVENT AND ID_APPROVED = TRUE AND ID_USER NOT IN (SELECT ID_USER FROM IS_ADMIN WHERE ID_COMMUNITY = (SELECT ID_CREATOR FROM EVENTS WHERE ID_EVENT = A.ID_EVENT))) < A.NUMBER_PARTICIPANT`
                                         
                                         if (status.includes("not-joined")){
                                             query_status_2 = `AND A.ID_EVENT NOT IN (SELECT ID_EVENT FROM EVENTS_LINK WHERE ID_USER = (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}') AND IS_APPROVED = TRUE))`
@@ -634,8 +634,6 @@ exports.getEventsPreviewList = asyncHandler(async function getEventsPreviewList(
         query_events = ""
     }
 
-    console.log("query_event FINALLLLL  " + query_events)
-
     if(!query_from) query_from = ""
 
     console.log(`SELECT DISTINCT ON (ID_EVENT)
@@ -666,30 +664,30 @@ exports.getEventsPreviewList = asyncHandler(async function getEventsPreviewList(
 
     try {
         var query_result = await pool.query(`SELECT DISTINCT ON (ID_EVENT)
-                                            A.ID_EVENT,
-                                            A.NAME,
-                                            CASE 
-                                                WHEN A.ID_CREATOR LIKE 'C%' THEN (SELECT NAME FROM COMMUNITY WHERE ID_COMMUNITY = A.ID_CREATOR)
-                                                WHEN A.ID_CREATOR LIKE 'U%' THEN (SELECT NAME FROM USERS WHERE ID_USER = A.ID_CREATOR)
-                                            END AS CREATOR_NAME,
-                                            A.LOCATION,
-                                            C.NAME AS CITY_BASED,
-                                            E.NAME AS PROVINCE_BASED,
-                                            A.DURATION,
-                                            A.DESCRIPTION,
-                                            A.ID_PROFILE,
-                                            A.latitude, A.longitude,
-                                            A.DATE AS EVENT_DATE,
-                                            TO_CHAR(A.DATE, 'HH24:mi') AS START_TIME,
-                                            (SELECT COUNT(*) FROM EVENTS_LINK WHERE ID_EVENT = A.ID_EVENT AND IS_APPROVED = true) AS CURRENT_PARTICIPANT
-                                            FROM EVENTS A
-                                            ${query_from}
-                                            JOIN CITY C ON A.CITY_BASED = C.ID
-                                            JOIN PROVINCE E ON C.ID_PROVINCE = E.ID
-                                            JOIN INTEREST F ON F.ID = A.ID_INTEREST
-                                            JOIN CATEGORY D ON F.ID_CATEGORY = D.ID 
-                                            WHERE ${q_date} ${query_and} ${query_event_date} ${query_interest} ${query_category} ${query_city_based}
-                                            ${query_province_based} ${query_event_location} ${query_event_number_participant} ${query_creator} ${query_community} ${query_status} ${query_events}`)
+                    A.ID_EVENT,
+                    A.NAME,
+                    CASE 
+                        WHEN A.ID_CREATOR LIKE 'C%' THEN (SELECT NAME FROM COMMUNITY WHERE ID_COMMUNITY = A.ID_CREATOR)
+                        WHEN A.ID_CREATOR LIKE 'U%' THEN (SELECT NAME FROM USERS WHERE ID_USER = A.ID_CREATOR)
+                    END AS CREATOR_NAME,
+                    A.LOCATION,
+                    C.NAME AS CITY_BASED,
+                    E.NAME AS PROVINCE_BASED,
+                    A.DURATION,
+                    A.DESCRIPTION,
+                    A.latitude, A.longitude,
+                    A.DATE AS EVENT_DATE,
+                    A.ID_PROFILE,
+                    TO_CHAR(A.DATE, 'HH24:mi') AS START_TIME,
+                    (SELECT COUNT(*) FROM EVENTS_LINK WHERE ID_EVENT = A.ID_EVENT AND IS_APPROVED = true) AS CURRENT_PARTICIPANT
+                    FROM EVENTS A
+                    ${query_from}
+                    JOIN CITY C ON A.CITY_BASED = C.ID
+                    JOIN PROVINCE E ON C.ID_PROVINCE = E.ID
+                    JOIN INTEREST F ON F.ID = A.ID_INTEREST
+                    JOIN CATEGORY D ON F.ID_CATEGORY = D.ID 
+                    WHERE ${q_date} ${query_and} ${query_event_date} ${query_interest} ${query_category} ${query_city_based}
+                    ${query_province_based} ${query_event_location} ${query_event_number_participant} ${query_creator} ${query_community} ${query_status} ${query_events}`)
     } catch (error) {
         isError = true
         log.error(`ERROR | /event/getEvents/preview getEventsPreviewList - Error found while connect to DB - ${error}`)
@@ -874,14 +872,14 @@ exports.addEvent = asyncHandler(async function addEvent(req, res, event_name, ev
                                         CITY_BASED, LOCATION, ADDRESS, NUMBER_PARTICIPANT ${query_img_1} ${query_event_coordinate_1}) VALUES 
                                         (NOW(), '${event_interest}',${query_event_creator},'${event_name}','${event_description}','${event_date}','${event_duration}', ${query_city},
                                         '${event_location}','${event_address}','${event_number_participant}' ${query_img_2} ${query_event_coordinate_2})
-                                        RETURNING ID_EVENT`)
+                                        RETURNING ID_EVENT, ID_CREATOR`)
 
     try {
         var query_result = await pool.query(`INSERT INTO EVENTS (ID, CREATED, ID_INTEREST, ID_CREATOR, NAME, DESCRIPTION, DATE, DURATION, 
                                 CITY_BASED, LOCATION, ADDRESS, NUMBER_PARTICIPANT ${query_img_1} ${query_event_coordinate_1}) VALUES 
                                 ((SELECT MAX(ID)+1 FROM EVENTS), NOW(),'${event_interest}',${query_event_creator},'${event_name}','${event_description}','${event_date}','${event_duration}', ${query_city},
                                 '${event_location}','${event_address}','${event_number_participant}' ${query_img_2} ${query_event_coordinate_2})
-                                RETURNING ID_EVENT`)
+                                RETURNING ID_EVENT, ID_CREATOR`)
     } catch (error) {
         isError = true
         log.error(`ERROR | /general/addEvent - Error found while connect to DB - ${error}`)
@@ -892,15 +890,31 @@ exports.addEvent = asyncHandler(async function addEvent(req, res, event_name, ev
             }
 
             let isError2 = false
+            let creator_id = query_result.rows[0].id_creator
 
             // processing add Notif -- New Event
-            if(event_creator){
-                if(event_creator.startsWith("C")){
+            if(creator_id){
+                if(creator_id.startsWith("C")){
+                    console.log(`INSERT INTO NOTIFICATION (ACTION, ID_SENDER, ID_RECEIVER, STRING1)
+                                        SELECT
+                                        'newEvent',
+                                        (SELECT ID_USER FROM IS_ADMIN WHERE ID_COMMUNITY = A.ID_COMMUNITY LIMIT 1),
+                                        A.ID_USER,
+                                        '${query_result.rows[0].id_event}'
+                                        FROM COMMUNITY_LINK A WHERE A.ID_COMMUNITY = '${creator_id}' AND A.IS_APPROVED = TRUE
+                                    `)
                     try {
-                        var query_result = await pool.query(`INSERT INTO NOTIFICATION (ACTION, ID_SENDER, ID_RECEIVER)
-                               VALUES ('newEvent', '${query_result.rows[0].id_event}', (SELECT ID_COMMUNITY FROM COMMUNITY WHERE ID_COMMUNITY ILIKE LOWER('${event_creator}')))`)
+                        var query_result = await pool.query(`INSERT INTO NOTIFICATION (ACTION, ID_SENDER, ID_RECEIVER, STRING1)
+                                        SELECT
+                                        'newEvent',
+                                        (SELECT ID_USER FROM IS_ADMIN WHERE ID_COMMUNITY = A.ID_COMMUNITY LIMIT 1),
+                                        A.ID_USER,
+                                        '${query_result.rows[0].id_event}'
+                                        FROM COMMUNITY_LINK A WHERE A.ID_COMMUNITY = '${creator_id}' AND A.IS_APPROVED = TRUE
+                                    `)
                     } catch (error) {
                         isError2 = true
+                        console.log(error)
                     } finally {
                         if(isError2){
                             return res.status(500).json({
