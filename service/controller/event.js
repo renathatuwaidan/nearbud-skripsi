@@ -872,14 +872,14 @@ exports.addEvent = asyncHandler(async function addEvent(req, res, event_name, ev
                                         CITY_BASED, LOCATION, ADDRESS, NUMBER_PARTICIPANT ${query_img_1} ${query_event_coordinate_1}) VALUES 
                                         (NOW(), '${event_interest}',${query_event_creator},'${event_name}','${event_description}','${event_date}','${event_duration}', ${query_city},
                                         '${event_location}','${event_address}','${event_number_participant}' ${query_img_2} ${query_event_coordinate_2})
-                                        RETURNING ID_EVENT`)
+                                        RETURNING ID_EVENT, ID_CREATOR`)
 
     try {
         var query_result = await pool.query(`INSERT INTO EVENTS (ID, CREATED, ID_INTEREST, ID_CREATOR, NAME, DESCRIPTION, DATE, DURATION, 
                                 CITY_BASED, LOCATION, ADDRESS, NUMBER_PARTICIPANT ${query_img_1} ${query_event_coordinate_1}) VALUES 
                                 ((SELECT MAX(ID)+1 FROM EVENTS), NOW(),'${event_interest}',${query_event_creator},'${event_name}','${event_description}','${event_date}','${event_duration}', ${query_city},
                                 '${event_location}','${event_address}','${event_number_participant}' ${query_img_2} ${query_event_coordinate_2})
-                                RETURNING ID_EVENT`)
+                                RETURNING ID_EVENT, ID_CREATOR`)
     } catch (error) {
         isError = true
         log.error(`ERROR | /general/addEvent - Error found while connect to DB - ${error}`)
@@ -890,15 +890,31 @@ exports.addEvent = asyncHandler(async function addEvent(req, res, event_name, ev
             }
 
             let isError2 = false
+            let creator_id = query_result.rows[0].id_creator
 
             // processing add Notif -- New Event
-            if(event_creator){
-                if(event_creator.startsWith("C")){
+            if(creator_id){
+                if(creator_id.startsWith("C")){
+                    console.log(`INSERT INTO NOTIFICATION (ACTION, ID_SENDER, ID_RECEIVER, STRING1)
+                                        SELECT
+                                        'newEvent',
+                                        (SELECT ID_USER FROM IS_ADMIN WHERE ID_COMMUNITY = A.ID_COMMUNITY LIMIT 1),
+                                        A.ID_USER,
+                                        '${query_result.rows[0].id_event}'
+                                        FROM COMMUNITY_LINK A WHERE A.ID_COMMUNITY = '${creator_id}' AND A.IS_APPROVED = TRUE
+                                    `)
                     try {
-                        var query_result = await pool.query(`INSERT INTO NOTIFICATION (ACTION, ID_SENDER, ID_RECEIVER)
-                               VALUES ('newEvent', '${query_result.rows[0].id_event}', (SELECT ID_COMMUNITY FROM COMMUNITY WHERE ID_COMMUNITY ILIKE LOWER('${event_creator}')))`)
+                        var query_result = await pool.query(`INSERT INTO NOTIFICATION (ACTION, ID_SENDER, ID_RECEIVER, STRING1)
+                                        SELECT
+                                        'newEvent',
+                                        (SELECT ID_USER FROM IS_ADMIN WHERE ID_COMMUNITY = A.ID_COMMUNITY LIMIT 1),
+                                        A.ID_USER,
+                                        '${query_result.rows[0].id_event}'
+                                        FROM COMMUNITY_LINK A WHERE A.ID_COMMUNITY = '${creator_id}' AND A.IS_APPROVED = TRUE
+                                    `)
                     } catch (error) {
                         isError2 = true
+                        console.log(error)
                     } finally {
                         if(isError2){
                             return res.status(500).json({

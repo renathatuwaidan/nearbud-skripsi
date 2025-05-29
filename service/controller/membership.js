@@ -371,10 +371,15 @@ exports.addCommunityLink = asyncHandler(async function addCommunityLink(req, res
                         let isError3 = false
 
                         try {
-                            var query_result_2 = await pool.query(`INSERT INTO NOTIFICATION (ACTION, ID_SENDER, ID_RECEIVER, STRING1)
-                                                                VALUES ('requestCommunity', (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username}')), 
-                                                                (SELECT ID_COMMUNITY FROM COMMUNITY WHERE ID_COMMUNITY ILIKE LOWER('${community_id}')), 
-                                                                (SELECT ID_COMMUNITY FROM COMMUNITY WHERE ID_COMMUNITY ILIKE LOWER('${community_id}')))`)
+                            var query_result_2 = await pool.query(`
+                                    INSERT INTO NOTIFICATION (action, id_sender, id_receiver, string1)
+                                    SELECT 
+                                    'requestCommunity',
+                                    (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username}')), -- id_sender
+                                    ID_USER, -- id_receiver
+                                    '${community_id}'
+                                    FROM IS_ADMIN WHERE ID_COMMUNITY = '${community_id}'
+                                `)
                         } catch (error) {
                             isError3 = true
                             log.error(`ERROR | /membership/addEventLink - Add Notif [username : "${users_username}"] - Error found while connecting to DB - ${error}`);
@@ -463,7 +468,6 @@ exports.addEventLink = asyncHandler(async function addEventLink(req, res, users_
                         WHERE ID_EVENT = '${event_id.toUpperCase()}' AND ID_CREATOR = ${temp_query_user_id}
                     )
                     )
-                    -- CASE 2: dia admin komunitas atau creator → boleh insert selalu
                     OR EXISTS (
                     SELECT 1 FROM IS_ADMIN 
                     WHERE ID_USER = ${temp_query_user_id} AND ID_COMMUNITY = (SELECT ID_CREATOR FROM EVENTS WHERE ID_EVENT = '${event_id.toUpperCase()}')
@@ -474,7 +478,56 @@ exports.addEventLink = asyncHandler(async function addEventLink(req, res, users_
                     )
                 )
                 ON CONFLICT DO NOTHING
-                RETURNING IS_APPROVED
+                RETURNING (SELECT ID_CREATOR FROM EVENTS WHERE ID_EVENT = '${event_id.toUpperCase()}')
+            `)
+
+            console.log(`
+                INSERT INTO EVENTS_LINK (ID_EVENT, ID_USER, IS_APPROVED, CREATED)
+                SELECT 
+                '${event_id.toUpperCase()}' AS ID_EVENT,
+                ${temp_query_user_id} AS ID_USER,
+                CASE 
+                    WHEN EXISTS (
+                    SELECT 1 FROM IS_ADMIN 
+                    WHERE ID_USER = ${temp_query_user_id} AND ID_COMMUNITY = (SELECT ID_CREATOR FROM EVENTS WHERE ID_EVENT = '${event_id.toUpperCase()}')
+                    ) THEN TRUE
+                    WHEN EXISTS (
+                    SELECT 1 FROM EVENTS 
+                    WHERE ID_EVENT = '${event_id.toUpperCase()}' AND ID_CREATOR = ${temp_query_user_id}
+                    ) THEN TRUE
+                    ELSE FALSE
+                END AS IS_APPROVED,
+                NOW() AS CREATED
+                WHERE 
+                (
+                    (
+                    (
+                        SELECT COUNT(*) 
+                        FROM EVENTS_LINK 
+                        WHERE ID_EVENT = '${event_id.toUpperCase()}' AND IS_APPROVED = TRUE 
+                    ) < (
+                        SELECT NUMBER_PARTICIPANT FROM EVENTS WHERE ID_EVENT = '${event_id.toUpperCase()}'
+                    )
+                    AND NOT EXISTS (
+                        SELECT 1 FROM IS_ADMIN 
+                        WHERE ID_USER = ${temp_query_user_id} AND ID_COMMUNITY = (SELECT ID_CREATOR FROM EVENTS WHERE ID_EVENT = '${event_id.toUpperCase()}')
+                    )
+                    AND NOT EXISTS (
+                        SELECT 1 FROM EVENTS 
+                        WHERE ID_EVENT = '${event_id.toUpperCase()}' AND ID_CREATOR = ${temp_query_user_id}
+                    )
+                    )
+                    OR EXISTS (
+                    SELECT 1 FROM IS_ADMIN 
+                    WHERE ID_USER = ${temp_query_user_id} AND ID_COMMUNITY = (SELECT ID_CREATOR FROM EVENTS WHERE ID_EVENT = '${event_id.toUpperCase()}')
+                    )
+                    OR EXISTS (
+                    SELECT 1 FROM EVENTS 
+                    WHERE ID_EVENT = '${event_id.toUpperCase()}' AND ID_CREATOR = ${temp_query_user_id}
+                    )
+                )
+                ON CONFLICT DO NOTHING
+                RETURNING (SELECT ID_CREATOR FROM EVENTS WHERE ID_EVENT = '${event_id.toUpperCase()}')
             `)
     } catch (error) {
         isError = true;
@@ -498,13 +551,34 @@ exports.addEventLink = asyncHandler(async function addEventLink(req, res, users_
             } else {
                 if(!query_result.rows[0].is_approved){
                     let isError3 = false
+                    let event_creator = query_result.rows[0].id_creator
+                    let query_notification = ""
+                    
+                    if(event_creator.startsWith('C')){
+                        query_notification = `
+                                    INSERT INTO NOTIFICATION (action, id_sender, id_receiver, string1)
+                                    SELECT 
+                                    'requestEvent',
+                                    (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')), -- id_sender
+                                    ID_USER, -- id_receiver
+                                    '${event_id.toUpperCase()}'
+                                    FROM IS_ADMIN WHERE ID_COMMUNITY = '${event_creator}'
+                                `
+                    } else {
+                        query_notification = `
+                                    INSERT INTO NOTIFICATION (action, id_sender, id_receiver, string1)
+                                    VALUES ('requestEvent', (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}')), -- id_sender
+                                    '${event_creator}','${event_id.toUpperCase()}')
+                                `
+                    }
+
+                    console.log(query_notification)
+
                     try {
-                        var query_result_2 = await pool.query(`INSERT INTO NOTIFICATION (ACTION, ID_SENDER, ID_RECEIVER, STRING1)
-                                                            VALUES ('requestEvent', (SELECT ID_USER FROM USERS WHERE USERNAME ILIKE LOWER('${users_username_token}') AND IS_VERIFIED = TRUE), 
-                                                            (SELECT ID_CREATOR FROM EVENTS WHERE ID_EVENT ILIKE LOWER('${event_id}')), 
-                                                            (SELECT ID_EVENT FROM EVENTS WHERE ID_EVENT ILIKE LOWER('${event_id}')))`)
+                        var query_result_2 = await pool.query(query_notification)
                     } catch (error) {
                         isError3 = true
+                        console.log(error)
                         log.error(`ERROR | /membership/addEventLink - Add Notif [username : "${users_username_token}"] - Error found while connecting to DB - ${error}`);
                     } finally {
                         if(!isError3){
