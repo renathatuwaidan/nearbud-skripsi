@@ -38,7 +38,7 @@ exports.getEventLink_preview = asyncHandler(async function getEventLink_preview(
         }
 
         query_conditional_1 = `WITH EVENT_DATE_LIST AS (
-                                SELECT TO_CHAR(A.DATE, 'YYYY-MM-DD') AS event_date
+                                SELECT DISTINCT(TO_CHAR(A.DATE, 'YYYY-MM-DD')) AS event_date
                                 FROM EVENTS A WHERE A.ID_CREATOR ILIKE LOWER('${community_id}')
                                 AND ID_EVENT IN (SELECT B.ID_EVENT FROM EVENTS B WHERE ${query_status})
                                 AND ID_EVENT NOT IN (SELECT ID_REPORTEE FROM SUSPENDED)
