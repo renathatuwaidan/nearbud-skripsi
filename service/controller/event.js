@@ -1316,10 +1316,10 @@ exports.deleteEvent = asyncHandler(async function deleteEvent(req, res, event_id
     }
 
     console.log(`
-            WITH DELETE_REVIEW AS (
-                DELETE FROM REVIEW 
-                WHERE ID_REVIEWEE IN (SELECT ID_EVENT FROM EVENTS WHERE ID_EVENT ILIKE LOWER('${event_id}')) OR ID_REVIEWEE ILIKE LOWER('${event_id}')
-                RETURNING ID_REVIEWEE
+            WITH DELETE_EVENTS AS (
+                DELETE FROM EVENTS 
+                WHERE ID_EVENT ILIKE LOWER('${event_id}')
+                RETURNING ID_EVENT
             ),
             DELETE_REPORT_LINK AS (
                 DELETE FROM REPORT_LINK 
@@ -1331,16 +1331,6 @@ exports.deleteEvent = asyncHandler(async function deleteEvent(req, res, event_id
                 WHERE ID_SENDER ILIKE LOWER('${event_id}') OR ID_RECEIVER ILIKE LOWER('${event_id}')
                 RETURNING ID_SENDER, ID_RECEIVER
             ),
-            DELETE_EVENT_LINK AS (
-                DELETE FROM EVENTS_LINK 
-                WHERE ID_EVENT ILIKE LOWER('${event_id}')
-                RETURNING ID_EVENT
-            ),
-            DELETE_EVENT_RATING_TASKS AS (
-                DELETE FROM EVENT_RATING_TASKS
-                WHERE ID_REVIEWEE ILIKE LOWER('${event_id}')
-                RETURNING ID_REVIEWEE
-            ),
             DELETE_SUSPENDED AS (
                 DELETE FROM SUSPENDED
                 WHERE ID_REPORTEE ILIKE LOWER('${event_id}')
@@ -1350,23 +1340,17 @@ exports.deleteEvent = asyncHandler(async function deleteEvent(req, res, event_id
                 DELETE FROM REPORT_LINK
                 WHERE ID_REPORTEE ILIKE LOWER('${event_id}')
                 RETURNING ID_REPORTEE
-            ),
-            DELETE_EVENTS AS (
-                DELETE FROM EVENTS 
-                WHERE ID_EVENT ILIKE LOWER('${event_id}')
-                RETURNING ID_EVENT
             )
             SELECT * 
-            FROM DELETE_REVIEW, DELETE_REPORT_LINK, DELETE_EVENT_RATING_TASKS, DELETE_SUSPENDED
-                DELETE_NOTIFICATION, DELETE_EVENT_LINK, DELETE_EVENTS, DELETE_REPORT_LINK
+            FROM DELETE_REPORT_LINK, DELETE_SUSPENDED, DELETE_NOTIFICATION, DELETE_EVENTS, DELETE_REPORT_LINK
     `)
 
     try {
         var query_result = await pool.query(`
-            WITH DELETE_REVIEW AS (
-                DELETE FROM REVIEW 
-                WHERE ID_REVIEWEE IN (SELECT ID_EVENT FROM EVENTS WHERE ID_EVENT ILIKE LOWER('${event_id}')) OR ID_REVIEWEE ILIKE LOWER('${event_id}')
-                RETURNING ID_REVIEWEE
+            WITH DELETE_EVENTS AS (
+                DELETE FROM EVENTS 
+                WHERE ID_EVENT ILIKE LOWER('${event_id}')
+                RETURNING ID_EVENT
             ),
             DELETE_REPORT_LINK AS (
                 DELETE FROM REPORT_LINK 
@@ -1378,16 +1362,6 @@ exports.deleteEvent = asyncHandler(async function deleteEvent(req, res, event_id
                 WHERE ID_SENDER ILIKE LOWER('${event_id}') OR ID_RECEIVER ILIKE LOWER('${event_id}')
                 RETURNING ID_SENDER, ID_RECEIVER
             ),
-            DELETE_EVENT_LINK AS (
-                DELETE FROM EVENTS_LINK 
-                WHERE ID_EVENT ILIKE LOWER('${event_id}')
-                RETURNING ID_EVENT
-            ),
-            DELETE_EVENT_RATING_TASKS AS (
-                DELETE FROM EVENT_RATING_TASKS
-                WHERE ID_REVIEWEE ILIKE LOWER('${event_id}')
-                RETURNING ID_REVIEWEE
-            ),
             DELETE_SUSPENDED AS (
                 DELETE FROM SUSPENDED
                 WHERE ID_REPORTEE ILIKE LOWER('${event_id}')
@@ -1397,16 +1371,10 @@ exports.deleteEvent = asyncHandler(async function deleteEvent(req, res, event_id
                 DELETE FROM REPORT_LINK
                 WHERE ID_REPORTEE ILIKE LOWER('${event_id}')
                 RETURNING ID_REPORTEE
-            ),
-            DELETE_EVENTS AS (
-                DELETE FROM EVENTS 
-                WHERE ID_EVENT ILIKE LOWER('${event_id}')
-                RETURNING ID_EVENT
             )
             SELECT * 
-            FROM DELETE_REVIEW, DELETE_REPORT_LINK, DELETE_EVENT_RATING_TASKS, DELETE_SUSPENDED
-                DELETE_NOTIFICATION, DELETE_EVENT_LINK, DELETE_EVENTS, DELETE_REPORT_LINK
-        `)
+            FROM DELETE_REPORT_LINK, DELETE_SUSPENDED, DELETE_NOTIFICATION, DELETE_EVENTS, DELETE_REPORT_LINK
+        `)  
     } catch (error) {
         isError = true
         log.error(`ERROR | /community/deleteCommunity - Error found while connect to DB - ${error}`)

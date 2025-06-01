@@ -71,12 +71,12 @@ app.patch("/registerUser/optional", user_auth_controller.tokenVerif, function(re
     user_auth_controller.registerUser_optional(req, res, users_gender, province_name, city_name, users_description, users_interest, users_community, users_username)
 })
 
-app.patch("/updatePassword", user_auth_controller.tokenVerif, function(req, res){
-    let old_pass = req.body.old_pass
-    let new_pass = req.body.new_pass
-    let users_username = res.getHeader('users_username')
+app.put("/updatePassword", user_auth_controller.tokenVerif, function(req, res){
+    let password_new = req.body.password_new
+    let password_old = req.body.password_old
+    let users_username_token = res.getHeader('users_username')
 
-    user_auth_controller.updatePassword(req, res, old_pass, new_pass, users_username)
+    user_auth_controller.updatePassword(req, res, password_new, password_old, users_username_token)
 })
 
 module.exports = app

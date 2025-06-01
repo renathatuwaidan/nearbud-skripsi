@@ -1170,21 +1170,6 @@ exports.deleteCommunity = asyncHandler(async function deleteCommunity(req, res, 
             WHERE ID_CREATOR ILIKE LOWER('${community_id}')
             RETURNING ID_EVENT
             ), 
-            DELETE_EVENT_LINK AS (
-                DELETE FROM EVENTS_LINK 
-                WHERE ID_EVENT IN (SELECT ID_EVENT FROM DELETE_EVENTS)
-                RETURNING ID_COMMUNITY
-            ), 
-            DELETE_IS_ADMIN AS (
-                DELETE FROM IS_ADMIN 
-                WHERE ID_COMMUNITY ILIKE LOWER('${community_id}')
-                RETURNING ID_COMMUNITY
-            ), 
-            DELETE_REVIEW AS (
-                DELETE FROM REVIEW 
-                WHERE ID_REVIEWEE IN (SELECT ID_CREATOR FROM DELETE_EVENTS) OR ID_REVIEWEE ILIKE LOWER('${community_id}')
-                RETURNING ID_REVIEWEE
-            ),
             DELETE_REPORT_LINK AS (
                 DELETE FROM REPORT_LINK 
                 WHERE ID_REPORTEE IN (SELECT ID_CREATOR FROM DELETE_EVENTS) OR ID_REPORTEE ILIKE LOWER('${community_id}')
@@ -1196,24 +1181,13 @@ exports.deleteCommunity = asyncHandler(async function deleteCommunity(req, res, 
                 OR (ID_RECEIVER IN (SELECT ID_CREATOR FROM DELETE_EVENTS) OR ID_RECEIVER ILIKE LOWER('${community_id}'))
                 RETURNING ID_SENDER, ID_RECEIVER
             ),
-            DELETE_COMMUNITY_LINK AS (
-                DELETE FROM COMMUNITY_LINK 
-                WHERE ID_COMMUNITY ILIKE LOWER('${community_id}')
-                RETURNING ID_COMMUNITY
-            ),
-            DELETE_COMMUNITY_BULLETIN AS (
-                DELETE FROM COMMUNITY_BULLETIN 
-                WHERE ID_COMMUNITY ILIKE LOWER('${community_id}')
-                RETURNING ID_COMMUNITY
-            ),
             DELETE_COMMUNITY AS (
                 DELETE FROM COMMUNITY 
                 WHERE ID_COMMUNITY IN (SELECT ID_CREATOR FROM DELETE_EVENTS) OR ID_COMMUNITY ILIKE LOWER('${community_id}')
                 RETURNING ID_COMMUNITY
             )
             SELECT * 
-            FROM DELETE_EVENTS, DELETE_IS_ADMIN, DELETE_REVIEW, DELETE_REPORT_LINK, 
-                DELETE_NOTIFICATION, DELETE_COMMUNITY_LINK, DELETE_COMMUNITY_BULLETIN, DELETE_COMMUNITY
+            FROM DELETE_EVENTS, DELETE_REPORT_LINK, DELETE_NOTIFICATION, DELETE_COMMUNITY
             
         `)
     } catch (error) {
