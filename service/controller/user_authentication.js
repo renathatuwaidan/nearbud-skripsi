@@ -358,6 +358,35 @@ exports.registerUser_optional = asyncHandler(async function registerUser_optiona
     log.info(`SUCCESS | /auth/registerUser/optional [username : "${users_username}"] - Success return the result`)
 })
 
+exports.updatePassword = asyncHandler (async function updatePassword(req, res, password_new, password_old, users_username_token) {
+    var isError = false, result = []
+
+    console.log(`UPDATE USERS SET MODIFIED = NOW(), PASSWORD = '${password_new}' WHERE USERNAME ILIKE LOWER('${users_username_token}') AND PASSWORD = '${password_old}'`)
+    
+    try {
+        var query_result = await pool.query(`UPDATE USERS SET MODIFIED = NOW(), PASSWORD = '${password_new}' WHERE USERNAME ILIKE LOWER('${users_username_token}') AND PASSWORD = '${password_old}'`)
+    } catch (error) {
+        isError = true
+        log.error(`ERROR | /general/updatePassword [username : "${username}"] - Error found while connect to DB - ${error}`)
+    } finally {
+        if(!isError){
+            if(query_result.rowCount > 0){
+                respond.successResp(req, res, "nearbud-000-000", "Data berhasil diperbaharui", 0, 0, 0, result)
+                log.info(`SUCCESS | /general/updatePassword - Success update the data`)
+            } else {
+                respond.successResp(req, res, "nearbud-000-001", "Tidak ada data yang diperbaharui", 0, 0, 0, result)
+            }
+        } else {
+            return res.status(500).json({
+                "error_schema" : {
+                    "error_code" : "nearbud-003-001",
+                    "error_message" : `Error while connecting to DB`
+                }
+            })
+        }
+    }
+})
+
 exports.loginUser = asyncHandler(async function loginUser(req, res, users_username, users_password) {
     let isError = false
 
