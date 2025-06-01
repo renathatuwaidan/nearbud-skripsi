@@ -1,7 +1,5 @@
 const express = require('express')
 const bodyParser = require('body-parser')
-const asyncHandler = require('express-async-handler')
-const functions = require('firebase-functions')
 const app = express()
 const port = 8888
 
@@ -20,5 +18,3 @@ app.use("/event", eventRoute)
 app.use("/membership", membershipRoute)
 
 app.listen(port, ()=> console.log("Connected to port --> ", port))  
-
-exports.api = functions.https.onRequest(app)

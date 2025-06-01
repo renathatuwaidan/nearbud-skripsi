@@ -9,6 +9,8 @@ app.get("/getProvince", user_auth_controller.tokenVerif, function(req,res){
     let page = req.query.page
     let size = req.query.size
 
+    console.log(res)
+
     general_controller.getProvince(req, res, province_id, province_name, page, size)
 })
 
