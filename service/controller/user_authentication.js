@@ -41,7 +41,7 @@ exports.reqForgetPassword = asyncHandler(async function reqForgetPassword(req, r
 
                 try {
                     var query_result = await pool.query(`UPDATE users SET MODIFIED = NOW(),  OTP = '${otp}', OTP_CREATED = NOW() AT TIME ZONE 'Asia/Jakarta' where email ILIKE LOWER('${users_email}')`)
-                } catch (error) {
+                } catch (error) { 
                     isError = true
                     log.error(`ERROR | /auth/reqForgetPassword [email : "${users_email}"] - Error found while connect to DB - ${error}`)
                 } 
@@ -135,26 +135,27 @@ exports.verifyOtpEmail = asyncHandler(async function verifyOtpEmail(req, res, us
                         });
                     } else {
                         if (process == "register") {
-                        let isError1 = false
-                        const users_username = match.username
-                        const users_password = match.password
+                            let isError1 = false
+                            const users_username = match.username
+                            const users_password = match.password
 
-                        const token = jwt.sign({ users_username, users_password }, config.auth.secretKey, { expiresIn: config.auth.tokenExpired })
+                            const token = jwt.sign({ users_username, users_password }, config.auth.secretKey, { expiresIn: config.auth.tokenExpired })
 
-                        try {
-                            var update_result = await pool.query(`
-                                UPDATE users 
-                                SET MODIFIED = NOW(), IS_VERIFIED = true 
-                                WHERE email ILIKE LOWER('${users_email}') AND otp = '${otp}'
-                            `)
-                        } catch (error) {
-                            isError1 = true;
-                            log.error(`ERROR | /auth/registerUser - register [username : "${users_username}"] - Error found while connect to DB - ${error}`)
-                        } finally {
-                            if (!isError1) {
-                                await exports.successResp(req, res, "nearbud-000-000", "Email terverifikasi", 0, update_result.rowCount, 0, token)
+                            try {
+                                var update_result = await pool.query(`
+                                    UPDATE users 
+                                    SET MODIFIED = NOW(), IS_VERIFIED = true 
+                                    WHERE email ILIKE LOWER('${users_email}') AND otp = '${otp}'
+                                `)
+                            } catch (error) {
+                                isError1 = true;
+                                log.error(`ERROR | /auth/registerUser - register [username : "${users_username}"] - Error found while connect to DB - ${error}`)
+                            } finally {
+                                if (!isError1) {
+                                    await exports.successResp(req, res, "nearbud-000-000", "Email terverifikasi", 0, update_result.rowCount, 0, token)
+                                }
                             }
-                        }
+                        
                         } else {
                             return res.status(200).json({
                                 "error_schema": {
@@ -225,18 +226,26 @@ exports.registerUser = asyncHandler(async function registerUser(req, res, users_
     } else {
         let validUser = await exports.checkExistedUser(users_username, users_email)
         console.log(validUser)
-        if(!validUser){
+
+        if(validUser == "exist"){
             return res.status(500).json({
                 "error_schema" : {
                     "error_code" : "nearbud-000-001",
                     "error_message" : `Username atau email sudah digunakan`
                 }
             })
+        } else if(validUser == "update"){
+            query = `UPDATE USERS 
+                SET NAME = '${utility.toTitleCase(users_name)}', USERNAME = '${users_username.toLowerCase()}', EMAIL = '${users_email.toLowerCase()}',
+                PASSWORD = '${users_password}', DATE_OF_BIRTH = '${users_dob}', IS_VERIFIED = 'false', OTP = '${otp}', CREATED = NOW(), OTP_CREATED = NOW() AT TIME ZONE 'Asia/Jakarta'
+                WHERE USERNAME = '${users_username.toLowerCase()}' AND EMAIL = '${users_email.toLowerCase()}' `
         } else {
             query = `INSERT INTO USERS (NAME, USERNAME, EMAIL, PASSWORD, DATE_OF_BIRTH, IS_VERIFIED, OTP, CREATED, OTP_CREATED) 
             VALUES ('${utility.toTitleCase(users_name)}','${users_username.toLowerCase()}','${users_email.toLowerCase()}','${users_password}', '${users_dob}', 'false', ${otp}, NOW(), NOW() AT TIME ZONE 'Asia/Jakarta')`
-        }          
+        }        
     }
+
+    console.log(query)
 
     try {
         var query_result = await pool.query(query)
@@ -562,26 +571,34 @@ exports.checkExistedUser = asyncHandler(async function checkExistedUser(username
         return false
     }
 
-    console.log(`SELECT * FROM USERS WHERE (EMAIL ILIKE LOWER('${email}') AND IS_VERIFIED = 'TRUE') 
-                                        OR (USERNAME ILIKE LOWER('${username}') AND IS_VERIFIED = 'TRUE')`)
+    console.log(`SELECT 
+        CASE WHEN (EMAIL ILIKE LOWER('${email}') AND IS_VERIFIED = 'TRUE') OR (USERNAME ILIKE LOWER('${username}') AND IS_VERIFIED = 'TRUE') THEN 'EXIST'
+        WHEN (EMAIL ILIKE LOWER('${email}') AND IS_VERIFIED = 'FALSE') AND (USERNAME ILIKE LOWER('${username}') AND IS_VERIFIED = 'FALSE') THEN 'UPDATE'
+        ELSE 'INSERT' END
+        FROM USERS where EMAIL ILIKE LOWER('${email}') AND USERNAME ILIKE LOWER('${username}')`)
 
     try { 
-        var query_result = await pool.query(`SELECT * FROM USERS WHERE (EMAIL ILIKE LOWER('${email}') AND IS_VERIFIED = 'TRUE') 
-                                        OR (USERNAME ILIKE LOWER('${username}') AND IS_VERIFIED = 'TRUE')
-`) 
+        var query_result = await pool.query(`SELECT 
+                        CASE WHEN (EMAIL ILIKE LOWER('${email}') AND IS_VERIFIED = 'TRUE') OR (USERNAME ILIKE LOWER('${username}') AND IS_VERIFIED = 'TRUE') THEN 'EXIST'
+                        WHEN (EMAIL ILIKE LOWER('${email}') AND IS_VERIFIED = 'FALSE') AND (USERNAME ILIKE LOWER('${username}') AND IS_VERIFIED = 'FALSE') THEN 'UPDATE'
+                        ELSE 'INSERT' END as HASIL
+                        FROM USERS where EMAIL ILIKE LOWER('${email}') AND USERNAME ILIKE LOWER('${username}')`)
     } catch (error) {
         isError = true
         log.error(`ERROR | /auth/registerUser - checkExistUser [username : "${username}"] - Error found while connect to DB - ${error}`)
     } finally {
         if(!isError){
-            console.log(query_result)
             if(query_result.rowCount > 0){
-                return false
+                if(query_result.rows[0].hasil == "EXIST"){
+                    return "exist"
+                } else if (query_result.rows[0].hasil == "UPDATE"){
+                    return "update"
+                }
             } else {
-                return true
+                return "insert"
             }
         } else {
-            return false
+            return "insert"
         }
     }
 })
