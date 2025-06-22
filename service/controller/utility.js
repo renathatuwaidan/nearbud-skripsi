@@ -18,7 +18,6 @@ exports.emailValidation = function emailValidation(users_email) {
 }
 
 exports.timestampValidation = function timestampValidation(timestamp) {
-    console.log(timestamp)
     const pattern =  /^(20\d{2})-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01]) (0\d|1\d|2[0-3]):([0-5]\d):([0-5]\d)$/
     var timestampValid = pattern.test(timestamp) ? true : false
 

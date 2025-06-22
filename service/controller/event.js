@@ -950,7 +950,6 @@ exports.addEvent = asyncHandler(async function addEvent(req, res, event_name, ev
         }
     }
 
-
 })
 
 exports.editEvent = asyncHandler(async function editEvent(req, res, event_id, event_name, event_description, event_date, event_duration, event_location, event_city, 

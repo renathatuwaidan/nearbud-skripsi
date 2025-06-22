@@ -601,17 +601,39 @@ exports.checkExistedUser = asyncHandler(async function checkExistedUser(username
     }
 
     console.log(`SELECT 
-        CASE WHEN (EMAIL ILIKE LOWER('${email}') AND IS_VERIFIED = 'TRUE') OR (USERNAME ILIKE LOWER('${username}') AND IS_VERIFIED = 'TRUE') THEN 'EXIST'
-        WHEN (EMAIL ILIKE LOWER('${email}') AND IS_VERIFIED = 'FALSE') AND (USERNAME ILIKE LOWER('${username}') AND IS_VERIFIED = 'FALSE') THEN 'UPDATE'
-        ELSE 'INSERT' END
-        FROM USERS where EMAIL ILIKE LOWER('${email}') AND USERNAME ILIKE LOWER('${username}')`)
+                CASE 
+                    WHEN EXISTS (
+                    SELECT 1 FROM USERS 
+                    WHERE (EMAIL ILIKE LOWER('${email}') AND IS_VERIFIED = true)
+                        OR (USERNAME ILIKE LOWER('${username}') AND IS_VERIFIED = true)
+                    ) THEN 'EXIST'
+
+                    WHEN EXISTS (
+                    SELECT 1 FROM USERS 
+                    WHERE (EMAIL ILIKE LOWER('${email}') AND IS_VERIFIED = false)
+                        OR (USERNAME ILIKE LOWER('${username}') AND IS_VERIFIED = false)
+                    ) THEN 'UPDATE'
+
+                    ELSE 'INSERT'
+                END AS HASIL`)
 
     try { 
         var query_result = await pool.query(`SELECT 
-                        CASE WHEN (EMAIL ILIKE LOWER('${email}') AND IS_VERIFIED = 'TRUE') OR (USERNAME ILIKE LOWER('${username}') AND IS_VERIFIED = 'TRUE') THEN 'EXIST'
-                        WHEN (EMAIL ILIKE LOWER('${email}') AND IS_VERIFIED = 'FALSE') AND (USERNAME ILIKE LOWER('${username}') AND IS_VERIFIED = 'FALSE') THEN 'UPDATE'
-                        ELSE 'INSERT' END as HASIL
-                        FROM USERS where EMAIL ILIKE LOWER('${email}') AND USERNAME ILIKE LOWER('${username}')`)
+                CASE 
+                    WHEN EXISTS (
+                    SELECT 1 FROM USERS 
+                    WHERE (EMAIL ILIKE LOWER('${email}') AND IS_VERIFIED = true)
+                        OR (USERNAME ILIKE LOWER('${username}') AND IS_VERIFIED = true)
+                    ) THEN 'EXIST'
+
+                    WHEN EXISTS (
+                    SELECT 1 FROM USERS 
+                    WHERE (EMAIL ILIKE LOWER('${email}') AND IS_VERIFIED = false)
+                        OR (USERNAME ILIKE LOWER('${username}') AND IS_VERIFIED = false)
+                    ) THEN 'UPDATE'
+
+                    ELSE 'INSERT'
+                END AS HASIL`)
     } catch (error) {
         isError = true
         log.error(`ERROR | /auth/registerUser - checkExistUser [username : "${username}"] - Error found while connect to DB - ${error}`)
